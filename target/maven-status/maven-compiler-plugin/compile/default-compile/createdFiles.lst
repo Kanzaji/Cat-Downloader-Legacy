@@ -1,0 +1,14 @@
+com\kanzaji\catdownloader\utils\Logger.class
+com\kanzaji\catdownloader\jsons\MinecraftInstance$AddonFile.class
+com\kanzaji\catdownloader\CatDownloader.class
+com\kanzaji\catdownloader\jsons\Manifest$legacyFile.class
+com\kanzaji\catdownloader\jsons\MinecraftInstance$baseModLoader.class
+com\vazkii\instancesync\DownloadManager.class
+com\kanzaji\catdownloader\jsons\MinecraftInstance.class
+com\kanzaji\catdownloader\jsons\Manifest$Files.class
+com\kanzaji\catdownloader\jsons\Manifest$modLoaders.class
+com\kanzaji\catdownloader\jsons\Manifest$downloadData.class
+com\kanzaji\catdownloader\jsons\Manifest$data.class
+com\kanzaji\catdownloader\jsons\Manifest.class
+com\kanzaji\catdownloader\jsons\MinecraftInstance$installedAddons.class
+com\kanzaji\catdownloader\jsons\Manifest$minecraft.class

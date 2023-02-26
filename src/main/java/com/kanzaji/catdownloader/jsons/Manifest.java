@@ -36,7 +36,11 @@ public class Manifest {
             logger.log("Getting data for project with ID: " + projectID);
 
             try {
-
+                if (downloadUrl != null) {
+                    logger.log("Found downloadURL inside of the Manifest file for project with id: " + projectID);
+                    fileSize = -1;
+                    return true;
+                }
                 URL url = new URL("https://api.cfwidget.com/" + projectID + "?&version=" + fileID);
                 try (BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
                     data downloadData = gson.fromJson(in, data.class);

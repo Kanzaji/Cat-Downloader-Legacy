@@ -12,12 +12,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import com.kanzaji.catdownloader.SettingsManager;
 import com.kanzaji.catdownloader.jsons.Manifest;
 import com.kanzaji.catdownloader.jsons.Manifest.Files;
 import com.kanzaji.catdownloader.utils.Logger;
 
-// TODO: Rework this for use with Path and chaching, should pretty much make this code my at the end and not Vazkii :kek:
 public class DownloadManager {
 
 	private final Path modsDir;
@@ -45,7 +43,7 @@ public class DownloadManager {
 
 		if(downloadCount == 0) {
 			if (failed > 0) {
-				System.out.println(failed + " mods failed to download! Check the log at \"" + SettingsManager.getSettingsPath() + "\" for more details!");
+				System.out.println(failed + " mods failed to download! Check the log at \"" + logger.getLogPath() + "\" for more details!");
 				logger.error(failed + " mods failed to download. Look for errors in the log for more details!");
 			} else {
 				System.out.println("No mods need to be downloaded, yay!");
@@ -59,7 +57,7 @@ public class DownloadManager {
 			logger.log(String.format("Finished downloading %d mods (Took %.2fs)", downloadCount, secs));
 			System.out.printf("Finished downloading %d mods (Took %.2fs)%n", downloadCount, secs);
 			if (failed > 0) {
-				System.out.println(failed + " mods failed to download! Check the log at \"" + SettingsManager.getSettingsPath() + "\" for more details!");
+				System.out.println(failed + " mods failed to download! Check the log at \"" + logger.getLogPath() + "\" for more details!");
 				logger.error(failed + " mods failed to download. Look for errors in the log for more details!");
 			}
 		} catch (InterruptedException e) {

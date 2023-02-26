@@ -4,25 +4,25 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import com.kanzaji.catdownloader.SettingsManager;
-
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.Files;
 
 public class Logger {
     private static Logger instance = null;
-
-    Path logFile = Path.of(".", "Launcher.log");
-
+    Path logFile = Path.of(".", "Cat-Downloader.log");
     public static Logger getInstance() {
         if (instance == null) {
             instance = new Logger();
         }
         return instance;
     }
-
+    public String getLogPath() {
+        if (this.logFile == null) {
+            return null;
+        }
+        return this.logFile.toAbsolutePath().toString();
+    }
     public void init() {
         try {
             if (Files.deleteIfExists(this.logFile)) {
@@ -36,35 +36,6 @@ public class Logger {
             e.printStackTrace();
         }
         this.log("Logger Initialization completed.");
-    }
-
-    public void postInit() {
-        this.log("Logger Post-Initialization sequence started.");
-
-        if (SettingsManager.settingsAvailable()) {
-
-            this.log("Settings were initiated, moving log file to \"" + SettingsManager.getSettingsPath() + "\"");
-            Path newLogFile = Path.of(SettingsManager.getSettingsPath().toString(), "Launcher.log");
-
-            if (newLogFile.toFile().exists()) {
-                this.log("Old Log file found! That file is going to be replaced by the new file generated in initialization.");
-            }
-
-            try {
-                Files.copy(this.logFile, newLogFile, StandardCopyOption.REPLACE_EXISTING);
-                Files.delete(this.logFile);
-            } catch (IOException e) {
-                this.logStackTrace("Failed to move log file to appdata!", e);
-            }
-
-            this.logFile = newLogFile;
-            this.log("New log file moved to appdata. Log file present at \"" + this.logFile.toAbsolutePath() + "\"");
-
-            return;
-        }
-
-        this.warn("Settings unavailable, log file present at \"" + this.logFile.toAbsolutePath() + "\"");
-        this.log("Logger Post-Initialization sequence completed.");
     }
 
     public void log(String msg) {
