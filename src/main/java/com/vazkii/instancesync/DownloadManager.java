@@ -17,13 +17,10 @@ import com.kanzaji.catdownloaderlegacy.jsons.Manifest.Files;
 import com.kanzaji.catdownloaderlegacy.utils.Logger;
 
 public class DownloadManager {
-
 	private final Path modsDir;
-	
 	private List<String> acceptableFilenames = new LinkedList<>();
 	private ExecutorService executor; 
 	private int downloadCount;
-
 	private Logger logger = Logger.getInstance();
 	
 	public DownloadManager(Path modsDir) {
