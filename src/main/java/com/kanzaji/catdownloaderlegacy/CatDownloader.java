@@ -71,7 +71,7 @@ public final class CatDownloader {
             }
             logger.log("Data fetched. Found " + manifest.files.length + " Mods, on version " + manifest.minecraft.version + " " + manifest.minecraft.modLoaders[0].id);
 
-            // Checking if manifest contains modpack name, it doesn't matter that much, but it's better to check :P
+            // Checking if manifest contains modpack name.
             if (manifest.name == null) {
                 System.out.println("manifest.json doesn't have modpack name!");
                 logger.warn("The name of the instance is missing!");
@@ -87,11 +87,14 @@ public final class CatDownloader {
                 logger.log("Mod Loader: " + manifest.minecraft.modLoaders[0].id);
             }
             // Checking if manifest has any mods.
-            if (manifest.files.length == 0) {
+            if (manifest.files == null || manifest.files.length == 0) {
                 System.out.println("Manifest file doesn't have any mods in it!");
                 logger.error("Manifest files does not have any mods in it. Is this intentional?");
                 System.exit(0);
             }
+
+            System.out.println("---------------------------------------------------------------------");
+
             // Some more info about modpack
             System.out.println("Found " + manifest.files.length + " mods!");
 
@@ -104,8 +107,7 @@ public final class CatDownloader {
             }
 
             if(!mods.toFile().exists()) {
-                System.out.println("/mods does not exist, creating");
-                logger.log("/mods is missing. Creating...");
+                logger.log("Folder \"mods\" is missing. Creating...");
                 Files.createDirectory(mods);
                 logger.log("Created \"mods\" folder in working directory. Path: " + dir.toAbsolutePath() + "\\mods");
             } else {
