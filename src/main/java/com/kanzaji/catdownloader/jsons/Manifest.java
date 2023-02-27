@@ -22,7 +22,7 @@ public class Manifest {
     public String author;
     public minecraft minecraft;
 
-    public class Files {
+    public static class Files {
         public Number projectID;
         public Number fileID;
         public String downloadUrl;

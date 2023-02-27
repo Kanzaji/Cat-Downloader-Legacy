@@ -29,7 +29,7 @@ public class DownloadManager {
 	public DownloadManager(Path modsDir) {
 		this.modsDir = modsDir;
 	}
-
+	// TODO: Rework this to use Sum Check verification, and add support for removing files not present in the manifest file!
 	public void downloadInstance(Manifest manifest) {
 		executor = Executors.newFixedThreadPool(16);
 
@@ -38,7 +38,7 @@ public class DownloadManager {
 		long time = System.currentTimeMillis();
 		int failed = 0;
 
-		for(Files a : manifest.files) 
+		for(Files a : manifest.files)
 			if(a.getData(manifest.minecraft)) {downloadAddonIfNeeded(a);} else {failed += 1;}
 
 		if(downloadCount == 0) {

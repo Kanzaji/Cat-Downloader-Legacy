@@ -7,9 +7,12 @@ public class MinecraftInstance {
     public installedAddons[] installedAddons;
 
     public static class installedAddons {
+        public String addonID;
         public AddonFile installedFile;
     }
     public static class AddonFile {
+        public String id;
+        public Number fileLenght;
         public String downloadUrl;
     }
     public static class baseModLoader {
