@@ -1,4 +1,4 @@
-package com.kanzaji.catdownloader.jsons;
+package com.kanzaji.catdownloaderlegacy.jsons;
 
 public class MinecraftInstance {
 
@@ -7,11 +7,11 @@ public class MinecraftInstance {
     public installedAddons[] installedAddons;
 
     public static class installedAddons {
-        public String addonID;
+        public Number addonID;
         public AddonFile installedFile;
     }
     public static class AddonFile {
-        public String id;
+        public Number id;
         public Number fileLenght;
         public String downloadUrl;
     }

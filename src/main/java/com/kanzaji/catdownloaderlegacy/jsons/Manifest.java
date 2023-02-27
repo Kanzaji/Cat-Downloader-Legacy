@@ -1,4 +1,4 @@
-package com.kanzaji.catdownloader.jsons;
+package com.kanzaji.catdownloaderlegacy.jsons;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -10,7 +10,7 @@ import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.kanzaji.catdownloader.utils.Logger;
+import com.kanzaji.catdownloaderlegacy.utils.Logger;
 
 public class Manifest {
     public String manifestType;

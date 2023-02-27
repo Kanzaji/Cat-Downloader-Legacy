@@ -1,4 +1,4 @@
-package com.kanzaji.catdownloader.utils;
+package com.kanzaji.catdownloaderlegacy.utils;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -10,6 +10,7 @@ import java.nio.file.Files;
 
 public class Logger {
     private static Logger instance = null;
+    private boolean disabled = false;
     Path logFile = Path.of(".", "Cat-Downloader.log");
     public static Logger getInstance() {
         if (instance == null) {
@@ -38,6 +39,12 @@ public class Logger {
         this.log("Logger Initialization completed.");
     }
 
+    public void exit() throws IOException {
+        System.out.println("LOGGER WAS DISABLED. If any errors occur they will not be logged and can be not shown in the console! Use at your own risk.");
+        this.disabled = true;
+        Files.deleteIfExists(this.logFile);
+    }
+
     public void log(String msg) {
         this.logType(msg, 0);
     }
@@ -63,6 +70,13 @@ public class Logger {
     }
 
     private void log(String msg, int type, Throwable error) {
+        if (disabled) {
+            System.out.println(msg);
+            if (error != null) {
+                error.printStackTrace();
+            }
+            return;
+        }
         String Type = switch (type) {
             case 1 -> "WARN";
             case 2 -> "ERROR";

@@ -1,20 +1,19 @@
-package com.kanzaji.catdownloader;
+package com.kanzaji.catdownloaderlegacy;
 
-import com.kanzaji.catdownloader.jsons.Manifest;
-import com.kanzaji.catdownloader.jsons.MinecraftInstance;
-import com.kanzaji.catdownloader.utils.Logger;
+import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
+import com.kanzaji.catdownloaderlegacy.jsons.MinecraftInstance;
+import com.kanzaji.catdownloaderlegacy.utils.ArgumentDecoder;
+import com.kanzaji.catdownloaderlegacy.utils.Logger;
 import com.google.gson.Gson;
+import com.kanzaji.catdownloaderlegacy.utils.MIInterpreter;
 import com.vazkii.instancesync.DownloadManager;
 
-import java.io.IOException;
 import java.nio.file.*;
 import java.util.Objects;
 
 public final class CatDownloader {
 
     public static final String VERSION = "DEVELOP";
-    public static String WorkingDirectory = ".";
-    public static String Mode = "Pack";
     public static Path manifestFile;
 
     public static void main(String[] args) {
@@ -23,37 +22,32 @@ public final class CatDownloader {
         logger.log("Cat Downloader version: " + VERSION);
 
         try {
-            // "What the hell did I just run" section
+            // Initialize required Utilities.
+            ArgumentDecoder ar = ArgumentDecoder.getInstance();
+
+            // Decode Arguments
+            ar.decodeArguments(args);
+
+            // Turns off Logger if user wants it (NOT RECOMMENDED!!!!)
+            // Redirects entire output to a console!
+            if (Objects.equals(ar.getData("Logger"), "off")){
+                logger.exit();
+            }
+
+            // "What the hell did I just run" section.
             System.out.println("---------------------------------------------------------------------");
             System.out.println("     Cat Downloader " + VERSION);
             System.out.println("     Created by: Kanzaji");
             System.out.println("---------------------------------------------------------------------");
-            logger.log("Running with arguments:");
-            for (String argument : args) {
-                logger.log(argument);
-                if (argument.startsWith("-WorkingDirectory:")) {
-                    WorkingDirectory = argument.substring(18);
-                }
-                if (argument.startsWith("-Mode:")) {
-                    Mode = argument.substring(6);
-                }
-            }
+
             // Setting directory where program was turned on
-            logger.log("Working directory = " + WorkingDirectory);
-            Path dir = Path.of(WorkingDirectory);
+            logger.log("Working directory = " + ar.getData("Wdir"));
+            Path dir = Path.of(ar.getData("Wdir"));
             System.out.println("Running in " + dir.toAbsolutePath());
 
-            // Checking mode and finding required file in each mode
-            if (!Objects.equals(Mode, "Pack") && !Objects.equals(Mode, "Instance")) {
-                logger.error("Wrong mode selected!" + Mode);
-                logger.error("Available modes: Pack // Instance");
-                logger.error("Check Github https://github.com/Kanzaji/Cat-Downloader-Legacy for more explanation!");
-                System.exit(1);
-            }
+            logger.log("Program Mode: " + ar.getData("Mode"));
 
-            logger.log("Program Mode: " + Mode);
-
-            if (Objects.equals(Mode, "Pack")) {
+            if (Objects.equals(ar.getData("Mode"), "Pack")) {
                 manifestFile = Path.of(dir.toAbsolutePath().toString(), "manifest.json");
             } else {
                 manifestFile = Path.of(dir.toAbsolutePath().toString(), "minecraftinstance.json");
@@ -68,26 +62,10 @@ public final class CatDownloader {
             // Getting data from manifest file
             Gson gson = new Gson();
             Manifest manifest = new Manifest();
-            // TODO: Add support for file size and Project / File ID translation.
             logger.log("Reading data from Manifest file...");
-            if (Objects.equals(Mode, "Instance")) {
+            if (Objects.equals(ar.getData("Mode"), "Instance")) {
                 MinecraftInstance MI = gson.fromJson(Files.readString(manifestFile),MinecraftInstance.class);
-                logger.log("Translating MinecraftInstance into Manifest compatible object...");
-                manifest.version = "";
-                manifest.name = MI.name;
-                manifest.minecraft = gson.fromJson("{\"version\":\"" + MI.baseModLoader.minecraftVersion + "\",\"modLoaders\": [{\"id\":\"" + MI.baseModLoader.name + "\"}]}",Manifest.minecraft.class);
-                int index = 0;
-                manifest.files = new Manifest.Files[MI.installedAddons.length];
-                for (MinecraftInstance.installedAddons File: MI.installedAddons) {
-                    Manifest.Files mf = new Manifest.Files();
-                    mf.projectID = -1;
-                    mf.fileID = -1;
-                    mf.downloadUrl = File.installedFile.downloadUrl;
-                    mf.required = true;
-                    manifest.files[index] = mf;
-                    index += 1;
-                }
-                logger.log("Translation successful");
+                manifest = MIInterpreter.decode(MI);
             } else {
                 manifest = gson.fromJson(Files.readString(manifestFile),Manifest.class);
             }
