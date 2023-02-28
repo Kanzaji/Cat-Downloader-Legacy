@@ -4,8 +4,10 @@ import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
 import com.kanzaji.catdownloaderlegacy.jsons.MinecraftInstance;
 import com.kanzaji.catdownloaderlegacy.utils.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.utils.Logger;
-import com.google.gson.Gson;
 import com.kanzaji.catdownloaderlegacy.utils.MIInterpreter;
+
+import com.google.gson.Gson;
+
 import com.vazkii.instancesync.DownloadManager;
 
 import java.nio.file.*;
