@@ -26,7 +26,7 @@ public class DownloadManager {
 	public DownloadManager(Path modsDir) {
 		this.modsDir = modsDir;
 	}
-	// TODO: Rework this to use Sum Check verification, and add support for removing files not present in the manifest file!
+	//TODO: Rework this to use Sum Check verification, and add support for removing files not present in the manifest file!
 	public void downloadInstance(Manifest manifest) {
 		executor = Executors.newFixedThreadPool(16);
 

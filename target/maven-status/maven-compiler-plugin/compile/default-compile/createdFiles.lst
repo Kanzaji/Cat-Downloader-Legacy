@@ -9,8 +9,11 @@ com\kanzaji\catdownloaderlegacy\jsons\Manifest.class
 com\vazkii\instancesync\DownloadManager.class
 com\kanzaji\catdownloaderlegacy\jsons\MinecraftInstance$baseModLoader.class
 com\kanzaji\catdownloaderlegacy\jsons\Manifest$data.class
+com\kanzaji\catdownloaderlegacy\utils\SumCheckCalculator.class
 com\kanzaji\catdownloaderlegacy\jsons\Manifest$minecraft.class
 com\kanzaji\catdownloaderlegacy\jsons\Manifest$downloadData.class
 com\kanzaji\catdownloaderlegacy\jsons\MinecraftInstance$AddonFile.class
+com\kanzaji\catdownloaderlegacy\DownloadManager.class
 com\kanzaji\catdownloaderlegacy\jsons\MinecraftInstance.class
 com\kanzaji\catdownloaderlegacy\jsons\Manifest$Files.class
+com\kanzaji\catdownloaderlegacy\FileManager.class

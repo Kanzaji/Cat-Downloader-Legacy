@@ -114,9 +114,12 @@ public final class CatDownloader {
                 logger.log("Found \"mods\" folder in working directory. Path: " + dir.toAbsolutePath() + "\\mods");
             }
 
+            FileManager fm = FileManager.getInstance();
+            fm.passData(mods,manifest);
+            fm.startSync();
             // Using modified Vazkii DownloadManager to download mods
-            DownloadManager dm = new DownloadManager(mods);
-            dm.downloadInstance(manifest);
+//            DownloadManager dm = new DownloadManager(mods);
+//            dm.downloadInstance(manifest);
         } catch (Exception e) {
             System.out.println("CatDownloader crashed! More details are in the log file at \"" + logger.getLogPath() + "\".");
             logger.logStackTrace("Something horrible happened...", e);
