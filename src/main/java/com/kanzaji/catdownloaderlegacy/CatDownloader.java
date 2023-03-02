@@ -25,14 +25,14 @@ public final class CatDownloader {
 
         try {
             // Initialize required Utilities.
-            ArgumentDecoder ar = ArgumentDecoder.getInstance();
+            ArgumentDecoder ARD = ArgumentDecoder.getInstance();
 
-            // Decode Arguments
-            ar.decodeArguments(args);
+            // Decode Arguments and store them in ARD Instance.
+            ARD.decodeArguments(args);
 
             // Turns off Logger if user wants it (NOT RECOMMENDED!!!!)
             // Redirects entire output to a console!
-            if (Objects.equals(ar.getData("Logger"), "off")){
+            if (Objects.equals(ARD.getData("Logger"), "off")){
                 logger.exit();
             }
 
@@ -43,13 +43,16 @@ public final class CatDownloader {
             System.out.println("---------------------------------------------------------------------");
 
             // Setting directory where program was turned on
-            logger.log("Working directory = " + ar.getData("Wdir"));
-            Path dir = Path.of(ar.getData("Wdir"));
+            Path dir = Path.of(ARD.getData("Wdir"));
             System.out.println("Running in " + dir.toAbsolutePath());
 
-            logger.log("Program Mode: " + ar.getData("Mode"));
+            // Printing out Argument values.
+            logger.log("Working directory = " + ARD.getData("Wdir"));
+            logger.log("Thread count for downloads = " + ARD.getData("Threads"));
+            logger.log("Program Mode: " + ARD.getData("Mode"));
 
-            if (Objects.equals(ar.getData("Mode"), "Pack")) {
+            // Checking Program mode and getting required Manifest File.
+            if (Objects.equals(ARD.getData("Mode"), "Pack")) {
                 manifestFile = Path.of(dir.toAbsolutePath().toString(), "manifest.json");
             } else {
                 manifestFile = Path.of(dir.toAbsolutePath().toString(), "minecraftinstance.json");
@@ -61,11 +64,12 @@ public final class CatDownloader {
                 System.exit(1);
             }
 
-            // Getting data from manifest file
+            // Parsing data from Manifest file.
             Gson gson = new Gson();
             Manifest manifest = new Manifest();
             logger.log("Reading data from Manifest file...");
-            if (Objects.equals(ar.getData("Mode"), "Instance")) {
+            if (Objects.equals(ARD.getData("Mode"), "Instance")) {
+                // Translating from MinecraftInstance format to Manifest format.
                 MinecraftInstance MI = gson.fromJson(Files.readString(manifestFile),MinecraftInstance.class);
                 manifest = MIInterpreter.decode(MI);
             } else {
@@ -73,7 +77,7 @@ public final class CatDownloader {
             }
             logger.log("Data fetched. Found " + manifest.files.length + " Mods, on version " + manifest.minecraft.version + " " + manifest.minecraft.modLoaders[0].id);
 
-            // Checking if manifest contains modpack name.
+            // Checking if Manifest contains modpack name.
             if (manifest.name == null) {
                 System.out.println("manifest.json doesn't have modpack name!");
                 logger.warn("The name of the instance is missing!");
@@ -81,6 +85,7 @@ public final class CatDownloader {
                 System.out.println("Installing modpack: " + manifest.name + " " + manifest.version);
                 logger.log("Instance name: " + manifest.name);
             }
+            // Checking if Manifest file contains required modLoader.
             if (manifest.minecraft.modLoaders[0].id == null) {
                 System.out.println("Manifest file doesn't have any mod loader specified! Is this vanilla?");
                 logger.warn("This instance seems to be vanilla? No mod loader found!");
@@ -88,7 +93,7 @@ public final class CatDownloader {
                 System.out.println("That requires ModLoader: " + manifest.minecraft.version + " " + manifest.minecraft.modLoaders[0].id);
                 logger.log("Mod Loader: " + manifest.minecraft.modLoaders[0].id);
             }
-            // Checking if manifest has any mods.
+            // Checking if Manifest has any mods.
             if (manifest.files == null || manifest.files.length == 0) {
                 System.out.println("Manifest file doesn't have any mods in it!");
                 logger.error("Manifest files does not have any mods in it. Is this intentional?");
@@ -116,8 +121,9 @@ public final class CatDownloader {
                 logger.log("Found \"mods\" folder in working directory. Path: " + dir.toAbsolutePath() + "\\mods");
             }
 
+            // Getting FileManager ready and starting sync of the profile.
             FileManager fm = FileManager.getInstance();
-            fm.passData(mods,manifest);
+            fm.passData(mods,manifest, Integer.parseInt(ARD.getData("Threads")));
             fm.startSync();
             // Using modified Vazkii DownloadManager to download mods
 //            DownloadManager dm = new DownloadManager(mods);
