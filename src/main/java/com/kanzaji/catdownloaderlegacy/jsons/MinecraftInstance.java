@@ -12,7 +12,7 @@ public class MinecraftInstance {
     }
     public static class AddonFile {
         public Number id;
-        public Number fileLenght;
+        public Number fileLength;
         public String downloadUrl;
     }
     public static class baseModLoader {

@@ -20,7 +20,7 @@ public class MIInterpreter {
                 Manifest.Files mf = new Manifest.Files();
                 mf.projectID = File.addonID;
                 mf.fileID = File.installedFile.id;
-                mf.fileSize = File.installedFile.fileLenght;
+                mf.fileSize = File.installedFile.fileLength;
                 mf.downloadUrl = File.installedFile.downloadUrl;
                 mf.required = true;
                 manifest.files[index] = mf;
