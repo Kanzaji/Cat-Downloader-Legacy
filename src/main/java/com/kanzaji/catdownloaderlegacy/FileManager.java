@@ -40,7 +40,7 @@ public class FileManager {
         this.executor = Executors.newFixedThreadPool(nThreadsCount);
     }
 
-    public void startSync() throws NullPointerException, IOException, InterruptedException {
+    public void startSync() throws NullPointerException, IOException, InterruptedException, RuntimeException{
         if (this.ModFolderPath == null || this.ManifestData == null || this.executor == null) {
             if (this.ModFolderPath == null) {
                 throw new NullPointerException("ModFolderPath is null!");
@@ -96,10 +96,10 @@ public class FileManager {
         }
 
         this.executor.shutdown();
-        if (this.executor.awaitTermination(1, TimeUnit.DAYS)) {
+        if (!this.executor.awaitTermination(1, TimeUnit.DAYS)) {
             logger.error("Downloading takes over a day! This for sure isn't right???");
             System.out.println("Downloads interrupted due to taking over a day! This for sure isn't right???");
-            throw new UnknownError("Downloads are taking over a day! Something is horribly wrong.");
+            throw new RuntimeException("Downloads are taking over a day! Something is horribly wrong.");
         }
 
         if (this.RemovalFailed > 0 || this.DownloadFailed > 0) {
