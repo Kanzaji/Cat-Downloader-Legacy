@@ -9,6 +9,7 @@ public class ArgumentDecoder {
     private String Mode;
     private String LoggerActive = "on";
     private int nThreadsCount = 16;
+    private boolean FileSizeVerification = true;
 
     /**
      * Used to create first instance of ArgumentDecoder, and get reference to a single Instance of it in any other place.
@@ -60,6 +61,17 @@ public class ArgumentDecoder {
                     this.nThreadsCount = 16;
                 }
             }
+            if (argument.startsWith("-SizeVerification:")) {
+                try {
+                    if (Integer.parseInt(argument.substring(18)) == 0) {
+                        this.FileSizeVerification = false;
+                    }
+                } catch (IllegalArgumentException e) {
+                    if (Objects.equals(argument.substring(18).toLowerCase(),"false") || Objects.equals(argument.substring(18).toLowerCase(),"disabled")) {
+                        this.FileSizeVerification = false;
+                    }
+                }
+            }
         }
     }
     private boolean validateMode(String Mode) {
@@ -77,6 +89,7 @@ public class ArgumentDecoder {
      *  <li>    Wdir | Working Directory of the program, Default: "."  </li>
      *  <li>    Logger | Determines if Logger is active or not, Default: "on"  </li>
      *  <li>    Threads | Amount of threads allowed to be used for downloads/verification work.</li>
+     *  <li>    SizeVer | Determines if FileSizeVerification is turned on. Default: "True".</li>
      * </ul>
      *
      * @param dataType Requested Type of Data.
@@ -88,6 +101,7 @@ public class ArgumentDecoder {
             case "WDir" -> this.WorkingDirectory;
             case "Logger" -> this.LoggerActive;
             case "Threads" -> String.valueOf(this.nThreadsCount);
+            case "SizeVer" -> String.valueOf(this.FileSizeVerification);
             default -> "";
         };
     }

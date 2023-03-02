@@ -29,7 +29,7 @@ public class Manifest {
         public Boolean required;
         public Number fileSize;
 
-        public boolean getData(minecraft minecraftData) {
+        public boolean getData(minecraft minecraftData) { //TODO: Rework this to use Executor for Performance Benefit. This has to be disabled by default in the commercial release and hidden to re-enable.
 
             Logger logger = Logger.getInstance();
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -50,7 +50,7 @@ public class Manifest {
                         for (legacyFile file : downloadData.files) {
                             Set<String> asSet = new HashSet<>(Arrays.asList(file.versions));
                             if (!asSet.contains(minecraftData.version)) continue;
-                            // TODO: Fix this because this one below is pretty useless lmao
+                            // TODO: Fix this because this one below is pretty useless
                             if (!asSet.contains((minecraftData.modLoaders[0].id.startsWith("forge")) ? "Forge" : (minecraftData.modLoaders[0].id.startsWith("fabric")) ? "Fabric" : "Quilt"))
                                 continue;
                             downloadUrl = (

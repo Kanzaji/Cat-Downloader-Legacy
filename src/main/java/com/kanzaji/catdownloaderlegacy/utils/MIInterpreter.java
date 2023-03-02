@@ -5,8 +5,8 @@ import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
 import com.kanzaji.catdownloaderlegacy.jsons.MinecraftInstance;
 
 public class MIInterpreter {
+    private static Logger logger = Logger.getInstance();
     public static Manifest decode(MinecraftInstance MinecraftInstanceFile) throws UnsupportedOperationException {
-        Logger logger = Logger.getInstance();
         Gson gson = new Gson();
         Manifest manifest = new Manifest();
         logger.log("Translating MinecraftInstance into Manifest compatible object...");

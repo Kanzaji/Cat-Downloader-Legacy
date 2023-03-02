@@ -1,6 +1,8 @@
 package com.kanzaji.catdownloaderlegacy;
 
 import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
+import com.kanzaji.catdownloaderlegacy.utils.ArgumentDecoder;
+import com.kanzaji.catdownloaderlegacy.utils.DownloadUtilities;
 import com.kanzaji.catdownloaderlegacy.utils.Logger;
 
 import java.io.IOException;
@@ -14,7 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-//TODO: Finish this! Idk what I just started exactly XD But Yea, its pretty late I have to get some sleep.
+//TODO: Add Documentation, Log stuff, Comments and finish this.
 public class FileManager {
     private static final Logger logger = Logger.getInstance();
     private static FileManager instance;
@@ -23,7 +25,7 @@ public class FileManager {
     private Manifest ManifestData;
     private int RemovedCount = 0;
     private int RemovalFailed = 0;
-    private int DownloadFailed = 0;
+    public static int DownloadFailed = 0;
     private final List<String> ModFileNames = new LinkedList<>();
 
     public static FileManager getInstance() {
@@ -61,14 +63,29 @@ public class FileManager {
             // I know this is slower, but it checks few times if the file exists, and that was an issue with original
             if (Files.notExists(ModFile, LinkOption.NOFOLLOW_LINKS)) {
                 logger.log(FileName + " not found! Added to download queue.");
-                //TODO: Download mods here:tm:
-                // Downloader will have SumCheck verification and file size verification in it.
-                // For now, using old downloader just to test removal part!
-                this.executor.submit(DownloadManager.download(ModFile, mod.downloadUrl));
+                //TODO: This seems to be launching before executor.shutdown??
+                this.executor.submit(() -> {
+                    DownloadUtilities.download(ModFile, mod.downloadUrl, FileName);
+                    try {
+                        if (!verifyFile(ModFile, mod.fileSize)) {
+                            DownloadUtilities.reDownload(ModFile, mod.downloadUrl, FileName, mod.fileSize);
+                        }
+                    } catch (IOException e) {
+                        logger.logStackTrace("IO Operation failed while redownloading " + FileName + " !", e);
+                    }
+                });
             } else {
                 logger.log("Found mod " + FileName + " on the drive! Verifying install...");
-                //TODO: SumCheck with URL and File on the drive.
-                // FileSize Verification
+                if (!verifyFileSize(ModFile, mod.fileSize)) {
+                    logger.warn("Mod " + FileName + " seems to be corrupted! Added to redownload queue.");
+                    executor.submit(() -> {
+                        try {
+                            DownloadUtilities.reDownload(ModFile, mod.downloadUrl, FileName, mod.fileSize);
+                        } catch (IOException e) {
+                            logger.logStackTrace("IO Operation failed while redownloading " + FileName + " !", e);
+                        }
+                    });
+                }
                 logger.log("Verification of " + FileName + " was successful!");
             }
         }
@@ -102,20 +119,36 @@ public class FileManager {
             throw new RuntimeException("Downloads are taking over a day! Something is horribly wrong.");
         }
 
-        if (this.RemovalFailed > 0 || this.DownloadFailed > 0) {
+        if (this.RemovalFailed > 0 || DownloadFailed > 0) {
             logger.error("Errors were found while doing synchronisation of the profile!");
             if (this.RemovalFailed > 0) {
                 logger.error("Failed removals: " + this.RemovalFailed);
             } else {
                 logger.error("No removal errors occurred.");
             }
-            if (this.DownloadFailed > 0) {
-                logger.error("Download errors: " + this.DownloadFailed);
+            if (DownloadFailed > 0) {
+                logger.error("Download errors: " + DownloadFailed);
             } else {
                 logger.error("No download errors occurred.");
             }
         } else {
             logger.log("Finished syncing profile!");
         }
+    }
+
+    public static boolean verifyFile(Path File, int Size) throws IOException {
+        return verifyFileSize(File, Size);
+    }
+    public static boolean verifyFile(Path File, Number Size) throws IOException {
+        return verifyFileSize(File, Size);
+    }
+    public static boolean verifyFileSize(Path File, Number Size) throws IOException {
+        return verifyFileSize(File, Size.intValue());
+    }
+    public static boolean verifyFileSize(Path File, int Size) throws IOException {
+        if (!Boolean.getBoolean(ArgumentDecoder.getInstance().getData("SizeVer"))) {
+            return true;
+        };
+        return Files.size(File) == Size;
     }
 }
