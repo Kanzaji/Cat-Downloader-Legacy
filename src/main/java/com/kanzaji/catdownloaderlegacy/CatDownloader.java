@@ -8,8 +8,6 @@ import com.kanzaji.catdownloaderlegacy.utils.MIInterpreter;
 
 import com.google.gson.Gson;
 
-import com.vazkii.instancesync.DownloadManager;
-
 import java.nio.file.*;
 import java.util.Objects;
 
@@ -124,11 +122,8 @@ public final class CatDownloader {
             // Getting FileManager ready and starting sync of the profile.
             FileManager fm = FileManager.getInstance();
             fm.passData(mods,manifest, Integer.parseInt(ARD.getData("Threads")));
-            fm.startSync();
-            // Using modified Vazkii DownloadManager to download mods
-//            DownloadManager dm = new DownloadManager(mods);
-//            dm.downloadInstance(manifest);
-        } catch (Exception e) {
+            fm.runSync();
+        } catch (Exception | Error e) {
             System.out.println("CatDownloader crashed! More details are in the log file at \"" + logger.getLogPath() + "\".");
             logger.logStackTrace("Something horrible happened...", e);
             System.exit(1);

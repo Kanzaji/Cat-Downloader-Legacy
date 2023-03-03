@@ -5,7 +5,7 @@ import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
 import com.kanzaji.catdownloaderlegacy.jsons.MinecraftInstance;
 
 public class MIInterpreter {
-    private static Logger logger = Logger.getInstance();
+    private static final Logger logger = Logger.getInstance();
     public static Manifest decode(MinecraftInstance MinecraftInstanceFile) throws UnsupportedOperationException {
         Gson gson = new Gson();
         Manifest manifest = new Manifest();

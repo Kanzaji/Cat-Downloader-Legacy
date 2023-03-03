@@ -57,7 +57,7 @@ public class Logger {
     /**
      * Used to disable Logger and remove log file.
      * Logger *can not* be re-activated.
-     * @throws IOException
+     * @throws IOException when log deletion failed.
      */
     public void exit() throws IOException {
         System.out.println("LOGGER WAS DISABLED. If any errors occur they will not be logged and can be not shown in the console! Use at your own risk.");
@@ -126,7 +126,7 @@ public class Logger {
      * @param type Int between 0 and 2 specifying selected level. Defaults to 0. (Nullable)
      * @param throwable Exception to log. (Nullable)
      */
-    public void logCustom(String msg, @Nullable int type, @Nullable Throwable throwable) {
+    public void logCustom(String msg, int type, @Nullable Throwable throwable) {
         this.log(msg, type, throwable);
     }
 
@@ -142,7 +142,7 @@ public class Logger {
      * @param type Int level (Nullable)
      * @param error Exception (Nullable)
      */
-    private void log(String msg, @Nullable int type,@Nullable Throwable error) {
+    private void log(String msg, int type,@Nullable Throwable error) {
         if (disabled) {
             System.out.println(msg);
             if (error != null) {

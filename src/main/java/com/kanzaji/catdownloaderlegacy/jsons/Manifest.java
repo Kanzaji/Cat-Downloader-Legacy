@@ -103,7 +103,7 @@ public class Manifest {
         }
     }
 
-    public class minecraft {
+    public static class minecraft {
         public String version;
         public modLoaders[] modLoaders;
     }
@@ -113,7 +113,7 @@ public class Manifest {
         public boolean primary;
     }
 
-    private class data {
+    private static class data {
         private legacyFile[] files;
         private downloadData download;
     }

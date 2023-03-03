@@ -9,6 +9,7 @@ public class ArgumentDecoder {
     private String Mode;
     private String LoggerActive = "on";
     private int nThreadsCount = 16;
+    private int DownloadAttempts = 5;
     private boolean FileSizeVerification = true;
 
     /**
@@ -61,6 +62,18 @@ public class ArgumentDecoder {
                     this.nThreadsCount = 16;
                 }
             }
+            if (argument.startsWith("-DownloadAttempts:")) {
+                try {
+                    this.DownloadAttempts = Integer.parseInt(argument.substring(18));
+                    if (this.DownloadAttempts < 1) {
+                        logger.warn("Value below 1 was passed to DownloadAttempts argument! Defaulting to 5.");
+                        this.DownloadAttempts = 5;
+                    }
+                } catch (IllegalArgumentException e) {
+                    logger.warn("Non-int value was passed to DownloadAttempts argument! Defaulting to 5.");
+                    this.DownloadAttempts = 5;
+                }
+            }
             if (argument.startsWith("-SizeVerification:")) {
                 try {
                     if (Integer.parseInt(argument.substring(18)) == 0) {
@@ -75,11 +88,7 @@ public class ArgumentDecoder {
         }
     }
     private boolean validateMode(String Mode) {
-        if (
-                Objects.equals(Mode, "Pack") ||
-                Objects.equals(Mode, "Instance")
-            ) {return true;}
-        return false;
+        return Objects.equals(Mode, "Pack") || Objects.equals(Mode, "Instance");
     }
 
     /**
@@ -90,6 +99,7 @@ public class ArgumentDecoder {
      *  <li>    Logger | Determines if Logger is active or not, Default: "on"  </li>
      *  <li>    Threads | Amount of threads allowed to be used for downloads/verification work.</li>
      *  <li>    SizeVer | Determines if FileSizeVerification is turned on. Default: "True".</li>
+     *  <li>    DAttempt | Amount of attempts a DownloadUtilities#reDownload() will take at re-downloading a mod.</li>
      * </ul>
      *
      * @param dataType Requested Type of Data.
@@ -102,6 +112,7 @@ public class ArgumentDecoder {
             case "Logger" -> this.LoggerActive;
             case "Threads" -> String.valueOf(this.nThreadsCount);
             case "SizeVer" -> String.valueOf(this.FileSizeVerification);
+            case "DAttempt" -> String.valueOf(this.DownloadAttempts);
             default -> "";
         };
     }
