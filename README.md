@@ -3,6 +3,8 @@ Cat-Downloader Legacy is an app that is meant to allow for easy synchronization 
 
 It supports CurseForge mods only, and is compatible both with CurseForge Launcher `minecraftinstance.json` format and CurseForge site `manifest.json` format.
 
+It also features file verification with Checksum (SHA-256) and File size!
+
 ## Configuration
 Cat-Downloader Legacy accepts some arguments to customize app behaviour to your needs. Here is the list and explanation for all of them:
 
