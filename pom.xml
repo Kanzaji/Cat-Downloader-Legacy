@@ -4,11 +4,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.kanzaji.app</groupId>
-  <artifactId>CatDownloader</artifactId>
-  <version>DEVELOP</version>
+  <artifactId>Cat-Downloader-Legacy</artifactId>
+  <version>1.0</version>
 
-  <name>Cat Downloader</name>
-  <url>https://github.com/Kanzaji/Cat-Downloader</url>
+  <name>Cat Downloader Legacy</name>
+  <url>https://github.com/Kanzaji/Cat-Downloader-Legacy</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
