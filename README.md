@@ -37,7 +37,7 @@ This project is under a MIT License, what you can find in the LICENSE file of th
 
 ## FAQ
 - Why Legacy in the name?<br>
-  (Cat-Downloader)[https://github.com/Kanzaji/Cat-Downloader] is actually a different project of mine that is meant to be full Minecraft Launcher! It is, however, in very early stages of the development, so for now it has more or less the same functionality as this app.
+  [Cat-Downloader](https://github.com/Kanzaji/Cat-Downloader) is actually a different project of mine that is meant to be full Minecraft Launcher! It is, however, in very early stages of the development, so for now it has more or less the same functionality as this app.
 
 ## Contributions
 For Contribution Guide-Lines and other stuff, check out Develop branch!
