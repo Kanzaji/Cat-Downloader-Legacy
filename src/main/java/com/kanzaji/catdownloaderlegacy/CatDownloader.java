@@ -130,8 +130,10 @@ public final class CatDownloader {
                         throw new RuntimeException("Data gathering is taking over a day! Something is horribly wrong.");
                     }
                 } else {
+                    int Index = 0;
                     for (Manifest.ModFile mod : ManifestData.files) {
-                        mod.getData(ManifestData.minecraft);
+                        ManifestData.files[Index] = mod.getData(ManifestData.minecraft);
+                        Index += 1;
                     }
                 }
                 logger.log("Finished gathering data!");
