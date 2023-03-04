@@ -94,7 +94,7 @@ public final class CatDownloader {
                     }
                 }
             }
-            
+
             logger.log("Data fetched. Found " + ManifestData.files.length + " Mods, on version " + ManifestData.minecraft.version + " " + ManifestData.minecraft.modLoaders[0].id);
 
             // Checking if Manifest contains modpack name.

@@ -6,7 +6,7 @@ public class ArgumentDecoder {
     private static ArgumentDecoder instance;
     private final Logger logger = Logger.getInstance();
     private String WorkingDirectory = "";
-    private String Mode = "Pack";
+    private String Mode = "Instance";
     private int nThreadsCount = 16;
     private int DownloadAttempts = 5;
     private boolean LoggerActive = true;
@@ -177,6 +177,7 @@ public class ArgumentDecoder {
             case "SizeVer" -> String.valueOf(this.FileSizeVerification);
             case "SumCheckVer" -> String.valueOf(this.SumCheckVerification);
             case "DAttempt" -> String.valueOf(this.DownloadAttempts);
+            case "Experimental" -> String.valueOf(this.Experimental);
             default -> "";
         };
     }
