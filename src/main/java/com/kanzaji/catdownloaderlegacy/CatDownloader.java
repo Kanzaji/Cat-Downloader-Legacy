@@ -76,6 +76,7 @@ public final class CatDownloader {
                 logger.log("Getting data for ids specified in the Manifest file...");
                 ManifestData = gson.fromJson(Files.readString(manifestFile),Manifest.class);
                 if (Boolean.parseBoolean(ARD.getData("Experimental"))) {
+                    logger.warn("EXPERIMENTAL MODE TURNED ON. USE ON YOUR OWN RISK!");
                     ExecutorService Executor = Executors.newFixedThreadPool(Integer.parseInt(ARD.getData("Threads")));
                     for (Manifest.ModFile mod: ManifestData.files) {
                         Executor.submit(() -> {
