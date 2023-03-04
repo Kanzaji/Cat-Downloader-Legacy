@@ -1,6 +1,7 @@
 package com.kanzaji.catdownloaderlegacy.utils;
 
-import com.kanzaji.catdownloaderlegacy.FileManager;
+import static com.kanzaji.catdownloaderlegacy.utils.FileVerificationUtils.verifyFile;
+
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -11,12 +12,13 @@ import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.security.NoSuchAlgorithmException;
 
 public class DownloadUtilities {
     private static final Logger logger = Logger.getInstance();
 
     /**
-     * Used to download a file from URL without any verification. For that, use FileManager#verifyFile.
+     * Used to download a file from URL without any verification. For that, use FileVerificationUtils#verifyFile.
      * @param ModFile Path for the download.
      * @param DownloadUrl URL to a file.
      * @param FileName Name of the file.
@@ -60,15 +62,15 @@ public class DownloadUtilities {
      * @param fileSize Expected length of the file.
      * @return Boolean with the result of re-download.
      * @throws IOException when IO operation fails.
+     * @throws NoSuchAlgorithmException when SumCheck Verification complains about algorithm.
      */
-    public static boolean reDownload(Path modFile, String downloadUrl, String fileName, Number fileSize) throws IOException {
-        //TODO: Add an argument for amount of retries a program will attempt while download fails.
-        for (int i = 0; i < 5; i++) {
+    public static boolean reDownload(Path modFile, String downloadUrl, String fileName, Number fileSize) throws IOException, NoSuchAlgorithmException {
+        for (int i = 0; i < Integer.parseInt(ArgumentDecoder.getInstance().getData("DAttempt")); i++) {
             if (Files.deleteIfExists(modFile)) {
-                logger.log("Deleted corrupted " + fileName + ". Re-download attempt: " + i);
+                logger.log("Deleted corrupted " + fileName + ". Re-download attempt: " + i+1);
             }
             download(modFile, downloadUrl, fileName);
-            if (FileManager.verifyFile(modFile, fileSize, downloadUrl)) {
+            if (verifyFile(modFile, fileSize, downloadUrl)) {
                 return true;
             }
         }

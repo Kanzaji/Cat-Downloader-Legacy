@@ -4,6 +4,7 @@ import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
 import com.kanzaji.catdownloaderlegacy.utils.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.utils.DownloadUtilities;
 import com.kanzaji.catdownloaderlegacy.utils.Logger;
+import static com.kanzaji.catdownloaderlegacy.utils.FileVerificationUtils.verifyFile;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,32 +17,32 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-public class FileManager {
+public class SyncManager {
     private static final Logger logger = Logger.getInstance();
-    private static FileManager instance;
+    private static SyncManager instance;
     private ExecutorService downloadExecutor;
     private ExecutorService verificationExecutor;
     private Path ModFolderPath;
     private Manifest ManifestData;
     private int RemovedCount = 0;
-    private int RemovalFailed = 0;
-    private int DownloadFailed = 0;
+    private int DownloadSuccess = 0;
     private int DownloadQueue = 0;
     private int ReDownloadQueue = 0;
-    private int VerificationQueue = 0;
-    private int DownloadSuccess = 0;
     private final List<Runnable> DownloadQueueL = new LinkedList<>();
     private final List<Runnable> VerificationQueueL = new LinkedList<>();
     private final List<String> ModFileNames = new LinkedList<>();
+    private final List<String> FailedVerifications = new LinkedList<>();
+    private final List<String> FailedDownloads = new LinkedList<>();
+    private final List<String> FailedRemovals = new LinkedList<>();
 
     /**
      * Used to get an instance of the FileManager. Creates new one at first use.
      * @return Reference to an instance of the FileManager.
      */
-    public static FileManager getInstance() {
+    public static SyncManager getInstance() {
         if (instance == null) {
             logger.log("Starting new instance of FileManager!");
-            instance = new FileManager();
+            instance = new SyncManager();
         }
         return instance;
     }
@@ -78,8 +79,6 @@ public class FileManager {
             throw new NullPointerException("Executor is null! passData seems to have failed?");
         }
 
-        //TODO: Add a list of downloaded/removed mods/files and corrupted ones.
-
         logger.log("Started syncing process.");
         logger.log("Checking for already existing files, and getting download queue ready...");
         System.out.println("Started syncing process!");
@@ -105,17 +104,16 @@ public class FileManager {
                                 logger.log("Re-download of " + FileName + " was successful!");
                                 this.DownloadSuccess += 1;
                             } else {
-                                //TODO: Replace "5" with value from argument
-                                logger.error("Re-download of " + FileName + " after 5 attempts failed!");
-                                this.DownloadFailed += 1;
+                                logger.error("Re-download of " + FileName + " after " + ArgumentDecoder.getInstance().getData("DAttempt") + "attempts failed!");
+                                this.FailedDownloads.add(FileName);
                             }
                         } else {
                             logger.log("Verification of " + FileName + " was successful!");
                             this.DownloadSuccess += 1;
                         }
-                    } catch (IOException e) {
-                        logger.logStackTrace("IO Operation failed while re-downloading " + FileName + " !", e);
-                        this.DownloadFailed += 1;
+                    } catch (Exception e) {
+                        logger.logStackTrace("Exception thrown while re-downloading " + FileName + " !", e);
+                        this.FailedDownloads.add(FileName);
                     }
                 });
             } else {
@@ -133,13 +131,12 @@ public class FileManager {
                                         logger.log("Re-download of " + FileName + " was successful!");
                                         this.DownloadSuccess += 1;
                                     } else {
-                                        //TODO: Replace "5" with value from argument
-                                        logger.error("Re-download of " + FileName + " after 5 attempts failed!");
-                                        this.DownloadFailed += 1;
+                                        logger.error("Re-download of " + FileName + " after " + ArgumentDecoder.getInstance().getData("DAttempt") + "attempts failed!");
+                                        this.FailedDownloads.add(FileName);
                                     }
-                                } catch (IOException e) {
-                                    logger.logStackTrace("IO Operation failed while re-downloading " + FileName + " !", e);
-                                    this.DownloadFailed += 1;
+                                } catch (Exception e) {
+                                    logger.logStackTrace("Exception thrown while re-downloading " + FileName + " !", e);
+                                    this.FailedDownloads.add(FileName);
                                 }
                             });
                         } else {
@@ -147,12 +144,15 @@ public class FileManager {
                         }
                     } catch (Exception e) {
                         logger.logStackTrace("Verification of " + FileName + " failed with exception!", e);
+                        this.FailedVerifications.add(FileName);
                     }
                 });
             }
         }
 
-        logger.log("Starting verification of existing files...");
+        System.out.println("Found " + this.VerificationQueueL.size() + " mods, Verifying installation...");
+        logger.log("Found " + this.VerificationQueueL.size() + " mods, starting verification of existing files...");
+
         for (Runnable Task: this.VerificationQueueL) { this.verificationExecutor.submit(Task); }
         this.verificationExecutor.shutdown();
         if (!this.verificationExecutor.awaitTermination(1, TimeUnit.DAYS)) {
@@ -188,10 +188,10 @@ public class FileManager {
                     try {
                         Files.delete(File);
                         logger.log("Deleted " + File.getFileName() + ".");
-                        RemovedCount += 1;
+                        this.RemovedCount += 1;
                     } catch (IOException e) {
                         logger.logStackTrace("Failed deleting " + File.getFileName() + "!", e);
-                        RemovalFailed += 1;
+                        this.FailedRemovals.add(File.getFileName().toString());
                     }
                 }
             });
@@ -225,75 +225,51 @@ public class FileManager {
             throw new RuntimeException("Downloads are taking over a day! Something is horribly wrong.");
         }
 
-        //TODO: Rework this message
         if (DownloadQueue > 0 || ReDownloadQueue > 0) {
             logger.log("Finished downloading process.");
-            System.out.println("Finished downloading process, downloaded " + DownloadSuccess + " mods!");
+            System.out.println("Finished downloading process, " + DownloadSuccess + " mods downloaded!");
         }
 
         System.out.println("---------------------------------------------------------------------");
 
-        if (this.RemovalFailed > 0 || DownloadFailed > 0) {
+        if (this.FailedRemovals.size() > 0 || this.FailedDownloads.size() > 0 || this.FailedVerifications.size() > 0) {
             logger.error("Errors were found while doing synchronisation of the profile!");
             System.out.println("Errors were found while doing synchronisation of the profile!");
-            if (this.RemovalFailed > 0) {
-                logger.error("Failed removals: " + this.RemovalFailed);
-                System.out.println("Failed removals: " + this.RemovalFailed);
+            if (FailedVerifications.size() > 0) {
+                logger.error("Failed Verifications: " + this.FailedVerifications.size());
+                System.out.println("Failed Verifications: " + this.FailedVerifications.size());
+            }
+            if (this.FailedRemovals.size() > 0) {
+                logger.error("Failed removals: " + this.FailedRemovals.size());
+                System.out.println("Failed removals: " + this.FailedRemovals.size());
             } else {
                 logger.error("No removal errors occurred.");
             }
-            if (DownloadFailed > 0) {
-                logger.error("Download errors: " + DownloadFailed);
-                System.out.println("Download errors: " + DownloadFailed);
+            if (this.FailedDownloads.size() > 0) {
+                logger.error("Download errors: " + this.FailedDownloads.size());
+                System.out.println("Download errors: " + this.FailedDownloads.size());
             } else {
                 logger.error("No download errors occurred.");
             }
             System.out.println("For more details, check log file at " + logger.getLogPath());
+            logger.error("Files that failed verification with an exception:");
+            for (String FileName:this.FailedVerifications) {
+                logger.error("  " + FileName);
+            }
+            logger.error("Files that weren't possible to remove:");
+            for (String FileName:this.FailedRemovals) {
+                logger.error("  " + FileName);
+            }
+            logger.error("Files that failed to Download:");
+            for (String FileName:this.FailedDownloads) {
+                logger.error("  " + FileName);
+            }
         } else {
             logger.log("Finished syncing profile!");
             System.out.println("Finished syncing profile!");
         }
-        System.out.println("(Took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s)");
-        logger.log("Sync took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s)");
-    }
 
-    /**
-     * Used to verify integrity of the file with use of Length and SumCheck verification!
-     * @param File Path to a file designated for verification.
-     * @param Size Expected file length.
-     * @param URL DownloadURL for SumCheck verification.
-     * @return Boolean with the result of the verification.
-     * @throws IOException when IO Operation fails.
-     */
-    public static boolean verifyFile(Path File, Number Size, String URL) throws IOException {
-        if (Files.notExists(File)) {
-            logger.error("File for mod " + File.getFileName() + " doesn't exists??");
-            return false;
-        }
-        return verifyFileSize(File, Size);
-    }
-
-    /**
-     * File size verification, can be disabled with an argument!
-     * @param File Path to a file designated for verification.
-     * @param Size Expected file length.
-     * @return Boolean with the result of the verification.
-     * @throws IOException when IO Operation fails.
-     */
-    private static boolean verifyFileSize(Path File, Number Size) throws IOException {
-        return verifyFileSize(File, Size.intValue());
-    }
-    /**
-     * File size verification, can be disabled with an argument!
-     * @param File Path to a file designated for verification.
-     * @param Size Expected file length.
-     * @return Boolean with the result of the verification.
-     * @throws IOException when IO Operation fails.
-     */
-    private static boolean verifyFileSize(Path File, int Size) throws IOException {
-        if (Boolean.getBoolean(ArgumentDecoder.getInstance().getData("SizeVer"))) {
-            return true;
-        }
-        return Files.size(File) == Size;
+        System.out.println("(Entire process took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s)");
+        logger.log("Sync took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s");
     }
 }

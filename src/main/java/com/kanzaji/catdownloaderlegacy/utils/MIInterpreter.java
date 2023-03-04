@@ -1,8 +1,9 @@
 package com.kanzaji.catdownloaderlegacy.utils;
 
-import com.google.gson.Gson;
 import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
 import com.kanzaji.catdownloaderlegacy.jsons.MinecraftInstance;
+
+import com.google.gson.Gson;
 
 public class MIInterpreter {
     private static final Logger logger = Logger.getInstance();
