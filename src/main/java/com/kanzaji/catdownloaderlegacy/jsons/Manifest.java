@@ -27,8 +27,8 @@ public class Manifest {
         public Number fileSize;
 
         //TODO: Rework this.. again :kek:
-        public boolean getData(minecraft minecraftData) {
-
+        public ModFile getData(minecraft minecraftData) {
+            ModFile ModFileData = new ModFile();
             Logger logger = Logger.getInstance();
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
             logger.log("Getting data for project with ID: " + projectID);
@@ -46,7 +46,7 @@ public class Manifest {
                             // TODO: Fix this because this one below is pretty useless
                             if (!asSet.contains((minecraftData.modLoaders[0].id.startsWith("forge")) ? "Forge" : (minecraftData.modLoaders[0].id.startsWith("fabric")) ? "Fabric" : "Quilt"))
                                 continue;
-                            downloadUrl = (
+                            ModFileData.downloadUrl = (
                                     "https://edge.forgecdn.net/files/" +
                                             String.valueOf(file.id).substring(0, 4) +
                                             "/" +
@@ -55,13 +55,13 @@ public class Manifest {
                                             file.name
                             ).replaceAll(" ", "%20");
 
-                            fileSize = file.filesize;
+                            ModFileData.fileSize = file.filesize;
                         }
-                        if (downloadUrl == null) {
+                        if (ModFileData.downloadUrl == null) {
                             logger.error("No file for version " + minecraftData.version + " was found in project with id " + projectID + "! Please report this to the pack creator.");
-                            return false;
+                            return null;
                         } else {
-                            return true;
+                            return ModFileData;
                         }
                     }
 
@@ -69,10 +69,10 @@ public class Manifest {
                         logger.error("Data received from api.cfwidget.com is not correct!");
                         logger.error("\n" + gson.toJson(downloadData));
                         logger.error(fileID.toString());
-                        return false;
+                        return null;
                     }
 
-                    downloadUrl = (
+                    ModFileData.downloadUrl = (
                             "https://edge.forgecdn.net/files/" +
                                     String.valueOf(downloadData.download.id).substring(0, 4) +
                                     "/" +
@@ -81,13 +81,13 @@ public class Manifest {
                                     downloadData.download.name
                     ).replaceAll(" ", "%20");
 
-                    fileSize = downloadData.download.filesize;
+                    ModFileData.fileSize = downloadData.download.filesize;
                 }
             } catch (Exception e) {
                 logger.logStackTrace("Failed to get Data for project with ID " + projectID, e);
-                return false;
+                return null;
             }
-            return true;
+            return ModFileData;
         }
 
         public String getFileName() {

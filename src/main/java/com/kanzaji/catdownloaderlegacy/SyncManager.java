@@ -28,6 +28,7 @@ public class SyncManager {
     private int DownloadSuccess = 0;
     private int DownloadQueue = 0;
     private int ReDownloadQueue = 0;
+    private int NullMods = 0;
     private final List<Runnable> DownloadQueueL = new LinkedList<>();
     private final List<Runnable> VerificationQueueL = new LinkedList<>();
     private final List<String> ModFileNames = new LinkedList<>();
@@ -86,6 +87,11 @@ public class SyncManager {
         System.out.println("Looking for already installed mods...");
 
         for (Manifest.ModFile mod: this.ManifestData.files) {
+            if (mod == null) {
+                logger.error("Mod without any data found! Skipping...");
+                this.NullMods += 1;
+                continue;
+            }
             String FileName = mod.getFileName();
             Path ModFile = Path.of(this.ModFolderPath.toString(), FileName);
 
@@ -232,7 +238,12 @@ public class SyncManager {
 
         System.out.println("---------------------------------------------------------------------");
 
-        if (this.FailedRemovals.size() > 0 || this.FailedDownloads.size() > 0 || this.FailedVerifications.size() > 0) {
+        if (
+                this.FailedRemovals.size() > 0 ||
+                this.FailedDownloads.size() > 0 ||
+                this.FailedVerifications.size() > 0 ||
+                this.NullMods > 0
+        ) {
             logger.error("Errors were found while doing synchronisation of the profile!");
             System.out.println("Errors were found while doing synchronisation of the profile!");
             if (FailedVerifications.size() > 0) {
@@ -251,6 +262,13 @@ public class SyncManager {
             } else {
                 logger.error("No download errors occurred.");
             }
+            if (this.NullMods > 0) {
+                logger.error("Mods without any data: " + this.NullMods);
+                System.out.println("Mods without any data: " + this.NullMods);
+            } else {
+                logger.error("No Null mods found.");
+            }
+
             System.out.println("For more details, check log file at " + logger.getLogPath());
             logger.error("Files that failed verification with an exception:");
             for (String FileName:this.FailedVerifications) {

@@ -1,5 +1,6 @@
 package com.kanzaji.catdownloaderlegacy.utils;
 
+import java.util.Locale;
 import java.util.Objects;
 
 public class ArgumentDecoder {
@@ -99,7 +100,7 @@ public class ArgumentDecoder {
      * @return boolean True when mode is available.
      */
     private boolean validateMode(String Mode) {
-        return Objects.equals(Mode, "Pack") || Objects.equals(Mode, "Instance");
+        return Objects.equals(Mode.toLowerCase(Locale.ROOT), "pack") || Objects.equals(Mode.toLowerCase(Locale.ROOT), "instance");
     }
     /**
      * Used to determine if provided String is one of the accepted ones for turning on a feature.<br>
@@ -109,7 +110,7 @@ public class ArgumentDecoder {
      * @return "True" Boolean when argument has acceptable value.
      */
     private boolean getOnBoolean(String Argument) {
-        return getOnBoolean(Argument, Argument.lastIndexOf(":"));
+        return getOnBoolean(Argument, Argument.lastIndexOf(":")+1);
     }
     /**
      * Used to determine if provided String is one of the accepted ones for turning on a feature.
@@ -122,10 +123,10 @@ public class ArgumentDecoder {
         if (Index < 0) {
             throw new IllegalArgumentException("Index can not be below 0!");
         }
-        return  Objects.equals(Argument.substring(Index).toLowerCase(),"true") ||
-                Objects.equals(Argument.substring(Index).toLowerCase(),"enabled") ||
-                Objects.equals(Argument.substring(Index).toLowerCase(),"on") ||
-                Objects.equals(Argument.substring(Index).toLowerCase(),"1");
+        return  Objects.equals(Argument.substring(Index).toLowerCase(Locale.ROOT),"true") ||
+                Objects.equals(Argument.substring(Index).toLowerCase(Locale.ROOT),"enabled") ||
+                Objects.equals(Argument.substring(Index).toLowerCase(Locale.ROOT),"on") ||
+                Objects.equals(Argument.substring(Index).toLowerCase(Locale.ROOT),"1");
     }
     /**
      * Used to determine if provided String is one of the accepted ones for turning off a feature.<br>
@@ -135,7 +136,7 @@ public class ArgumentDecoder {
      * @return "True" Boolean when argument has acceptable value.
      */
     private boolean getOffBoolean(String Argument) {
-        return getOffBoolean(Argument, Argument.lastIndexOf(":"));
+        return getOffBoolean(Argument, Argument.lastIndexOf(":")+1);
     }
     /**
      * Used to determine if provided String is one of the accepted ones for turning off a feature.
@@ -148,10 +149,10 @@ public class ArgumentDecoder {
         if (Index < 0) {
             throw new IllegalArgumentException("Index can not be below 0!");
         }
-        return  Objects.equals(Argument.substring(Index).toLowerCase(),"false") ||
-                Objects.equals(Argument.substring(Index).toLowerCase(),"disabled") ||
-                Objects.equals(Argument.substring(Index).toLowerCase(),"off") ||
-                Objects.equals(Argument.substring(Index).toLowerCase(),"0");
+        return  Objects.equals(Argument.substring(Index).toLowerCase(Locale.ROOT),"false") ||
+                Objects.equals(Argument.substring(Index).toLowerCase(Locale.ROOT),"disabled") ||
+                Objects.equals(Argument.substring(Index).toLowerCase(Locale.ROOT),"off") ||
+                Objects.equals(Argument.substring(Index).toLowerCase(Locale.ROOT),"0");
     }
     /**
      * Returns requested data from the arguments. Available data types:
@@ -163,6 +164,7 @@ public class ArgumentDecoder {
      *  <li>    Logger | Determines if Logger is turned on, Default: "True"  </li>
      *  <li>    SizeVer | Determines if FileSizeVerification is turned on, Default: "True".</li>
      *  <li>    SumCheckVer | Determines if SumCheckVerification is turned on, Default: "True".</li>
+     *  <li>    Experimental | Unlocks Experimental features, Default: "False".</li>
      * </ul>
      *
      * @param dataType Requested Type of Data.

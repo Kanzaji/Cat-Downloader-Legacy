@@ -15,19 +15,22 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public final class CatDownloader {
-    public static final String VERSION = "DEVELOP";
+    // Launch fresh instances of required utilities.
     private static final Logger logger = Logger.getInstance();
+    private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
+
+    // Some other variables
+    public static final String VERSION = "DEVELOP";
     public static Path manifestFile;
     private static Manifest ManifestData = new Manifest();
+    private static boolean Legacy = false;
 
     public static void main(String[] args) {
+        // Initialize utilities.
         logger.init();
         logger.log("Cat Downloader version: " + VERSION);
 
         try {
-            // Initialize required Utilities.
-            ArgumentDecoder ARD = ArgumentDecoder.getInstance();
-
             // Decode Arguments and store them in ARD Instance.
             ARD.decodeArguments(args);
 
@@ -73,27 +76,8 @@ public final class CatDownloader {
                 MinecraftInstance MI = gson.fromJson(Files.readString(manifestFile),MinecraftInstance.class);
                 ManifestData = MIInterpreter.decode(MI);
             } else {
-                logger.log("Getting data for ids specified in the Manifest file...");
+                Legacy = true;
                 ManifestData = gson.fromJson(Files.readString(manifestFile),Manifest.class);
-                if (Boolean.parseBoolean(ARD.getData("Experimental"))) {
-                    logger.warn("EXPERIMENTAL MODE TURNED ON. USE ON YOUR OWN RISK!");
-                    ExecutorService Executor = Executors.newFixedThreadPool(Integer.parseInt(ARD.getData("Threads")));
-                    for (Manifest.ModFile mod: ManifestData.files) {
-                        Executor.submit(() -> {
-                           mod.getData(ManifestData.minecraft);
-                        });
-                    }
-                    Executor.shutdown();
-                    if (Executor.awaitTermination(1, TimeUnit.DAYS)) {
-                        logger.error("Data gathering takes over a day! This for sure isn't right???");
-                        System.out.println("Data gathering interrupted due to taking over a day! This for sure isn't right???");
-                        throw new RuntimeException("Data gathering is taking over a day! Something is horribly wrong.");
-                    }
-                } else {
-                    for (Manifest.ModFile mod: ManifestData.files) {
-                        mod.getData(ManifestData.minecraft);
-                    }
-                }
             }
 
             logger.log("Data fetched. Found " + ManifestData.files.length + " Mods, on version " + ManifestData.minecraft.version + " " + ManifestData.minecraft.modLoaders[0].id);
@@ -123,8 +107,36 @@ public final class CatDownloader {
 
             System.out.println("---------------------------------------------------------------------");
 
-            // Some more info about modpack
             System.out.println("Found " + ManifestData.files.length + " mods!");
+            // If in Legacy mode, gather data from CFWidget API required for downloads. (THIS IS REALLY UNSTABLE).
+            if (Legacy) {
+                logger.log("Getting data for ids specified in the Manifest file...");
+                System.out.println("Gathering Data about mods... This may take a while.");
+                if (Boolean.parseBoolean(ARD.getData("Experimental"))) {
+                    logger.warn("EXPERIMENTAL MODE TURNED ON. USE ON YOUR OWN RISK!");
+                    ExecutorService Executor = Executors.newFixedThreadPool(Integer.parseInt(ARD.getData("Threads")));
+                    int Index = 0;
+                    for (Manifest.ModFile mod : ManifestData.files) {
+                        int finalIndex = Index;
+                        Executor.submit(() -> {
+                            ManifestData.files[finalIndex] = mod.getData(ManifestData.minecraft);
+                        });
+                        Index += 1;
+                    }
+                    Executor.shutdown();
+                    if (!Executor.awaitTermination(1, TimeUnit.DAYS)) {
+                        logger.error("Data gathering takes over a day! This for sure isn't right???");
+                        System.out.println("Data gathering interrupted due to taking over a day! This for sure isn't right???");
+                        throw new RuntimeException("Data gathering is taking over a day! Something is horribly wrong.");
+                    }
+                } else {
+                    for (Manifest.ModFile mod : ManifestData.files) {
+                        mod.getData(ManifestData.minecraft);
+                    }
+                }
+                logger.log("Finished gathering data!");
+                System.out.println("Finished gathering data!");
+            }
 
             // Checking if /mods directory exists and can be used
             Path ModsFolder = Path.of(dir.toAbsolutePath().toString(), "mods");
