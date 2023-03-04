@@ -16,9 +16,9 @@ public class MIInterpreter {
             manifest.name = MinecraftInstanceFile.name;
             manifest.minecraft = gson.fromJson("{\"version\":\"" + MinecraftInstanceFile.baseModLoader.minecraftVersion + "\",\"modLoaders\": [{\"id\":\"" + MinecraftInstanceFile.baseModLoader.name + "\"}]}", Manifest.minecraft.class);
             int index = 0;
-            manifest.files = new Manifest.Files[MinecraftInstanceFile.installedAddons.length];
+            manifest.files = new Manifest.ModFile[MinecraftInstanceFile.installedAddons.length];
             for (MinecraftInstance.installedAddons File : MinecraftInstanceFile.installedAddons) {
-                Manifest.Files mf = new Manifest.Files();
+                Manifest.ModFile mf = new Manifest.ModFile();
                 mf.projectID = File.addonID;
                 mf.fileID = File.installedFile.id;
                 mf.fileSize = File.installedFile.fileLength;

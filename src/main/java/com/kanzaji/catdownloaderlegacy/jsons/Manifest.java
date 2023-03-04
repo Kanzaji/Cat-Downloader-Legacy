@@ -14,34 +14,26 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Manifest {
-    public String manifestType;
     public String version;
-    public Files[] files;
-    public Number manifestVersion;
+    public ModFile[] files;
     public String name;
-    public String overrides;
-    public String author;
     public minecraft minecraft;
 
-    public static class Files {
+    public static class ModFile {
         public Number projectID;
         public Number fileID;
         public String downloadUrl;
         public Boolean required;
         public Number fileSize;
 
-        public boolean getData(minecraft minecraftData) { //TODO: Rework this to use Executor for Performance Benefit. This has to be disabled by default in the commercial release and hidden to re-enable.
+        //TODO: Rework this.. again :kek:
+        public boolean getData(minecraft minecraftData) {
 
             Logger logger = Logger.getInstance();
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
             logger.log("Getting data for project with ID: " + projectID);
 
             try {
-                if (downloadUrl != null) {
-                    logger.log("Found downloadURL inside of the Manifest file for project with id: " + projectID);
-                    fileSize = -1;
-                    return true;
-                }
                 URL url = new URL("https://api.cfwidget.com/" + projectID + "?&version=" + fileID);
                 try (BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
                     data downloadData = gson.fromJson(in, data.class);

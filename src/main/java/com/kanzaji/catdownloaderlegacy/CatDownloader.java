@@ -10,11 +10,15 @@ import com.google.gson.Gson;
 
 import java.nio.file.*;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public final class CatDownloader {
     public static final String VERSION = "DEVELOP";
     private static final Logger logger = Logger.getInstance();
     public static Path manifestFile;
+    private static Manifest ManifestData = new Manifest();
 
     public static void main(String[] args) {
         logger.init();
@@ -63,15 +67,34 @@ public final class CatDownloader {
 
             // Parsing data from Manifest file.
             Gson gson = new Gson();
-            Manifest ManifestData = new Manifest();
             logger.log("Reading data from Manifest file...");
             if (Objects.equals(ARD.getData("Mode"), "Instance")) {
                 // Translating from MinecraftInstance format to Manifest format.
                 MinecraftInstance MI = gson.fromJson(Files.readString(manifestFile),MinecraftInstance.class);
                 ManifestData = MIInterpreter.decode(MI);
             } else {
+                logger.log("Getting data for ids specified in the Manifest file...");
                 ManifestData = gson.fromJson(Files.readString(manifestFile),Manifest.class);
+                if (Boolean.parseBoolean(ARD.getData("Experimental"))) {
+                    ExecutorService Executor = Executors.newFixedThreadPool(Integer.parseInt(ARD.getData("Threads")));
+                    for (Manifest.ModFile mod: ManifestData.files) {
+                        Executor.submit(() -> {
+                           mod.getData(ManifestData.minecraft);
+                        });
+                    }
+                    Executor.shutdown();
+                    if (Executor.awaitTermination(1, TimeUnit.DAYS)) {
+                        logger.error("Data gathering takes over a day! This for sure isn't right???");
+                        System.out.println("Data gathering interrupted due to taking over a day! This for sure isn't right???");
+                        throw new RuntimeException("Data gathering is taking over a day! Something is horribly wrong.");
+                    }
+                } else {
+                    for (Manifest.ModFile mod: ManifestData.files) {
+                        mod.getData(ManifestData.minecraft);
+                    }
+                }
             }
+            
             logger.log("Data fetched. Found " + ManifestData.files.length + " Mods, on version " + ManifestData.minecraft.version + " " + ManifestData.minecraft.modLoaders[0].id);
 
             // Checking if Manifest contains modpack name.

@@ -85,7 +85,7 @@ public class SyncManager {
         System.out.println("---------------------------------------------------------------------");
         System.out.println("Looking for already installed mods...");
 
-        for (Manifest.Files mod: this.ManifestData.files) {
+        for (Manifest.ModFile mod: this.ManifestData.files) {
             String FileName = mod.getFileName();
             Path ModFile = Path.of(this.ModFolderPath.toString(), FileName);
 

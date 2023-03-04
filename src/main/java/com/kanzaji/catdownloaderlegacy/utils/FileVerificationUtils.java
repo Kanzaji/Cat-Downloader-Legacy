@@ -25,7 +25,6 @@ public class FileVerificationUtils {
             logger.error("File for mod " + File.getFileName() + " doesn't exists??");
             return false;
         }
-        //TODO: Add SumCheckVerification
         return verifyFileSize(File, Size) && verifySumCheck(File, URL);
     }
 

@@ -12,6 +12,7 @@ public class ArgumentDecoder {
     private boolean LoggerActive = true;
     private boolean FileSizeVerification = true;
     private boolean SumCheckVerification = true;
+    private boolean Experimental = false;
 
     /**
      * Used to create first instance of ArgumentDecoder, and get reference to a single Instance of it in any other place.
@@ -85,6 +86,11 @@ public class ArgumentDecoder {
                     this.LoggerActive = false;
                 }
             }
+            if (Argument.startsWith("-Experimental:")) {
+                if (getOnBoolean(Argument)) {
+                    this.Experimental = true;
+                }
+            }
         }
     }
     /**
@@ -94,6 +100,32 @@ public class ArgumentDecoder {
      */
     private boolean validateMode(String Mode) {
         return Objects.equals(Mode, "Pack") || Objects.equals(Mode, "Instance");
+    }
+    /**
+     * Used to determine if provided String is one of the accepted ones for turning on a feature.<br>
+     * Tries to automatically determine the position of ":". If data of your argument can contain ":" or argument itself has it, please provide the Index for a data search manually.
+     * @param Argument String with argument.
+     * @throws IllegalArgumentException when Index < 0;
+     * @return "True" Boolean when argument has acceptable value.
+     */
+    private boolean getOnBoolean(String Argument) {
+        return getOnBoolean(Argument, Argument.lastIndexOf(":"));
+    }
+    /**
+     * Used to determine if provided String is one of the accepted ones for turning on a feature.
+     * @param Argument String with argument.
+     * @param Index Index of `:` in the argument.
+     * @throws IllegalArgumentException when Index < 0;
+     * @return "True" Boolean when argument has acceptable value.
+     */
+    private boolean getOnBoolean(String Argument, int Index) {
+        if (Index < 0) {
+            throw new IllegalArgumentException("Index can not be below 0!");
+        }
+        return  Objects.equals(Argument.substring(Index).toLowerCase(),"true") ||
+                Objects.equals(Argument.substring(Index).toLowerCase(),"enabled") ||
+                Objects.equals(Argument.substring(Index).toLowerCase(),"on") ||
+                Objects.equals(Argument.substring(Index).toLowerCase(),"1");
     }
     /**
      * Used to determine if provided String is one of the accepted ones for turning off a feature.<br>
