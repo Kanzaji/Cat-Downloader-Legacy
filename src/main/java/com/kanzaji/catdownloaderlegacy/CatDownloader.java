@@ -7,6 +7,7 @@ import com.kanzaji.catdownloaderlegacy.utils.Logger;
 import com.kanzaji.catdownloaderlegacy.utils.MIInterpreter;
 
 import com.google.gson.Gson;
+import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
 
 import java.nio.file.*;
 import java.util.Objects;
@@ -18,6 +19,7 @@ public final class CatDownloader {
     // Launch fresh instances of required utilities.
     private static final Logger logger = Logger.getInstance();
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
+    private static final SettingsManager SM = SettingsManager.getInstance();
 
     // Some other variables
     public static final String VERSION = "DEVELOP";
@@ -26,7 +28,7 @@ public final class CatDownloader {
     private static boolean Legacy = false;
 
     public static void main(String[] args) {
-        // Initialize utilities.
+        // Initialize Logger.
         logger.init();
         logger.log("Cat Downloader version: " + VERSION);
 
@@ -34,9 +36,12 @@ public final class CatDownloader {
             // Decode Arguments and store them in ARD Instance.
             ARD.decodeArguments(args);
 
+            // Initialize other Utilities
+            if (!ARD.getBooleanData("Settings")) { SM.init(); }
+
             // Turns off Logger if user wants it (NOT RECOMMENDED!!!!)
             // Redirects entire output to a console!
-            if (!Boolean.parseBoolean(ARD.getData("Logger"))){
+            if (!ARD.getBooleanData("Logger")){
                 logger.exit();
             }
 
@@ -112,7 +117,7 @@ public final class CatDownloader {
             if (Legacy) {
                 logger.log("Getting data for ids specified in the Manifest file...");
                 System.out.println("Gathering Data about mods... This may take a while.");
-                if (Boolean.parseBoolean(ARD.getData("Experimental"))) {
+                if (ARD.getBooleanData("Experimental")) {
                     logger.warn("EXPERIMENTAL MODE TURNED ON. USE ON YOUR OWN RISK!");
                     ExecutorService Executor = Executors.newFixedThreadPool(Integer.parseInt(ARD.getData("Threads")));
                     int Index = 0;
