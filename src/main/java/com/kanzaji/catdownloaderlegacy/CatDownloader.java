@@ -7,6 +7,7 @@ import com.kanzaji.catdownloaderlegacy.utils.Logger;
 import com.kanzaji.catdownloaderlegacy.utils.MIInterpreter;
 
 import com.google.gson.Gson;
+import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
 
 import java.nio.file.*;
 import java.util.Objects;
@@ -26,7 +27,7 @@ public final class CatDownloader {
     private static boolean Legacy = false;
 
     public static void main(String[] args) {
-        // Initialize utilities.
+        // Initialize Logger.
         logger.init();
         logger.log("Cat Downloader version: " + VERSION);
 
@@ -36,9 +37,12 @@ public final class CatDownloader {
 
             // Turns off Logger if user wants it (NOT RECOMMENDED!!!!)
             // Redirects entire output to a console!
-            if (!Boolean.parseBoolean(ARD.getData("Logger"))){
+            if (!ARD.getBooleanData("Logger")){
                 logger.exit();
             }
+
+            // Printing out Argument / Configuration values.
+            ARD.printConfiguration("Program Configuration from Arguments:");
 
             // "What the hell did I just run" section.
             System.out.println("---------------------------------------------------------------------");
@@ -46,17 +50,15 @@ public final class CatDownloader {
             System.out.println("     Created by: Kanzaji");
             System.out.println("---------------------------------------------------------------------");
 
+            // Initialize SettingsManager
+            if (ARD.getBooleanData("Settings")) { SettingsManager.initSettings(); }
+
             // Setting directory where program was turned on
             Path dir = Path.of(ARD.getData("Wdir"));
             System.out.println("Running in " + dir.toAbsolutePath());
 
-            // Printing out Argument values.
-            logger.log("Working directory = " + ARD.getData("Wdir"));
-            logger.log("Thread count for downloads = " + ARD.getData("Threads"));
-            logger.log("Program Mode: " + ARD.getData("Mode"));
-
             // Checking Program mode and getting required Manifest File.
-            if (Objects.equals(ARD.getData("Mode"), "Pack")) {
+            if (Objects.equals(ARD.getData("Mode"), "pack")) {
                 manifestFile = Path.of(dir.toAbsolutePath().toString(), "manifest.json");
             } else {
                 manifestFile = Path.of(dir.toAbsolutePath().toString(), "minecraftinstance.json");
@@ -71,7 +73,7 @@ public final class CatDownloader {
             // Parsing data from Manifest file.
             Gson gson = new Gson();
             logger.log("Reading data from Manifest file...");
-            if (Objects.equals(ARD.getData("Mode"), "Instance")) {
+            if (Objects.equals(ARD.getData("Mode"), "instance")) {
                 // Translating from MinecraftInstance format to Manifest format.
                 MinecraftInstance MI = gson.fromJson(Files.readString(manifestFile),MinecraftInstance.class);
                 ManifestData = MIInterpreter.decode(MI);
@@ -112,7 +114,7 @@ public final class CatDownloader {
             if (Legacy) {
                 logger.log("Getting data for ids specified in the Manifest file...");
                 System.out.println("Gathering Data about mods... This may take a while.");
-                if (Boolean.parseBoolean(ARD.getData("Experimental"))) {
+                if (ARD.getBooleanData("Experimental")) {
                     logger.warn("EXPERIMENTAL MODE TURNED ON. USE ON YOUR OWN RISK!");
                     ExecutorService Executor = Executors.newFixedThreadPool(Integer.parseInt(ARD.getData("Threads")));
                     int Index = 0;
@@ -143,7 +145,7 @@ public final class CatDownloader {
             // Checking if /mods directory exists and can be used
             Path ModsFolder = Path.of(dir.toAbsolutePath().toString(), "mods");
             if(ModsFolder.toFile().exists() && !ModsFolder.toFile().isDirectory()) {
-                System.out.println("Folder\"mods\" exists, but it is a file!");
+                System.out.println("Folder \"mods\" exists, but it is a file!");
                 logger.error("Folder \"mods\" exists, but it is a file!");
                 System.exit(1);
             }

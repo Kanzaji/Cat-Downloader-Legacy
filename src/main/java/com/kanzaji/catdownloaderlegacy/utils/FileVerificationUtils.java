@@ -13,10 +13,10 @@ public class FileVerificationUtils {
     private static final Logger logger = Logger.getInstance();
 
     /**
-     * Used to verify integrity of the file with use of Length and SumCheck verification!
+     * Used to verify integrity of the file with use of Length and Hash verification!
      * @param File Path to a file designated for verification.
      * @param Size Expected file length.
-     * @param URL DownloadURL for SumCheck verification.
+     * @param URL DownloadURL for Hash verification.
      * @return Boolean with the result of the verification.
      * @throws IOException when IO Operation fails.
      */
@@ -25,7 +25,7 @@ public class FileVerificationUtils {
             logger.error("File for mod " + File.getFileName() + " doesn't exists??");
             return false;
         }
-        return verifyFileSize(File, Size) && verifySumCheck(File, URL);
+        return verifyFileSize(File, Size) && verifyHash(File, URL);
     }
 
     /**
@@ -47,72 +47,72 @@ public class FileVerificationUtils {
      * @throws IOException when IO Operation fails.
      */
     public static boolean verifyFileSize(Path File, int Size) throws IOException {
-        if (Boolean.getBoolean(ArgumentDecoder.getInstance().getData("SizeVer"))) {
+        if (!ArgumentDecoder.getInstance().getBooleanData("SizeVer")) {
             return true;
         }
         return Files.size(File) == Size;
     }
 
     /**
-     * Used to verify a file using SumCheck calculations (SHA-256).
+     * Used to verify a file using Hash calculations (SHA-256).
      * @param File Path to a file designated for verification.
      * @param DownloadURL URL to a source of the file.
      * @return Boolean with the result of the verification.
      * @throws IOException when IO operation fails.
-     * @throws NoSuchAlgorithmException when SumCheck Verification complains about Algorithm for some reason.
+     * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm for some reason.
      */
-    public static boolean verifySumCheck(Path File, String DownloadURL) throws IOException, NoSuchAlgorithmException {
-        if (Boolean.getBoolean(ArgumentDecoder.getInstance().getData("SumCheckVer"))) {
+    public static boolean verifyHash(Path File, String DownloadURL) throws IOException, NoSuchAlgorithmException {
+        if (!ArgumentDecoder.getInstance().getBooleanData("HashVer")) {
             return true;
         }
-        return Arrays.equals(getSumCheck(File), getSumCheck(DownloadURL));
+        return Arrays.equals(getHash(File), getHash(DownloadURL));
     }
 
     /**
-     * Used to get a SumCheck (SHA-256) from a URL.
-     * @param DownloadURL URL for data stream to calculate SumCheck from.
-     * @return Byte array with the result of the SumCheck calculations
+     * Used to get a Hash (SHA-256) from a URL.
+     * @param DownloadURL URL for data stream to calculate Hash from.
+     * @return Byte array with the result of the Hash calculations
      * @throws IOException when IO operation fails.
-     * @throws NoSuchAlgorithmException when SumCheck Verification complains about Algorithm for some reason.
+     * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm for some reason.
      */
-    public static byte[] getSumCheck(String DownloadURL) throws IOException, NoSuchAlgorithmException {
-        return getSumCheck(DownloadURL, null, "SHA-256");
+    public static byte[] getHash(String DownloadURL) throws IOException, NoSuchAlgorithmException {
+        return getHash(DownloadURL, null, "SHA-256");
     }
 
     /**
-     * Used to get a SumCheck (SHA-256) from a file.
-     * @param FilePath Path to a file to calculate SumCheck from.
-     * @return Byte array with the result of the SumCheck calculations
+     * Used to get a Hash (SHA-256) from a file.
+     * @param FilePath Path to a file to calculate Hash from.
+     * @return Byte array with the result of the Hash calculations
      * @throws IOException when IO operation fails.
-     * @throws NoSuchAlgorithmException when SumCheck Verification complains about Algorithm for some reason.
+     * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm for some reason.
      */
-    public static byte[] getSumCheck(Path FilePath) throws IOException, NoSuchAlgorithmException {
-        return getSumCheck(null, FilePath, "SHA-256");
+    public static byte[] getHash(Path FilePath) throws IOException, NoSuchAlgorithmException {
+        return getHash(null, FilePath, "SHA-256");
     }
 
     /**
-     * Used to get a SumCheck from a file or URL.
-     * @param DownloadURL URL for data stream to calculate SumCheck from.
-     * @param FilePath Path to a file to calculate SumCheck from.
+     * Used to get a Hash from a file or URL.
+     * @param DownloadURL URL for data stream to calculate Hash from.
+     * @param FilePath Path to a file to calculate Hash from.
      * @param Algorithm Algorithm to use for Calculations.
-     * @return Byte array with the result of the SumCheck calculations
+     * @return Byte array with the result of the Hash calculations
      * @throws IOException when IO operation fails.
-     * @throws NoSuchAlgorithmException when SumCheck Verification complains about Algorithm.
+     * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm.
      */
-    private static byte[] getSumCheck(String DownloadURL,Path FilePath, String Algorithm) throws IOException, NoSuchAlgorithmException {
+    private static byte[] getHash(String DownloadURL, Path FilePath, String Algorithm) throws IOException, NoSuchAlgorithmException {
         // Logger commands are commented out because they are making a lot of mess in the log itself, and they aren't that important tbh.
         if (DownloadURL == null && FilePath == null) {
-            throw new NullPointerException("Both arguments for SumCheck verification are null!");
+            throw new NullPointerException("Both arguments for Hash verification are null!");
         }
-        long StartTime = System.currentTimeMillis();
+//        long StartTime = System.currentTimeMillis();
         InputStream InputData;
         MessageDigest MD = MessageDigest.getInstance(Algorithm);
 
         if (DownloadURL == null) {
-//            logger.log("Getting Checksum for file " + FilePath.getFileName());
+//            logger.log("Getting Hash for file " + FilePath.getFileName());
             InputData = Files.newInputStream(FilePath);
         } else {
-//            logger.log("Getting Checksum for file from URL " + DownloadURL);
+//            logger.log("Getting Hash for file from URL " + DownloadURL);
             InputData = new URL(DownloadURL).openStream();
         }
 
@@ -124,7 +124,7 @@ public class FileVerificationUtils {
 
         InputData.close();
 //        logger.log(
-//                String.format("Finished getting Checksum for %s (Took %.2fs)",
+//                String.format("Finished getting Hash for %s (Took %.2fs)",
 //                (DownloadURL == null)? FilePath.getFileName(): DownloadUrl,
 //                (float) (System.currentTimeMillis() - StartTime) / 1000F
 //                ));

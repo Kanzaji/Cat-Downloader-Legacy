@@ -1,11 +1,15 @@
 package com.kanzaji.catdownloaderlegacy;
 
 import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
+import com.kanzaji.catdownloaderlegacy.jsons.Settings;
 import com.kanzaji.catdownloaderlegacy.utils.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.utils.DownloadUtilities;
 import com.kanzaji.catdownloaderlegacy.utils.Logger;
+import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
+
 import static com.kanzaji.catdownloaderlegacy.utils.FileVerificationUtils.verifyFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -35,6 +39,8 @@ public class SyncManager {
     private final List<String> FailedVerifications = new LinkedList<>();
     private final List<String> FailedDownloads = new LinkedList<>();
     private final List<String> FailedRemovals = new LinkedList<>();
+    private final List<String> IgnoredVerification = new LinkedList<>();
+    private final List<String> IgnoredRemoval = new LinkedList<>();
 
     /**
      * Used to get an instance of the FileManager. Creates new one at first use.
@@ -94,8 +100,15 @@ public class SyncManager {
             }
             String FileName = mod.getFileName();
             Path ModFile = Path.of(this.ModFolderPath.toString(), FileName);
-
             this.ModFileNames.add(FileName);
+
+            // Check if the filename exists in the Blacklist
+            if (SettingsManager.ModBlackList.contains(FileName)) {
+                logger.warn("Skipping " + FileName + " in verification because its present on the blacklist!");
+                IgnoredVerification.add(FileName);
+                continue;
+            }
+
             // I know this is slower, but it checks few times if the file exists, and that was an issue with original
             if (Files.notExists(ModFile, LinkOption.NOFOLLOW_LINKS)) {
                 logger.log(FileName + " not found! Added to download queue.");
@@ -156,8 +169,8 @@ public class SyncManager {
             }
         }
 
-        System.out.println("Found " + this.VerificationQueueL.size() + " mods, Verifying installation...");
-        logger.log("Found " + this.VerificationQueueL.size() + " mods, starting verification of existing files...");
+        System.out.println("Found " + this.ModFileNames.size() + ((this.ModFileNames.size() == 1)? " mod":" mods") + ((this.VerificationQueueL.size() > 0)? ", Verifying installation...": "!"));
+        logger.log("Found " + this.ModFileNames.size() + ((this.ModFileNames.size() == 1)? " mod":" mods") + ((this.VerificationQueueL.size() > 0)? ", Verifying installation...": "!"));
 
         for (Runnable Task: this.VerificationQueueL) { this.verificationExecutor.submit(Task); }
         this.verificationExecutor.shutdown();
@@ -166,9 +179,10 @@ public class SyncManager {
             System.out.println("Verification interrupted due to taking over a day! This for sure isn't right???");
             throw new RuntimeException("Verification is taking over a day! Something is horribly wrong.");
         }
-
-        logger.log("Checking for existing files done.");
-        System.out.println("Verification of existing files finished!");
+        if (this.VerificationQueueL.size() > 0) {
+            logger.log("Verification of existing files done.");
+            System.out.println("Verification of existing files finished!");
+        }
         if (DownloadQueue > 0) {
             logger.log("Mods designated to download: " + DownloadQueue);
             System.out.println("> Mods designated to download: " + DownloadQueue);
@@ -179,7 +193,7 @@ public class SyncManager {
         if (ReDownloadQueue > 0) {
             logger.warn("Found corrupted mods! Mods designated to re-download: " + ReDownloadQueue);
             System.out.println("> Found corrupted mods! Mods designated to re-download: " + ReDownloadQueue);
-        } else {
+        } else if (this.VerificationQueueL.size() > 0) {
             logger.log("No corrupted mods found!");
             System.out.println("> No corrupted mods found!");
         }
@@ -189,7 +203,16 @@ public class SyncManager {
         System.out.println("Checking for removed mods...");
         try (Stream<Path> pathStream = Files.list(this.ModFolderPath)) {
             pathStream.forEach(File -> {
-                if (!this.ModFileNames.contains(File.getFileName().toString())) {
+                String FileName = File.getFileName().toString();
+                if (!this.ModFileNames.contains(FileName)) {
+
+                    // Check if the filename exists in the Blacklist
+                    if (SettingsManager.ModBlackList.contains(FileName)) {
+                        logger.warn("Found removed mod " + FileName + ", but its present on the blacklist. Skipping!");
+                        IgnoredRemoval.add(FileName);
+                        return;
+                    }
+
                     logger.log("Found removed mod " + File.getFileName() + "! Deleting...");
                     try {
                         Files.delete(File);
@@ -237,6 +260,39 @@ public class SyncManager {
         }
 
         System.out.println("---------------------------------------------------------------------");
+        if (SettingsManager.ModBlackList.size() > 0) {
+
+            System.out.println("Ignored mods found in the config file! (" + SettingsManager.ModBlackList.size() + " " + ((SettingsManager.ModBlackList.size() == 1)? "file":"files") + ")");
+            logger.log("Mods contained in the blacklist:");
+            SettingsManager.ModBlackList.forEach((mod) -> {
+                logger.log("- " + mod);
+            });
+
+            if (this.IgnoredVerification.size() > 0) {
+                logger.warn(this.IgnoredVerification.size() + " " + ((this.IgnoredVerification.size() == 1)? "mod was":"mods were") + " not verified!");
+                System.out.println("> " + this.IgnoredVerification.size() + " " + ((this.IgnoredVerification.size() == 1)? "mod was":"mods were") + " not verified!");
+                this.IgnoredVerification.forEach((mod) -> {
+                    logger.warn("- " + mod);
+                });
+            } else {
+                logger.log("All mods have been verified.");
+                System.out.println("> All mods have been verified.");
+            }
+
+            if (this.IgnoredRemoval.size() > 0) {
+                logger.warn(this.IgnoredRemoval.size() + " " + ((this.IgnoredRemoval.size() == 1)? "mod was":"mods were") + " not removed!");
+                System.out.println("> " + this.IgnoredVerification.size() + " " + ((this.IgnoredRemoval.size() == 1)? "mod was":"mods were") + " not removed!");
+                this.IgnoredRemoval.forEach((mod) -> {
+                    logger.warn("- " + mod);
+                });
+            } else {
+                logger.log("All mods designated to removal were removed!");
+                System.out.println("> All mods designated to removal were removed!");
+            }
+
+            System.out.println("\nFor more details, check your configuration file or the log at:\n\"" + logger.getLogPath() + "\"");
+            System.out.println("---------------------------------------------------------------------");
+        }
 
         if (
                 this.FailedRemovals.size() > 0 ||
@@ -271,23 +327,35 @@ public class SyncManager {
 
             System.out.println("For more details, check log file at " + logger.getLogPath());
             logger.error("Files that failed verification with an exception:");
-            for (String FileName:this.FailedVerifications) {
-                logger.error("  " + FileName);
+            if (this.FailedVerifications.size() > 0) {
+                for (String FileName:this.FailedVerifications) {
+                    logger.error("  " + FileName);
+                }
+            } else {
+                logger.error(" None \\o/");
             }
             logger.error("Files that weren't possible to remove:");
-            for (String FileName:this.FailedRemovals) {
-                logger.error("  " + FileName);
+            if (this.FailedRemovals.size() > 0) {
+                for (String FileName:this.FailedRemovals) {
+                    logger.error("  " + FileName);
+                }
+            } else {
+                logger.error(" None \\o/");
             }
             logger.error("Files that failed to Download:");
-            for (String FileName:this.FailedDownloads) {
-                logger.error("  " + FileName);
+            if (this.FailedDownloads.size() > 0) {
+                for (String FileName:this.FailedDownloads) {
+                    logger.error("  " + FileName);
+                }
+            } else {
+                logger.error(" None \\o/");
             }
         } else {
             logger.log("Finished syncing profile!");
-            System.out.println("Finished syncing profile!");
+            System.out.print("Finished syncing profile!");
         }
 
-        System.out.println("(Entire process took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s)");
+        System.out.println(" (Entire process took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s)");
         logger.log("Sync took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s");
     }
 }
