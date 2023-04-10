@@ -2,6 +2,8 @@ package com.kanzaji.catdownloaderlegacy.utils;
 
 import com.kanzaji.catdownloaderlegacy.jsons.Settings;
 
+import java.io.FileNotFoundException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Objects;
@@ -10,12 +12,13 @@ public class ArgumentDecoder {
     private static ArgumentDecoder instance;
     private final Logger logger = Logger.getInstance();
     private String WorkingDirectory = "";
+    private String SettingsPath = "";
     private String Mode = "instance";
     private int nThreadsCount = 16;
     private int DownloadAttempts = 5;
     private boolean LoggerActive = true;
     private boolean FileSizeVerification = true;
-    private boolean SumCheckVerification = true;
+    private boolean HashVerification = true;
     private boolean Settings = true;
     private boolean DefaultSettingsFromTemplate = true;
     private boolean Experimental = false;
@@ -37,12 +40,25 @@ public class ArgumentDecoder {
      *
      * @param arguments String[] with arguments passed to the program.
      */
-    public void decodeArguments(String[] arguments) throws IllegalArgumentException {
+    public void decodeArguments(String[] arguments) throws IllegalArgumentException, FileNotFoundException {
         logger.log("Running with arguments:");
         for (String Argument : arguments) {
             logger.log(Argument);
             if (decodeArgument(Argument,"-WorkingDirectory:")) {
                 this.WorkingDirectory = Argument.substring(18);
+                if (!Files.exists(Path.of(this.WorkingDirectory))) {
+                    logger.error("Specified Working Directory does not exists!");
+                    logger.error(Path.of(this.WorkingDirectory).toAbsolutePath().toString());
+                    throw new FileNotFoundException("Specified Working Directory does not exists!");
+                }
+            }
+            if (decodeArgument(Argument,"-SettingsPath:")) {
+                this.SettingsPath = Argument.substring(14);
+                if (!Files.exists(Path.of(this.SettingsPath))) {
+                    logger.error("Specified Setting Path does not exists!");
+                    logger.error(Path.of(this.SettingsPath).toAbsolutePath().toString());
+                    throw new FileNotFoundException("Specified Settings file does not exists!");
+                }
             }
             if (decodeArgument(Argument,"-Mode:")) {
                 this.Mode = Argument.substring(6).toLowerCase(Locale.ROOT);
@@ -82,9 +98,9 @@ public class ArgumentDecoder {
                     this.FileSizeVerification = false;
                 }
             }
-            if (decodeArgument(Argument,"-SumCheckVerification:")) {
+            if (decodeArgument(Argument,"-HashVerification:")) {
                 if (getOffBoolean(Argument)) {
-                    this.SumCheckVerification = false;
+                    this.HashVerification = false;
                 }
             }
             if (decodeArgument(Argument,"-Logger:")) {
@@ -189,7 +205,7 @@ public class ArgumentDecoder {
      *  <li>    DAttempt <br> Amount of attempts a DownloadUtilities#reDownload() will take at re-downloading a mod, Default: "5"</li>
      *  <li>    Logger <br> Determines if Logger is turned on, Default: "True"  </li>
      *  <li>    SizeVer <br> Determines if FileSizeVerification is turned on, Default: "True".</li>
-     *  <li>    SumCheckVer <br> Determines if SumCheckVerification is turned on, Default: "True".</li>
+     *  <li>    HashVer <br> Determines if HashVerification is turned on, Default: "True".</li>
      *  <li>    Settings <br> Determines if user wants to use config file instead of arguments, Default: "True"</li>
      *  <li>    DefaultSettings <br> Determines if Generated Settings should be created from the Template, Default: "True"</li>
      *  <li>    Experimental <br> Unlocks Experimental features, Default: "False".</li>
@@ -204,11 +220,12 @@ public class ArgumentDecoder {
         return switch (dataType) {
             case "Mode" -> this.Mode;
             case "Wdir" -> this.WorkingDirectory;
+            case "SettingsPath" -> this.SettingsPath;
             case "Threads" -> String.valueOf(this.nThreadsCount);
             case "DAttempt" -> String.valueOf(this.DownloadAttempts);
             case "Logger" -> String.valueOf(this.LoggerActive);
             case "SizeVer" -> String.valueOf(this.FileSizeVerification);
-            case "SumCheckVer" -> String.valueOf(this.SumCheckVerification);
+            case "HashVer" -> String.valueOf(this.HashVerification);
             case "Settings" -> String.valueOf(this.Settings);
             case "DefaultSettings" -> String.valueOf(this.DefaultSettingsFromTemplate);
             case "Experimental" -> String.valueOf(this.Experimental);
@@ -222,7 +239,7 @@ public class ArgumentDecoder {
      * <ul>
      *  <li>    Logger <br> Determines if Logger is turned on, Default: "True"  </li>
      *  <li>    SizeVer <br> Determines if FileSizeVerification is turned on, Default: "True".</li>
-     *  <li>    SumCheckVer <br> Determines if SumCheckVerification is turned on, Default: "True".</li>
+     *  <li>    HashVer <br> Determines if HashVerification is turned on, Default: "True".</li>
      *  <li>    Settings <br> Determines if user wants to use config file instead of arguments, Default: "True"</li>
      *  <li>    DefaultSettings <br> Determines if Generated Settings should be created from the Template, Default: "True"</li>
      *  <li>    Experimental <br> Unlocks Experimental features, Default: "False".</li>
@@ -235,7 +252,7 @@ public class ArgumentDecoder {
      */
     public boolean getBooleanData(String dataType) throws IllegalArgumentException {
         return switch (dataType) {
-            case "Mode", "Wdir", "Threads", "DAttempt" -> throw new IllegalArgumentException();
+            case "Mode", "Wdir", "Threads", "DAttempt", "SettingsPath" -> throw new IllegalArgumentException();
             default -> Boolean.parseBoolean(getData(dataType));
         };
     }
@@ -251,9 +268,11 @@ public class ArgumentDecoder {
         logger.log("· Program Mode: " + this.getData("Mode"));
         logger.log("· Thread count for downloads: " + this.getData("Threads"));
         logger.log("· Download attempts for re-downloads: " + this.getData("DAttempt"));
-        logger.log("· Settings File: " + this.getData("Settings"));
+        logger.log("· Settings enabled: " + this.getData("Settings"));
         logger.log("· Default Settings from the template: " + this.getData("DefaultSettings"));
-        logger.log("· SumCheck Verification: " + this.getData("SumCheckVer"));
+        logger.log("· Settings Path: " + this.getData("SettingsPath"));
+        logger.log("- Full Path: " + Path.of(this.getData("SettingsPath")).toAbsolutePath());
+        logger.log("· Hash Verification: " + this.getData("HashVer"));
         logger.log("· File Size Verification: " + this.getData("SizeVer"));
         logger.log("---------------------------------------------------------------------");
     }
@@ -269,7 +288,7 @@ public class ArgumentDecoder {
         this.DownloadAttempts = SettingsData.downloadAttempts;
         this.LoggerActive = SettingsData.isLoggerActive;
         this.FileSizeVerification = SettingsData.isFileSizeVerificationActive;
-        this.SumCheckVerification = SettingsData.isSumCheckVerificationActive;
-        if (Print) { printConfiguration("Program Configuration from Settings:");};
+        this.HashVerification = SettingsData.isHashVerificationActive;
+        if (Print) { printConfiguration("Program Configuration from Settings:");}
     }
 }

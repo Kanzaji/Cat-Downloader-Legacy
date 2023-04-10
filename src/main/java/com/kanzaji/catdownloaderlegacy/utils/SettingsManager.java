@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -17,9 +18,10 @@ import java.util.List;
  */
 public class SettingsManager {
     private static final Logger logger = Logger.getInstance();
-    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private static final Gson gson = new GsonBuilder().setPrettyPrinting().setLenient().create();
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
-    private static final Path SettingsFile = Path.of("Cat-Downloader-Legacy Settings.json5");
+    private static final Path SettingsFile = Path.of(ARD.getData("SettingsPath"),"Cat-Downloader-Legacy Settings.json5");
+    public static List<String> ModBlackList = new LinkedList<>();
 
     /**
      * Used to initialize {@link Settings}.
@@ -79,6 +81,7 @@ public class SettingsManager {
         logger.log("Parsing data from settings file...");
         try {
             Settings SettingsFileData = gson.fromJson(Files.readString(SettingsFile), Settings.class);
+            ModBlackList = Arrays.stream(SettingsFileData.modBlacklist).toList();
             logger.log("Parsing of Settings was successful!");
             return SettingsFileData;
         } catch (Exception e) {
@@ -175,7 +178,7 @@ public class SettingsManager {
         ARDConfig.threadCount = Integer.parseInt(ARD.getData("Threads"));
         ARDConfig.downloadAttempts = Integer.parseInt(ARD.getData("DAttempt"));
         ARDConfig.isLoggerActive = ARD.getBooleanData("Logger");
-        ARDConfig.isSumCheckVerificationActive = ARD.getBooleanData("SumCheckVer");
+        ARDConfig.isHashVerificationActive = ARD.getBooleanData("HashVer");
         ARDConfig.isFileSizeVerificationActive = ARD.getBooleanData("SizeVer");
         ARDConfig.modBlacklist = new String[0];
         logger.log("Generation of Settings from ARD finished!");

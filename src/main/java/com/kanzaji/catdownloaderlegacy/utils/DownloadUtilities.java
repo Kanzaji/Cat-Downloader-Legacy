@@ -62,7 +62,7 @@ public class DownloadUtilities {
      * @param fileSize Expected length of the file.
      * @return Boolean with the result of re-download.
      * @throws IOException when IO operation fails.
-     * @throws NoSuchAlgorithmException when SumCheck Verification complains about algorithm.
+     * @throws NoSuchAlgorithmException when Hash Verification complains about algorithm.
      */
     public static boolean reDownload(Path modFile, String downloadUrl, String fileName, Number fileSize) throws IOException, NoSuchAlgorithmException {
         for (int i = 0; i < Integer.parseInt(ArgumentDecoder.getInstance().getData("DAttempt")); i++) {

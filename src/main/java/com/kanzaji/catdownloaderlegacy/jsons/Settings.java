@@ -14,6 +14,6 @@ public class Settings {
     public int downloadAttempts;
     public boolean isLoggerActive;
     public boolean isFileSizeVerificationActive;
-    public boolean isSumCheckVerificationActive;
+    public boolean isHashVerificationActive;
     public String[] modBlacklist;
 }
