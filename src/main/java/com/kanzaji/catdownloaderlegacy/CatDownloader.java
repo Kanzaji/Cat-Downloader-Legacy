@@ -21,7 +21,7 @@ public final class CatDownloader {
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
 
     // Some other variables
-    public static final String VERSION = "DEVELOP";
+    public static final String VERSION = "1.0";
     public static Path manifestFile;
     private static Manifest ManifestData = new Manifest();
     private static boolean Legacy = false;
