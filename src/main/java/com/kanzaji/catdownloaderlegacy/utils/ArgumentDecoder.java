@@ -7,7 +7,7 @@ public class ArgumentDecoder {
     private static ArgumentDecoder instance;
     private final Logger logger = Logger.getInstance();
     private String WorkingDirectory = "";
-    private String Mode = "Instance";
+    private String Mode = "instance";
     private int nThreadsCount = 16;
     private int DownloadAttempts = 5;
     private boolean LoggerActive = true;

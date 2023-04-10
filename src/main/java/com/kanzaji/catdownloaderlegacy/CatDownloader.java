@@ -61,7 +61,7 @@ public final class CatDownloader {
             logger.log("Program Mode: " + ARD.getData("Mode"));
 
             // Checking Program mode and getting required Manifest File.
-            if (Objects.equals(ARD.getData("Mode"), "Pack")) {
+            if (Objects.equals(ARD.getData("Mode"), "pack")) {
                 manifestFile = Path.of(dir.toAbsolutePath().toString(), "manifest.json");
             } else {
                 manifestFile = Path.of(dir.toAbsolutePath().toString(), "minecraftinstance.json");
@@ -76,7 +76,7 @@ public final class CatDownloader {
             // Parsing data from Manifest file.
             Gson gson = new Gson();
             logger.log("Reading data from Manifest file...");
-            if (Objects.equals(ARD.getData("Mode"), "Instance")) {
+            if (Objects.equals(ARD.getData("Mode"), "instance")) {
                 // Translating from MinecraftInstance format to Manifest format.
                 MinecraftInstance MI = gson.fromJson(Files.readString(manifestFile),MinecraftInstance.class);
                 ManifestData = MIInterpreter.decode(MI);
