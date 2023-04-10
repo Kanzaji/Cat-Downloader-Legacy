@@ -1,0 +1,47 @@
+{
+  // Cat-Downloader Legacy Configuration file!
+
+  // Mode -> Determines the mode of the app. Available modes are: "Instance" / "Pack"
+  // Argument representation: -Mode:
+  "mode": "instance",
+
+  // WorkingDirectory -> Determines working directory of the app, so where mods are getting downloaded and log file is getting generated.
+  // Empty string will result in working directory being set to where the app is being executed from!
+  // Accepts: both relative and absolute paths.
+  // Argument representation: -WorkingDirectory:
+  "workingDirectory": "",
+
+  // ThreadCount -> Amount of threads an app is going to create for Data gathering, Verification and Downloading processes.
+  // Accepts: any Integer Values above 1!
+  // Argument representation: -ThreadCount:
+  "threadCount": 16,
+
+  // DownloadAttempts -> Amount of tries the app will take before giving up on re-downloading a corrupted mod.
+  // Accepts: any Integer Values above 1!
+  // Argument representation: -DownloadAttempts:
+  "downloadAttempts": 5,
+
+  // isLoggerActive -> Determines if the logger is enabled. *It is not recommended to disable Logger service*. Entire Logger output will be printed to the console!
+  // Accepts: Boolean Values (Example: True)
+  // Argument representation:
+  "isLoggerActive": true,
+
+  // isFileSizeVerificationActive -> Determines if FileSize verification is turned on. Barely-Visible Performance gain and will result in corrupted mods if disabled.
+  // Accepts: Boolean Values (Example: True)
+  // Argument representation: -SizeVerification:
+  "isFileSizeVerificationActive": true,
+
+  // isSumCheckVerificationActive -> Determines if SumCheck verification is turned on. HUGE Performance gain but can result in corrupted mods if disabled!
+  // Accepts: Boolean Values (Example: True)
+  // Argument representation: -SumCheckVerification:
+  "isSumCheckVerificationActive": true,
+
+  // modBlacklist -> A list of file names that Cat-Downloader should ignore while Removing / Verifying / Downloading mods!
+  // Beware! This does not support regex, if the mod in here is going to get updated you will end up with duplicated mods in your instance!
+  // Accepts: Comma separated array of Strings (Example: ["super_mod.jar","another_super_mod.jar"])
+  // Argument representation: None (Settings Exclusive!)
+  "modBlacklist": []
+
+  // For more configuration options, check out my github at https://github.com/Kanzaji/Cat-Downloader-Legacy!
+  // For auto-generation of the file (if you don't want to include it with your repo), you can use `-DefaultSettings:false` to generate this file from the arguments!
+}

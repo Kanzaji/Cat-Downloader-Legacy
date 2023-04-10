@@ -19,7 +19,6 @@ public final class CatDownloader {
     // Launch fresh instances of required utilities.
     private static final Logger logger = Logger.getInstance();
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
-    private static final SettingsManager SM = SettingsManager.getInstance();
 
     // Some other variables
     public static final String VERSION = "DEVELOP";
@@ -36,14 +35,14 @@ public final class CatDownloader {
             // Decode Arguments and store them in ARD Instance.
             ARD.decodeArguments(args);
 
-            // Initialize other Utilities
-            if (!ARD.getBooleanData("Settings")) { SM.init(); }
-
             // Turns off Logger if user wants it (NOT RECOMMENDED!!!!)
             // Redirects entire output to a console!
             if (!ARD.getBooleanData("Logger")){
                 logger.exit();
             }
+
+            // Printing out Argument / Configuration values.
+            ARD.printConfiguration("Program Configuration from Arguments:");
 
             // "What the hell did I just run" section.
             System.out.println("---------------------------------------------------------------------");
@@ -51,14 +50,12 @@ public final class CatDownloader {
             System.out.println("     Created by: Kanzaji");
             System.out.println("---------------------------------------------------------------------");
 
+            // Initialize SettingsManager
+            if (ARD.getBooleanData("Settings")) { SettingsManager.initSettings(); }
+
             // Setting directory where program was turned on
             Path dir = Path.of(ARD.getData("Wdir"));
             System.out.println("Running in " + dir.toAbsolutePath());
-
-            // Printing out Argument values.
-            logger.log("Working directory = " + ARD.getData("Wdir"));
-            logger.log("Thread count for downloads = " + ARD.getData("Threads"));
-            logger.log("Program Mode: " + ARD.getData("Mode"));
 
             // Checking Program mode and getting required Manifest File.
             if (Objects.equals(ARD.getData("Mode"), "pack")) {
@@ -148,7 +145,7 @@ public final class CatDownloader {
             // Checking if /mods directory exists and can be used
             Path ModsFolder = Path.of(dir.toAbsolutePath().toString(), "mods");
             if(ModsFolder.toFile().exists() && !ModsFolder.toFile().isDirectory()) {
-                System.out.println("Folder\"mods\" exists, but it is a file!");
+                System.out.println("Folder \"mods\" exists, but it is a file!");
                 logger.error("Folder \"mods\" exists, but it is a file!");
                 System.exit(1);
             }

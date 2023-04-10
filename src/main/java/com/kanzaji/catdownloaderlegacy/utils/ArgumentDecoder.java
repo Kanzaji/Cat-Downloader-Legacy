@@ -1,5 +1,8 @@
 package com.kanzaji.catdownloaderlegacy.utils;
 
+import com.kanzaji.catdownloaderlegacy.jsons.Settings;
+
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -14,7 +17,7 @@ public class ArgumentDecoder {
     private boolean FileSizeVerification = true;
     private boolean SumCheckVerification = true;
     private boolean Settings = true;
-    private boolean DefaultSettingsFromArgs = false;
+    private boolean DefaultSettingsFromTemplate = true;
     private boolean Experimental = false;
 
     /**
@@ -94,9 +97,9 @@ public class ArgumentDecoder {
                     this.Settings = false;
                 }
             }
-            if (decodeArgument(Argument,"-DefaultSettingsFromArguments:")) {
+            if (decodeArgument(Argument,"-DefaultSettings:")) {
                 if (getOffBoolean(Argument)) {
-                    this.DefaultSettingsFromArgs = false;
+                    this.DefaultSettingsFromTemplate = false;
                 }
             }
             if (decodeArgument(Argument,"-Experimental:")) {
@@ -111,7 +114,7 @@ public class ArgumentDecoder {
      * @param Mode Mode to verify.
      * @return boolean True when mode is available.
      */
-    private boolean validateMode(String Mode) {
+    public static boolean validateMode(String Mode) {
         return Objects.equals(Mode, "pack") || Objects.equals(Mode, "instance");
     }
     /**
@@ -188,7 +191,7 @@ public class ArgumentDecoder {
      *  <li>    SizeVer <br> Determines if FileSizeVerification is turned on, Default: "True".</li>
      *  <li>    SumCheckVer <br> Determines if SumCheckVerification is turned on, Default: "True".</li>
      *  <li>    Settings <br> Determines if user wants to use config file instead of arguments, Default: "True"</li>
-     *  <li>    DefaultsFromArguments <br> Determines if Generated Settings should be created from the Argument values, Default: "False"</li>
+     *  <li>    DefaultSettings <br> Determines if Generated Settings should be created from the Template, Default: "True"</li>
      *  <li>    Experimental <br> Unlocks Experimental features, Default: "False".</li>
      * </ul>
      *
@@ -207,7 +210,7 @@ public class ArgumentDecoder {
             case "SizeVer" -> String.valueOf(this.FileSizeVerification);
             case "SumCheckVer" -> String.valueOf(this.SumCheckVerification);
             case "Settings" -> String.valueOf(this.Settings);
-            case "DefaultSettings" -> String.valueOf(this.DefaultSettingsFromArgs);
+            case "DefaultSettings" -> String.valueOf(this.DefaultSettingsFromTemplate);
             case "Experimental" -> String.valueOf(this.Experimental);
             default -> "";
         };
@@ -221,7 +224,7 @@ public class ArgumentDecoder {
      *  <li>    SizeVer <br> Determines if FileSizeVerification is turned on, Default: "True".</li>
      *  <li>    SumCheckVer <br> Determines if SumCheckVerification is turned on, Default: "True".</li>
      *  <li>    Settings <br> Determines if user wants to use config file instead of arguments, Default: "True"</li>
-     *  <li>    DefaultsFromArguments <br> Determines if Generated Settings should be created from the Argument values, Default: "False"</li>
+     *  <li>    DefaultSettings <br> Determines if Generated Settings should be created from the Template, Default: "True"</li>
      *  <li>    Experimental <br> Unlocks Experimental features, Default: "False".</li>
      * </ul>
      *
@@ -235,5 +238,38 @@ public class ArgumentDecoder {
             case "Mode", "Wdir", "Threads", "DAttempt" -> throw new IllegalArgumentException();
             default -> Boolean.parseBoolean(getData(dataType));
         };
+    }
+
+    /**
+     * Prints entire ARD Configuration to a log file.
+     */
+    public void printConfiguration(String message) {
+        logger.log("---------------------------------------------------------------------");
+        logger.log(message);
+        logger.log("· Working directory: " + this.getData("Wdir"));
+        logger.log("- Full Path: " + Path.of(this.getData("Wdir")).toAbsolutePath());
+        logger.log("· Program Mode: " + this.getData("Mode"));
+        logger.log("· Thread count for downloads: " + this.getData("Threads"));
+        logger.log("· Download attempts for re-downloads: " + this.getData("DAttempt"));
+        logger.log("· Settings File: " + this.getData("Settings"));
+        logger.log("· Default Settings from the template: " + this.getData("DefaultSettings"));
+        logger.log("· SumCheck Verification: " + this.getData("SumCheckVer"));
+        logger.log("· File Size Verification: " + this.getData("SizeVer"));
+        logger.log("---------------------------------------------------------------------");
+    }
+
+    /**
+     * Used to load data to ARD from Settings Manager.
+     * @param SettingsData {@link Settings} object with data to load.
+     */
+    public void loadFromSettings(Settings SettingsData, boolean Print) {
+        this.Mode = SettingsData.mode;
+        this.WorkingDirectory = SettingsData.workingDirectory;
+        this.nThreadsCount = SettingsData.threadCount;
+        this.DownloadAttempts = SettingsData.downloadAttempts;
+        this.LoggerActive = SettingsData.isLoggerActive;
+        this.FileSizeVerification = SettingsData.isFileSizeVerificationActive;
+        this.SumCheckVerification = SettingsData.isSumCheckVerificationActive;
+        if (Print) { printConfiguration("Program Configuration from Settings:");};
     }
 }
