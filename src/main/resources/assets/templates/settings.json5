@@ -6,7 +6,7 @@
   "mode": "instance",
 
   // WorkingDirectory -> Determines working directory of the app, so where mods are getting downloaded and log file is getting generated.
-  // Empty string will result in working directory being set to where the app is being executed from!
+//  Empty string will result in working directory being set to place of execution of the app!
   // Accepts: both relative and absolute paths.
   // Argument representation: -WorkingDirectory:
   "workingDirectory": "",
@@ -17,16 +17,16 @@
   "threadCount": 16,
 
   // DownloadAttempts -> Amount of tries the app will take before giving up on re-downloading a corrupted mod.
-  // Accepts: any Integer Values above 1!
+  // Accepts: any Integer Value above 1!
   // Argument representation: -DownloadAttempts:
   "downloadAttempts": 5,
 
   // isLoggerActive -> Determines if the logger is enabled. *It is not recommended to disable Logger service*. Entire Logger output will be printed to the console!
-  // Accepts: Boolean Values (Example: True)
-  // Argument representation:
+  // Accepts: Boolean Value (Example: True)
+  // Argument representation: -Logger:
   "isLoggerActive": true,
 
-  // isFileSizeVerificationActive -> Determines if FileSize verification is turned on. Barely-Visible Performance gain and will result in corrupted mods if disabled.
+  // isFileSizeVerificationActive -> Determines if file size verification is turned on. Barely-Visible performance gain and will result in corrupted mods if disabled.
   // Accepts: Boolean Values (Example: True)
   // Argument representation: -SizeVerification:
   "isFileSizeVerificationActive": true,
