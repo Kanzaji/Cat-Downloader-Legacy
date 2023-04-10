@@ -3,7 +3,7 @@
 REM You set your arguments here
 set arguments=
 
-set version=1.0
+set version=1.1
 type NUL > .git/hooks/post-merge
 echo #!/bin/sh > .git/hooks/post-merge
 echo java -jar Cat-Downloader-Legacy-%version%.jar %arguments% >> .git/hooks/post-merge

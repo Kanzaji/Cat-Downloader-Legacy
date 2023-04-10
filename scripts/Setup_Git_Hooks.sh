@@ -1,6 +1,6 @@
 ARGUMENTS=
 
-VERSION="1.0"
+VERSION="1.1"
 echo "#!/bin/sh" > .git/hooks/post-merge
 echo "java -jar Cat-Downloader-Legacy-${version}.jar ${arguments}" >> .git/hooks/post-merge
 

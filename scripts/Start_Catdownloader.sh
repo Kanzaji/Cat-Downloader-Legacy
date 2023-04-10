@@ -6,4 +6,4 @@
 # Fore more information, check out the github repo of this app! https://github.com/Kanzaji/Cat-Downloader-Legacy
 
 # You can configure the command here:
-java -jar Cat-Downloader-Legacy-1.0.jar
+java -jar Cat-Downloader-Legacy-1.1.jar
