@@ -47,7 +47,7 @@ public class FileVerificationUtils {
      * @throws IOException when IO Operation fails.
      */
     public static boolean verifyFileSize(Path File, int Size) throws IOException {
-        if (Boolean.getBoolean(ArgumentDecoder.getInstance().getData("SizeVer"))) {
+        if (!ArgumentDecoder.getInstance().getBooleanData("SizeVer")) {
             return true;
         }
         return Files.size(File) == Size;
@@ -62,7 +62,7 @@ public class FileVerificationUtils {
      * @throws NoSuchAlgorithmException when SumCheck Verification complains about Algorithm for some reason.
      */
     public static boolean verifySumCheck(Path File, String DownloadURL) throws IOException, NoSuchAlgorithmException {
-        if (Boolean.getBoolean(ArgumentDecoder.getInstance().getData("SumCheckVer"))) {
+        if (!ArgumentDecoder.getInstance().getBooleanData("SumCheckVer")) {
             return true;
         }
         return Arrays.equals(getSumCheck(File), getSumCheck(DownloadURL));
