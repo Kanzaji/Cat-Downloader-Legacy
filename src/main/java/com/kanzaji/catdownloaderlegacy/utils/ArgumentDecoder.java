@@ -11,7 +11,7 @@ import java.util.Objects;
 public class ArgumentDecoder {
     private final Logger logger = Logger.getInstance();
     private static ArgumentDecoder instance;
-    private ArgumentDecoder() {};
+    private ArgumentDecoder() {}
     private String WorkingDirectory = "";
     private String SettingsPath = "";
     private String LogPath = "";
@@ -227,71 +227,6 @@ public class ArgumentDecoder {
             }
         }
         return OriginalValue;
-    }
-
-    /**
-     * Returns requested data from the arguments.
-     * <br><br>Available data types:
-     * <ul>
-     *  <li>    Mode <br> A mode the program works in, Default: "Pack"    </li>
-     *  <li>    Wdir <br> Working Directory of the program, Default: "."  </li>
-     *  <li>    Threads <br> Amount of threads allowed to be used for download/verification work, Default: "16"</li>
-     *  <li>    DAttempt <br> Amount of attempts a DownloadUtilities#reDownload() will take at re-downloading a mod, Default: "5"</li>
-     *  <li>    Logger <br> Determines if Logger is turned on, Default: "True"  </li>
-     *  <li>    SizeVer <br> Determines if FileSizeVerification is turned on, Default: "True".</li>
-     *  <li>    HashVer <br> Determines if FileHashVerification is turned on, Default: "True".</li>
-     *  <li>    Settings <br> Determines if user wants to use config file instead of arguments, Default: "True"</li>
-     *  <li>    DefaultSettings <br> Determines if Generated Settings should be created from the Template, Default: "True"</li>
-     *  <li>    Experimental <br> Unlocks Experimental features, Default: "False".</li>
-     * </ul>
-     *
-     * @param dataType Requested type of Data.
-     * @return String with Requested Data
-     * @see ArgumentDecoder#getBooleanData(String) ArgumentDecoder#getBooleanData()<br>Easier Boolean data requests.
-     */
-    @Deprecated
-    public String getData(String dataType) {
-        // Note to myself: Next time use Record for this ffs, this is so stupid, yet I'm too lazy to change this now :lul:
-        return switch (dataType) {
-            case "Mode" -> this.Mode;
-            case "Wdir" -> this.WorkingDirectory;
-            case "SettingsPath" -> this.SettingsPath;
-            case "Threads" -> String.valueOf(this.ThreadCount);
-            case "DAttempt" -> String.valueOf(this.DownloadAttempts);
-            case "Logger" -> String.valueOf(this.LoggerActive);
-            case "SizeVer" -> String.valueOf(this.FileSizeVerification);
-            case "HashVer" -> String.valueOf(this.HashVerification);
-            case "Settings" -> String.valueOf(this.Settings);
-            case "DefaultSettings" -> String.valueOf(this.DefaultSettingsFromTemplate);
-            case "Experimental" -> String.valueOf(this.Experimental);
-            default -> "";
-        };
-    }
-
-    /**
-     * Returns requested data from the arguments as Boolean.
-     * This method only returns data available as Boolean! For non-Boolean data, use the {@link ArgumentDecoder#getData(String)}.
-     * <br><br>Available data types:
-     * <ul>
-     *  <li>    Logger <br> Determines if Logger is turned on, Default: "True"  </li>
-     *  <li>    SizeVer <br> Determines if FileSizeVerification is turned on, Default: "True".</li>
-     *  <li>    HashVer <br> Determines if FileHashVerification is turned on, Default: "True".</li>
-     *  <li>    Settings <br> Determines if user wants to use config file instead of arguments, Default: "True"</li>
-     *  <li>    DefaultSettings <br> Determines if Generated Settings should be created from the Template, Default: "True"</li>
-     *  <li>    Experimental <br> Unlocks Experimental features, Default: "False".</li>
-     * </ul>
-     *
-     * @param dataType Requested type of Data.
-     * @return Boolean of Requested Data.
-     * @throws IllegalArgumentException when requesting non-Boolean data.
-     * @see ArgumentDecoder#getData(String) ArgumentDecoder#getData() <br> Used for requesting non-Boolean data.
-     */
-    @Deprecated
-    public boolean getBooleanData(String dataType) throws IllegalArgumentException {
-        return switch (dataType) {
-            case "Mode", "Wdir", "Threads", "DAttempt", "SettingsPath" -> throw new IllegalArgumentException();
-            default -> Boolean.parseBoolean(getData(dataType));
-        };
     }
 
     /**
