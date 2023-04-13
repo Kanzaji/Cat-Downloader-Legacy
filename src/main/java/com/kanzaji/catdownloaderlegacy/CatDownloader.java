@@ -32,6 +32,9 @@ public final class CatDownloader {
             // Decode Arguments and store them in ARD Instance.
             ARD.decodeArguments(args);
 
+            // Run Post-int on Logger.
+            logger.postInit();
+
             // Turns off Logger if user wants it (NOT RECOMMENDED!!!!)
             // Redirects entire output to a console!
             if (!ARD.isLoggerActive()){

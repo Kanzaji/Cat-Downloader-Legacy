@@ -9,7 +9,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 public class ArgumentDecoder {
-    private final Logger logger = Logger.getInstance();
+    private Logger logger = Logger.getInstance();
     private static ArgumentDecoder instance;
     private ArgumentDecoder() {}
     private String WorkingDirectory = "";
@@ -193,7 +193,7 @@ public class ArgumentDecoder {
      */
     private String decodePathArgument(String Argument, String ArgumentName, String Message, String OriginalValue) throws FileNotFoundException {
         if (decodeArgument(Argument, ArgumentName)) {
-            String ArgumentValue = Argument.substring(ArgumentName.indexOf(":"));
+            String ArgumentValue = Argument.substring(ArgumentName.indexOf(":")+1);
             Path ArgumentPath = Path.of(ArgumentValue);
             if (!Files.exists(ArgumentPath)) {
                 logger.error("Specified " + Message + " does not exists!");
@@ -216,7 +216,7 @@ public class ArgumentDecoder {
         if (decodeArgument(Argument,ArgumentName)) {
             int ArgumentValue;
             try {
-                ArgumentValue = Integer.parseInt(Argument.substring(ArgumentName.indexOf(":")));
+                ArgumentValue = Integer.parseInt(Argument.substring(ArgumentName.indexOf(":")+1));
                 if (ArgumentValue < 1) {
                     logger.warn("Value below 1 was passed to \"" + ArgumentName + "\" Argument! Defaulting to " + OriginalValue + ".");
                     return OriginalValue;

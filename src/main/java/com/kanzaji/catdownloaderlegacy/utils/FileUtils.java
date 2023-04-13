@@ -18,6 +18,34 @@ public class FileUtils {
         return file;
     }
 
+    public static Path getFolder(Path File) {return File.toAbsolutePath().getParent();}
+
+    public static String rename(Path File, String Name) throws IOException {
+        if (Files.exists(Path.of(getFolder(File).toString(), Name))) {
+            logger.warn("Found existing file with name: \"" + Name + "\"! Adding numeric suffix to the file name...");
+            String newName;
+            String fileExtension = null;
+            if (Name.lastIndexOf(".") == -1) {
+                newName = Name;
+            } else {
+                newName = Name.substring(0, Name.lastIndexOf("."));
+                fileExtension = Name.substring(Name.lastIndexOf("."));
+            }
+            long suffix = 1;
+            while (Files.exists(Path.of(newName + " (" + suffix + ")" + ((fileExtension != null)? fileExtension:"")))) {
+                suffix++;
+            }
+            Path newFile = Path.of(getFolder(File).toString(),newName + " (" + suffix + ")" + ((fileExtension != null)? fileExtension:""));
+            Files.move(File, newFile);
+            logger.warn("New file name: \"" + newFile.getFileName() + "\"");
+            return newFile.getFileName().toString();
+        } else {
+            Files.move(File, Path.of(getFolder(File).toString(),Name));
+            logger.log("Renamed file \"" + File.getFileName() + "\" to \"" + Name + "\".");
+            return Name;
+        }
+    }
+
     // Okay I have actually no idea how I can set the file name in the gz file itself... Soo I'm going to just rename the final file afterwards if the FileName is provided.
     public static void compressToGz(Path File, String FileName, boolean DeleteOriginal, boolean Override) throws IOException {
         if (Files.isDirectory(File)) {
@@ -27,7 +55,7 @@ public class FileUtils {
         }
 
         Path gzFile = Path.of(FileUtils.getFolder(File).toString(), File.getFileName() + ".gz");
-        Path customFile = Path.of(FileName + ".gz");
+        Path customFile = Path.of(FileUtils.getFolder(File).toString(),FileName + ".gz");
         boolean gzFileExists = Files.exists(gzFile);
         boolean fileNameExists = Files.exists(customFile);
 
@@ -73,6 +101,4 @@ public class FileUtils {
     public static void compressToGz(Path File, boolean DeleteOriginal, boolean Override) throws IOException {compressToGz(File, null, DeleteOriginal, Override);}
     public static void compressToGz(Path File, String FileName) throws IOException {compressToGz(File, FileName, false, false);}
     public static void compressToGz(Path File, String FileName, boolean DeleteOriginal) throws IOException {compressToGz(File, FileName, DeleteOriginal, false);}
-
-    public static Path getFolder(Path File) {return File.toAbsolutePath().getParent();}
 }
