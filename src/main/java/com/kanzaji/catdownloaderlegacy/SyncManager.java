@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 public class SyncManager {
     private static final Logger logger = Logger.getInstance();
     private static SyncManager instance;
+    private SyncManager() {};
     private ExecutorService downloadExecutor;
     private ExecutorService verificationExecutor;
     private Path ModFolderPath;

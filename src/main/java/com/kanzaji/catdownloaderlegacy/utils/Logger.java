@@ -13,6 +13,7 @@ import java.io.IOException;
 public class Logger {
     private static Logger instance = null;
     private boolean disabled = false;
+    private Logger() {}
     Path logFile = Path.of(".", "Cat-Downloader.log");
 
     /**

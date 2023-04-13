@@ -173,13 +173,13 @@ public class SettingsManager {
     private static Settings generateSettingsFromARD() {
         logger.log("Generating settings file based out of argument values...");
         Settings ARDConfig = new Settings();
-        ARDConfig.mode = ARD.getData("Mode");
-        ARDConfig.workingDirectory = ARD.getData("Wdir");
-        ARDConfig.threadCount = Integer.parseInt(ARD.getData("Threads"));
-        ARDConfig.downloadAttempts = Integer.parseInt(ARD.getData("DAttempt"));
-        ARDConfig.isLoggerActive = ARD.getBooleanData("Logger");
-        ARDConfig.isHashVerificationActive = ARD.getBooleanData("HashVer");
-        ARDConfig.isFileSizeVerificationActive = ARD.getBooleanData("SizeVer");
+        ARDConfig.mode = ARD.getMode();
+        ARDConfig.workingDirectory = ARD.getWorkingDir();
+        ARDConfig.threadCount = ARD.getThreads();
+        ARDConfig.downloadAttempts = ARD.getDownloadAttempts();
+        ARDConfig.isLoggerActive = ARD.isLoggerActive();
+        ARDConfig.isHashVerificationActive = ARD.isHashVerActive();
+        ARDConfig.isFileSizeVerificationActive = ARD.isFileSizeVerActive();
         ARDConfig.modBlacklist = new String[0];
         logger.log("Generation of Settings from ARD finished!");
         return ARDConfig;
