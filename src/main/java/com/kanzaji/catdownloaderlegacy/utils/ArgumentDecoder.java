@@ -13,10 +13,13 @@ public class ArgumentDecoder {
     private final Logger logger = Logger.getInstance();
     private String WorkingDirectory = "";
     private String SettingsPath = "";
+    private String LogPath = "";
     private String Mode = "instance";
     private int nThreadsCount = 16;
     private int DownloadAttempts = 5;
+    private int LogStockSize = 10;
     private boolean LoggerActive = true;
+    private boolean StockPileLogs = true;
     private boolean FileSizeVerification = true;
     private boolean HashVerification = true;
     private boolean Settings = true;

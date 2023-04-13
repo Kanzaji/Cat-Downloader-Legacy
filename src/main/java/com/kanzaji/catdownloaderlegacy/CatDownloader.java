@@ -2,12 +2,9 @@ package com.kanzaji.catdownloaderlegacy;
 
 import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
 import com.kanzaji.catdownloaderlegacy.jsons.MinecraftInstance;
-import com.kanzaji.catdownloaderlegacy.utils.ArgumentDecoder;
-import com.kanzaji.catdownloaderlegacy.utils.Logger;
-import com.kanzaji.catdownloaderlegacy.utils.MIInterpreter;
+import com.kanzaji.catdownloaderlegacy.utils.*;
 
 import com.google.gson.Gson;
-import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
 
 import java.nio.file.*;
 import java.util.Objects;
@@ -32,6 +29,8 @@ public final class CatDownloader {
         logger.log("Cat Downloader version: " + VERSION);
 
         try {
+            FileUtils.compressToGz(Path.of("Cat-Downloader.log"), true);
+            System.exit(3);
             // Decode Arguments and store them in ARD Instance.
             ARD.decodeArguments(args);
 

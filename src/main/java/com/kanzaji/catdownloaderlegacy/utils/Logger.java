@@ -2,6 +2,7 @@ package com.kanzaji.catdownloaderlegacy.utils;
 
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.NoSuchFileException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.nio.file.Path;
@@ -48,7 +49,7 @@ public class Logger {
                 Files.createFile(this.logFile);
                 this.log("\"" + this.logFile.toAbsolutePath() + "\" file created.");
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         this.log("Logger Initialization completed.");
@@ -166,7 +167,12 @@ public class Logger {
                 }
                 Files.writeString(this.logFile, "[" + new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new Date()) + "] [" + Type + "] " + error + "\n" + stackTrace + "\n", StandardOpenOption.APPEND);
             }
-        } catch (IOException e) {
+        } catch (NoSuchFileException e) {
+            this.init();
+            this.error("Log file seems to had been deleted! Created another copy, but the rest of the log file has been lost.");
+            this.error("Catching last message...");
+            this.log(msg);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

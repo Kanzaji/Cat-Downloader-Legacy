@@ -55,7 +55,7 @@ public class SettingsManager {
 
             if (ARD.getBooleanData("DefaultSettings")) {
                 logger.log("Getting a template for settings file out of internal assets...");
-                Files.copy(AssetsUtils.getFile("templates/settings.json5"), SettingsFile);
+                Files.copy(FileUtils.getInternalFile("templates/settings.json5"), SettingsFile);
                 logger.log("Template created! Halting program to allow configuration changes.");
 
                 // Console output to the user
