@@ -29,8 +29,6 @@ public final class CatDownloader {
         logger.log("Cat Downloader version: " + VERSION);
 
         try {
-            FileUtils.compressToGz(Path.of("Cat-Downloader.log"), true);
-            System.exit(3);
             // Decode Arguments and store them in ARD Instance.
             ARD.decodeArguments(args);
 
