@@ -69,7 +69,7 @@ public class ArgumentDecoder {
                     this.FileSizeVerification = false;
                 }
             }
-            if (decodeArgument(Argument,"-FileHashVerification:")) {
+            if (decodeArgument(Argument,"-HashVerification:")) {
                 if (getOffBoolean(Argument)) {
                     this.HashVerification = false;
                 }
