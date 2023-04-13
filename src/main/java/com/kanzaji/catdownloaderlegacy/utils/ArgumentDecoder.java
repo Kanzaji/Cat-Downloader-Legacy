@@ -338,15 +338,16 @@ public class ArgumentDecoder {
     // Just a spam of Get methods. nothing spectacular to see here.
     public String getMode() {return this.Mode;}
     public String getWorkingDir() {return this.WorkingDirectory;}
+    public String getSettingsPath() {return this.SettingsPath;}
     public String getLogPath() {return this.LogPath;}
-    public int getThreads() {return this.ThreadCount;}
     public int getDownloadAttempts() {return this.DownloadAttempts;}
+    public int getThreads() {return this.ThreadCount;}
     public int getLogStockSize() {return this.LogStockSize;}
+    public boolean areSettingsEnabled() {return this.Settings;}
+    public boolean shouldDefaultSettings() {return this.DefaultSettingsFromTemplate;}
     public boolean isLoggerActive() {return this.LoggerActive;}
     public boolean shouldStockPileLogs() {return this.StockPileLogs;}
     public boolean shouldCompressLogs() {return this.CompressStockPiledLogs;}
-    public boolean areSettingsEnabled() {return this.Settings;}
-    public boolean shouldDefaultSettings() {return this.DefaultSettingsFromTemplate;}
     public boolean isFileSizeVerActive() {return this.FileSizeVerification;}
     public boolean isHashVerActive() {return this.HashVerification;}
     public boolean isExperimental() {return this.Experimental;}

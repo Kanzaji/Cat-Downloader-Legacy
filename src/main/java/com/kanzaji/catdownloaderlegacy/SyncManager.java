@@ -124,7 +124,7 @@ public class SyncManager {
                                 logger.log("Re-download of " + FileName + " was successful!");
                                 this.DownloadSuccess += 1;
                             } else {
-                                logger.error("Re-download of " + FileName + " after " + ArgumentDecoder.getInstance().getData("DAttempt") + "attempts failed!");
+                                logger.error("Re-download of " + FileName + " after " + ArgumentDecoder.getInstance().getDownloadAttempts() + "attempts failed!");
                                 this.FailedDownloads.add(FileName);
                             }
                         } else {
@@ -151,7 +151,7 @@ public class SyncManager {
                                         logger.log("Re-download of " + FileName + " was successful!");
                                         this.DownloadSuccess += 1;
                                     } else {
-                                        logger.error("Re-download of " + FileName + " after " + ArgumentDecoder.getInstance().getData("DAttempt") + "attempts failed!");
+                                        logger.error("Re-download of " + FileName + " after " + ArgumentDecoder.getInstance().getDownloadAttempts() + "attempts failed!");
                                         this.FailedDownloads.add(FileName);
                                     }
                                 } catch (Exception e) {

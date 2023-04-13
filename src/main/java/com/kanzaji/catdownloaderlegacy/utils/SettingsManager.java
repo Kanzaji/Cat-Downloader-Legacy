@@ -20,7 +20,7 @@ public class SettingsManager {
     private static final Logger logger = Logger.getInstance();
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().setLenient().create();
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
-    private static final Path SettingsFile = Path.of(ARD.getData("SettingsPath"),"Cat-Downloader-Legacy Settings.json5");
+    private static final Path SettingsFile = Path.of(ARD.getSettingsPath(),"Cat-Downloader-Legacy Settings.json5");
     public static List<String> ModBlackList = new LinkedList<>();
 
     /**
@@ -36,7 +36,7 @@ public class SettingsManager {
             logger.log("Found settings file!");
             logger.log("- Path to settings file: " + SettingsFile.toAbsolutePath());
 
-            if (!ARD.getBooleanData("DefaultSettings")) {
+            if (!ARD.shouldDefaultSettings()) {
                 logger.warn("Generating Settings from arguments is enabled! Overriding settings file with argument values...");
                 saveSettingsFromARD();
                 logger.log("Override of the settings finished!");
@@ -53,7 +53,7 @@ public class SettingsManager {
 
             logger.log("No settings file found!");
 
-            if (ARD.getBooleanData("DefaultSettings")) {
+            if (ARD.shouldDefaultSettings()) {
                 logger.log("Getting a template for settings file out of internal assets...");
                 Files.copy(FileUtils.getInternalFile("templates/settings.json5"), SettingsFile);
                 logger.log("Template created! Halting program to allow configuration changes.");

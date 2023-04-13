@@ -47,7 +47,7 @@ public class FileVerificationUtils {
      * @throws IOException when IO Operation fails.
      */
     public static boolean verifyFileSize(Path File, int Size) throws IOException {
-        if (!ArgumentDecoder.getInstance().getBooleanData("SizeVer")) {
+        if (!ArgumentDecoder.getInstance().isFileSizeVerActive()) {
             return true;
         }
         return Files.size(File) == Size;
@@ -62,7 +62,7 @@ public class FileVerificationUtils {
      * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm for some reason.
      */
     public static boolean verifyHash(Path File, String DownloadURL) throws IOException, NoSuchAlgorithmException {
-        if (!ArgumentDecoder.getInstance().getBooleanData("HashVer")) {
+        if (!ArgumentDecoder.getInstance().isHashVerActive()) {
             return true;
         }
         return Arrays.equals(getHash(File), getHash(DownloadURL));

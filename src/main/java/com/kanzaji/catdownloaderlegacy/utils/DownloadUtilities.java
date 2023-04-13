@@ -65,7 +65,7 @@ public class DownloadUtilities {
      * @throws NoSuchAlgorithmException when Hash Verification complains about algorithm.
      */
     public static boolean reDownload(Path modFile, String downloadUrl, String fileName, Number fileSize) throws IOException, NoSuchAlgorithmException {
-        for (int i = 0; i < Integer.parseInt(ArgumentDecoder.getInstance().getData("DAttempt")); i++) {
+        for (int i = 0; i < ArgumentDecoder.getInstance().getDownloadAttempts(); i++) {
             if (Files.deleteIfExists(modFile)) {
                 logger.log("Deleted corrupted " + fileName + ". Re-download attempt: " + i+1);
             }
