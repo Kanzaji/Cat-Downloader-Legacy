@@ -41,6 +41,9 @@ public final class CatDownloader {
                 logger.exit();
             }
 
+            System.out.println(logger.hashCode());
+            System.out.println(logger.hashCode());
+
             // Printing out Argument / Configuration values.
             ARD.printConfiguration("Program Configuration from Arguments:");
 

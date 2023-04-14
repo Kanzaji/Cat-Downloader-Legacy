@@ -75,7 +75,7 @@ public class FileUtils {
                 while (Files.exists(Path.of(gzNewFileName + " (" + suffix + ").gz"))) {
                     suffix++;
                 }
-                Path newGzFile = Path.of(gzNewFileName + " (" + suffix + ").gz");
+                Path newGzFile = Path.of(FileUtils.getFolder(File).toString(),gzNewFileName + " (" + suffix + ").gz");
                 Files.move((fileNameExists)? customFile: gzFile, newGzFile);
                 logger.warn("New file name: " + newGzFile.getFileName());
             }
@@ -85,7 +85,10 @@ public class FileUtils {
 
         try (GZIPOutputStream gzOutput = new GZIPOutputStream(Files.newOutputStream(gzFile))) {
             Files.copy(File, gzOutput);
-            if (FileName != null) {Files.move(gzFile, customFile);}
+            if (FileName != null) {
+                logger.log("Custom file name for archive specified! Renaming the file to \"" + FileName + ".gz\"");
+                Files.move(gzFile, customFile);
+            }
             if (DeleteOriginal) {
                 logger.log("Compression done! Deleting original file...");
                 Files.delete(File);

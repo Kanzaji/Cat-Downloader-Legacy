@@ -1,7 +1,6 @@
 package com.kanzaji.catdownloaderlegacy;
 
 import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
-import com.kanzaji.catdownloaderlegacy.jsons.Settings;
 import com.kanzaji.catdownloaderlegacy.utils.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.utils.DownloadUtilities;
 import com.kanzaji.catdownloaderlegacy.utils.Logger;
@@ -9,7 +8,6 @@ import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
 
 import static com.kanzaji.catdownloaderlegacy.utils.FileVerificationUtils.verifyFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -23,8 +21,8 @@ import java.util.stream.Stream;
 
 public class SyncManager {
     private static final Logger logger = Logger.getInstance();
-    private static SyncManager instance;
-    private SyncManager() {};
+    private static final class InstanceHolder {private static final SyncManager instance = new SyncManager();}
+    private SyncManager() {}
     private ExecutorService downloadExecutor;
     private ExecutorService verificationExecutor;
     private Path ModFolderPath;
@@ -44,15 +42,11 @@ public class SyncManager {
     private final List<String> IgnoredRemoval = new LinkedList<>();
 
     /**
-     * Used to get an instance of the FileManager. Creates new one at first use.
-     * @return Reference to an instance of the FileManager.
+     * Used to get a reference to an instance of the SyncManager.
+     * @return Reference to an instance of the SyncManager.
      */
     public static SyncManager getInstance() {
-        if (instance == null) {
-            logger.log("Starting new instance of FileManager!");
-            instance = new SyncManager();
-        }
-        return instance;
+        return InstanceHolder.instance;
     }
 
     /**
@@ -76,6 +70,7 @@ public class SyncManager {
      * @throws RuntimeException when downloading process takes over a day.
      */
     public void runSync() throws NullPointerException, IOException, InterruptedException, RuntimeException{
+        System.out.println(logger.hashCode());
         long StartingTime = System.currentTimeMillis();
         if (this.ModFolderPath == null || this.ManifestData == null || this.downloadExecutor == null || this.verificationExecutor == null) {
             if (this.ModFolderPath == null) {
@@ -265,16 +260,12 @@ public class SyncManager {
 
             System.out.println("Ignored mods found in the config file! (" + SettingsManager.ModBlackList.size() + " " + ((SettingsManager.ModBlackList.size() == 1)? "file":"files") + ")");
             logger.log("Mods contained in the blacklist:");
-            SettingsManager.ModBlackList.forEach((mod) -> {
-                logger.log("- " + mod);
-            });
+            SettingsManager.ModBlackList.forEach((mod) -> logger.log("- " + mod));
 
             if (this.IgnoredVerification.size() > 0) {
                 logger.warn(this.IgnoredVerification.size() + " " + ((this.IgnoredVerification.size() == 1)? "mod was":"mods were") + " not verified!");
                 System.out.println("> " + this.IgnoredVerification.size() + " " + ((this.IgnoredVerification.size() == 1)? "mod was":"mods were") + " not verified!");
-                this.IgnoredVerification.forEach((mod) -> {
-                    logger.warn("- " + mod);
-                });
+                this.IgnoredVerification.forEach((mod) -> logger.warn("- " + mod));
             } else {
                 logger.log("All mods have been verified.");
                 System.out.println("> All mods have been verified.");
@@ -283,9 +274,7 @@ public class SyncManager {
             if (this.IgnoredRemoval.size() > 0) {
                 logger.warn(this.IgnoredRemoval.size() + " " + ((this.IgnoredRemoval.size() == 1)? "mod was":"mods were") + " not removed!");
                 System.out.println("> " + this.IgnoredVerification.size() + " " + ((this.IgnoredRemoval.size() == 1)? "mod was":"mods were") + " not removed!");
-                this.IgnoredRemoval.forEach((mod) -> {
-                    logger.warn("- " + mod);
-                });
+                this.IgnoredRemoval.forEach((mod) -> logger.warn("- " + mod));
             } else {
                 logger.log("All mods designated to removal were removed!");
                 System.out.println("> All mods designated to removal were removed!");

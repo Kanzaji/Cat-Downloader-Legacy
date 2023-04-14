@@ -9,20 +9,17 @@ import java.io.IOException;
 
 public class Logger {
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
-    private static Logger instance = null;
+    private static final class InstanceHolder {private static final Logger instance = new Logger();}
     private Logger() {}
     private boolean disabled = false;
     private Path LogFile = Path.of("Cat-Downloader.log");
 
     /**
-     * Used to get an instance of the Logger. Creates new one at first use.
+     * Used to get an instance of the Logger.
      * @return Reference to an instance of the Logger.
      */
     public static Logger getInstance() {
-        if (instance == null) {
-            instance = new Logger();
-        }
-        return instance;
+        return InstanceHolder.instance;
     }
 
     /**

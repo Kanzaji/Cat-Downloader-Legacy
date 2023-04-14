@@ -9,8 +9,8 @@ import java.util.Locale;
 import java.util.Objects;
 
 public class ArgumentDecoder {
-    private Logger logger = Logger.getInstance();
-    private static ArgumentDecoder instance;
+    private static final Logger logger = Logger.getInstance();
+    private static final class InstanceHolder {private static final ArgumentDecoder instance = new ArgumentDecoder();}
     private ArgumentDecoder() {}
     private String WorkingDirectory = "";
     private String SettingsPath = "";
@@ -29,15 +29,12 @@ public class ArgumentDecoder {
     private boolean Experimental = false;
 
     /**
-     * Used to create first instance of ArgumentDecoder, and get reference to a single Instance of it in any other place.
+     * Used to get a reference to {@link ArgumentDecoder} instance.
      *
      * @return ArgumentDecoder with reference to the single instance of it.
      */
     public static ArgumentDecoder getInstance() {
-        if (instance == null) {
-            instance = new ArgumentDecoder();
-        }
-        return instance;
+        return InstanceHolder.instance;
     }
 
     /**
@@ -233,6 +230,7 @@ public class ArgumentDecoder {
      * Prints entire ARD Configuration to a log file.
      */
     public void printConfiguration(String message) {
+        System.out.println(logger.hashCode());
         logger.log("---------------------------------------------------------------------");
         logger.log(message);
         logger.log("> Working directory: " + this.WorkingDirectory);
