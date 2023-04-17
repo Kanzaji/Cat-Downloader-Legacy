@@ -74,7 +74,7 @@ public class Logger {
                     archivedLog = Path.of(ARD.getLogPath(), "Cat-Downloader Archived.log");
                     if (ARD.shouldCompressLogs()) {
                         this.log("Moved archived log to new location! Compressing...");
-                        FileUtils.compressToGz(archivedLog, DateUtils.getCurrentFullDate(), true);
+                        FileUtils.compressToGz(archivedLog, DateUtils.getCurrentFullDate() + ".log", true);
                     } else {
                         this.log("Moved archived log to new location! Changing the filename...");
                         FileUtils.rename(archivedLog, DateUtils.getCurrentFullDate() + ".log");
@@ -87,7 +87,7 @@ public class Logger {
                     this.log("Old log file found! Archiving the log file...");
                     String archivedName = FileUtils.rename(Path.of(ARD.getLogPath(), "Cat-Downloader.log"), "Cat-Downloader Archived.log");
                     if (ARD.shouldCompressLogs()) {
-                        FileUtils.compressToGz(Path.of(ARD.getLogPath(), archivedName), DateUtils.getCurrentFullDate(), true);
+                        FileUtils.compressToGz(Path.of(ARD.getLogPath(), archivedName), DateUtils.getCurrentFullDate() + ".log", true);
                     } else {
                         FileUtils.rename(Path.of(ARD.getLogPath(), archivedName), DateUtils.getCurrentFullDate() + ".log");
                     }
