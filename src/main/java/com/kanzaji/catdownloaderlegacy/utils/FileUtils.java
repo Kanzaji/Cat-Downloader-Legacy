@@ -59,6 +59,10 @@ public class FileUtils {
         boolean gzFileExists = Files.exists(gzFile);
         boolean fileNameExists = Files.exists(customFile);
 
+        if (FileName != null) {
+            logger.log("Custom file name for archive specified! Archive will be saved under name: \"" + FileName + ".gz\"");
+        }
+
         logger.log("Compressing file \"" + File.toAbsolutePath() + "\"...");
 
         if (gzFileExists || fileNameExists) {
