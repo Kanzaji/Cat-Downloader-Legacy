@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="CatDownloader Test General" type="Application" factoryName="Application">
+  <configuration default="false" name="CatDownloader Test General" type="Application" factoryName="Application" folderName="Tests">
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
     <log_file alias="Logs" path="$PROJECT_DIR$/TestingArea/Cat-Downloader.log" show_all="true" />
     <option name="MAIN_CLASS_NAME" value="com.kanzaji.catdownloaderlegacy.CatDownloader" />

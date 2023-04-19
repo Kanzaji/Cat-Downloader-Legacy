@@ -11,6 +11,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 public class Manifest {
@@ -31,7 +32,7 @@ public class Manifest {
             ModFile ModFileData = new ModFile();
             Logger logger = Logger.getInstance();
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            logger.log("Getting data for project with ID: " + projectID);
+            logger.log("Getting data for project with ID: " + projectID + " with file ID: " + fileID);
 
             try {
                 URL url = new URL("https://api.cfwidget.com/" + projectID + "?&version=" + fileID);
@@ -56,6 +57,7 @@ public class Manifest {
                             ).replaceAll(" ", "%20");
 
                             ModFileData.fileSize = file.filesize;
+                            break;
                         }
                         if (ModFileData.downloadUrl == null) {
                             logger.error("No file for version " + minecraftData.version + " was found in project with id " + projectID + "! Please report this to the pack creator.");
@@ -65,7 +67,7 @@ public class Manifest {
                         }
                     }
 
-                    if (downloadData.download.id.intValue() != fileID.intValue()) {
+                    if (!Objects.equals(downloadData.download.id, fileID)) {
                         logger.error("Data received from api.cfwidget.com is not correct!");
                         logger.error("\n" + gson.toJson(downloadData));
                         logger.error(fileID.toString());
@@ -91,8 +93,7 @@ public class Manifest {
         }
 
         public String getFileName() {
-            int cut = downloadUrl.lastIndexOf("/");
-            return downloadUrl.substring(cut+1).replaceAll("%20", " ");
+            return downloadUrl.substring(downloadUrl.lastIndexOf("/")+1).replaceAll("%20", " ");
         }
     }
 

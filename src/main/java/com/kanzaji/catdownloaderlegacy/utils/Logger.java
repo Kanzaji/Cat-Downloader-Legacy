@@ -3,9 +3,13 @@ package com.kanzaji.catdownloaderlegacy.utils;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Stream;
 
 public class Logger {
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
@@ -109,6 +113,47 @@ public class Logger {
                 this.log("Moved current log to the new Location!");
             } else {
                 this.error("The log file doesn't exists before even archiving??? Something is horribly wrong...");
+            }
+        } else {
+            this.log("No custom path for Logs has been specified, using working directory for logging!");
+            if (Files.exists(archivedLog)) {
+                if(ARD.shouldStockPileLogs()) {
+                    this.log("Old log file found! Archiving the log file...");
+                    if (ARD.shouldCompressLogs()) {
+                        FileUtils.compressToGz(archivedLog, DateUtils.getCurrentFullDate() + ".log", true);
+                    } else {
+                        FileUtils.rename(archivedLog, DateUtils.getCurrentFullDate() + ".log");
+                    }
+                    this.log("Log has been archived!");
+                } else {
+                    this.log("Stockpiling of the logs has been disabled! Deleting old log file...");
+                    Files.delete(archivedLog);
+                    this.log("Old log file has been deleted.");
+                }
+            }
+        }
+
+        if(ARD.shouldStockPileLogs()) {
+            this.log("Stockpiling logs is enabled! Stockpile limit is " + ((ARD.getLogStockSize() == 0)? "infinite!": ARD.getLogStockSize()));
+            List<Path> archivedLogs = new LinkedList<>();
+            try(Stream<Path> directoryList = Files.list(Path.of(ARD.getLogPath()))) {
+                directoryList.forEach((File) -> {
+                    if(File.getFileName().toString().endsWith(".log.gz")) {
+                        archivedLogs.add(File);
+                    }
+                });
+            }
+            if (archivedLogs.size() > ARD.getLogStockSize()) {
+                this.log("Limit of stockpile has been reached! Deleting the oldest file...");
+                // TODO: Find the oldest log file!
+                archivedLogs.forEach((File) -> {
+                    try {
+                        Files.readAttributes(File, BasicFileAttributes.class).creationTime();
+                    } catch (IOException e) {
+                        this.logStackTrace("Unable to read attributes of file: " + File.toAbsolutePath(), e);
+                        throw new IllegalStateException("Unable to read attributes of the file!");
+                    }
+                });
             }
         }
 
