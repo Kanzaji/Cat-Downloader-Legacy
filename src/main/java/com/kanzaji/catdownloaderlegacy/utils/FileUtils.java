@@ -38,10 +38,11 @@ public class FileUtils {
             Path newFile = Path.of(getFolder(File).toString(),newName + " (" + suffix + ")" + ((fileExtension != null)? fileExtension:""));
             Files.move(File, newFile);
             logger.warn("New file name: \"" + newFile.getFileName() + "\"");
+            logger.log("Renamed file \"" + File.toAbsolutePath().getFileName() + "\" to \"" + newFile.getFileName() + "\".");
             return newFile.getFileName().toString();
         } else {
             Files.move(File, Path.of(getFolder(File).toString(),Name));
-            logger.log("Renamed file \"" + File.getFileName() + "\" to \"" + Name + "\".");
+            logger.log("Renamed file \"" + File.toAbsolutePath().getFileName() + "\" to \"" + Name + "\".");
             return Name;
         }
     }
@@ -90,13 +91,12 @@ public class FileUtils {
         try (GZIPOutputStream gzOutput = new GZIPOutputStream(Files.newOutputStream(gzFile))) {
             Files.copy(File, gzOutput);
             if (FileName != null) {
-                logger.log("Custom file name for archive specified! Renaming the file to \"" + FileName + ".gz\"");
                 Files.move(gzFile, customFile);
             }
             if (DeleteOriginal) {
                 logger.log("Compression done! Deleting original file...");
                 Files.delete(File);
-                logger.log("File \"" + File.getFileName() + "\" has been deleted.");
+                logger.log("File \"" + File.toAbsolutePath().getFileName() + "\" has been deleted.");
             } else {
                 logger.log("Compression done!");
             }

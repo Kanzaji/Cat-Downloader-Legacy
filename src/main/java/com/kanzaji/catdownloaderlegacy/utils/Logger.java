@@ -9,6 +9,7 @@ import java.util.Date;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 public class Logger {
@@ -60,22 +61,31 @@ public class Logger {
 
     public void postInit() throws IOException {
         this.log("Post-Initialization of Logger started!");
+        Path logPath = Path.of(ARD.getLogPath());
         Path archivedLog = Path.of("Cat-Downloader Archived.log");
+        Path logInLogPath = Path.of(logPath.toString(), "Cat-Downloader.log");
+        Path archivedLogInLogPath = Path.of(logPath.toString(), "Cat-Downloader Archived.log");
 
         // Move Log files to the log Path if specified.
-        if (!FileUtils.getFolder(Path.of(ARD.getLogPath(), ".")).toString().equals(FileUtils.getFolder(this.LogFile).toString())) {
+        if (!FileUtils.getFolder(Path.of(logPath.toString(), ".")).toString().equals(FileUtils.getFolder(this.LogFile).toString())) {
+            if (Files.notExists(logPath)) {
+                this.log("Custom path for logs has been specified, but it doesn't exists! Creating \"" + logPath.toAbsolutePath() + "\".");
+                Files.createDirectory(logPath);
+            } else {
+                this.log("Custom path for logs has been specified: \"" + logPath.toAbsolutePath() + "\".");
+            }
             if (ARD.shouldStockPileLogs()) {
                 // Cat-Downloader Archived.log handling.
-                if (Files.exists(Path.of(ARD.getLogPath(), "Cat-Downloader Archived.log"))) {
+                if (Files.exists(archivedLogInLogPath)) {
                     this.warn("Found old pre-full-archive log file in specified Path! This might signal a crash in the last post-init phase of the logger!");
                     this.warn("The log file is going to be saved as Unknown.log.gz for future inspection.");
-                    String unknownName = FileUtils.rename(Path.of(ARD.getLogPath(), "Cat-Downloader Archived.log"), "unknown.log");
-                    FileUtils.compressToGz(Path.of(ARD.getLogPath(), unknownName), true);
+                    String unknownName = FileUtils.rename(archivedLogInLogPath, "unknown.log");
+                    FileUtils.compressToGz(Path.of(logPath.toString(), unknownName), true);
                 }
                 if (Files.exists(archivedLog)) {
-                    this.log("Moving archived log to new location...");
-                    Files.move(archivedLog, Path.of(ARD.getLogPath(), "Cat-Downloader Archived.log"));
-                    archivedLog = Path.of(ARD.getLogPath(), "Cat-Downloader Archived.log");
+                    this.log("Found archived log in working directory! Moving archived log to new location...");
+                    Files.move(archivedLog, archivedLogInLogPath);
+                    archivedLog = archivedLogInLogPath;
                     if (ARD.shouldCompressLogs()) {
                         this.log("Moved archived log to new location! Compressing...");
                         FileUtils.compressToGz(archivedLog, DateUtils.getCurrentFullDate() + ".log", true);
@@ -87,30 +97,30 @@ public class Logger {
                 }
 
                 // Cat-Downloader.log handling.
-                if (Files.exists(Path.of(ARD.getLogPath(), "Cat-Downloader.log"))) {
+                if (Files.exists(logInLogPath)) {
                     this.log("Old log file found! Archiving the log file...");
-                    String archivedName = FileUtils.rename(Path.of(ARD.getLogPath(), "Cat-Downloader.log"), "Cat-Downloader Archived.log");
+                    String archivedName = FileUtils.rename(logInLogPath, "Cat-Downloader Archived.log");
+                    Path archivedFile = Path.of(logPath.toString(), archivedName);
                     if (ARD.shouldCompressLogs()) {
-                        FileUtils.compressToGz(Path.of(ARD.getLogPath(), archivedName), DateUtils.getCurrentFullDate() + ".log", true);
+                        FileUtils.compressToGz(archivedFile, DateUtils.getCurrentFullDate() + ".log", true);
                     } else {
-                        FileUtils.rename(Path.of(ARD.getLogPath(), archivedName), DateUtils.getCurrentFullDate() + ".log");
+                        FileUtils.rename(archivedFile, DateUtils.getCurrentFullDate() + ".log");
                     }
                     this.log("Log has been archived!");
                 }
             }
 
             if (Files.exists(this.LogFile)) {
-                Path newLogPath = Path.of(ARD.getLogPath(), "Cat-Downloader.log");
-                this.log("Moving current log file to new location...");
-                if (Files.exists(newLogPath)) {
+                this.log("Moving currently active log file to new location...");
+                if (Files.exists(logInLogPath)) {
                     this.error("Found non-archived log in the final destination, what should not happen at this point of the process!");
                     this.error("Archiving the log under unknown_latest.log.gz name for future inspection.");
-                    String unknownName = FileUtils.rename(newLogPath, "unknown_latest.log");
-                    FileUtils.compressToGz(Path.of(ARD.getLogPath(), unknownName), true);
+                    String unknownName = FileUtils.rename(logInLogPath, "unknown_latest.log");
+                    FileUtils.compressToGz(Path.of(logPath.toString(), unknownName), true);
                 }
-                Files.move(this.LogFile, newLogPath);
-                this.LogFile = newLogPath;
-                this.log("Moved current log to the new Location!");
+                Files.move(this.LogFile, logInLogPath);
+                this.LogFile = logInLogPath;
+                this.log("Moved currently active log to the new Location: \"" + this.LogFile.toAbsolutePath() + "\".");
             } else {
                 this.error("The log file doesn't exists before even archiving??? Something is horribly wrong...");
             }
@@ -136,24 +146,36 @@ public class Logger {
         if(ARD.shouldStockPileLogs()) {
             this.log("Stockpiling logs is enabled! Stockpile limit is " + ((ARD.getLogStockSize() == 0)? "infinite!": ARD.getLogStockSize()));
             List<Path> archivedLogs = new LinkedList<>();
-            try(Stream<Path> directoryList = Files.list(Path.of(ARD.getLogPath()))) {
+            try(Stream<Path> directoryList = Files.list(logPath)) {
                 directoryList.forEach((File) -> {
-                    if(File.getFileName().toString().endsWith(".log.gz")) {
+                    if(File.getFileName().toString().endsWith(".gz") && File.getFileName().toString().contains(".log")) {
                         archivedLogs.add(File);
                     }
                 });
             }
-            if (archivedLogs.size() > ARD.getLogStockSize()) {
+
+            while (archivedLogs.size() > ARD.getLogStockSize()) {
                 this.log("Limit of stockpile has been reached! Deleting the oldest file...");
-                // TODO: Find the oldest log file!
+                AtomicReference<Path> test = new AtomicReference<>();
                 archivedLogs.forEach((File) -> {
                     try {
-                        Files.readAttributes(File, BasicFileAttributes.class).creationTime();
-                    } catch (IOException e) {
+                        BasicFileAttributes currentFile = Files.readAttributes(File, BasicFileAttributes.class);
+                        if (test.get() == null) {
+                            test.set(File);
+                        } else if (currentFile.creationTime().compareTo(Files.readAttributes(test.get(), BasicFileAttributes.class).creationTime()) < 0) {
+                            test.set(File);
+                        }
+                    } catch (Exception e) {
                         this.logStackTrace("Unable to read attributes of file: " + File.toAbsolutePath(), e);
                         throw new IllegalStateException("Unable to read attributes of the file!");
                     }
                 });
+                archivedLogs.remove(test.get());
+                if (Files.deleteIfExists(test.get())) {
+                    this.log(test.get().toAbsolutePath() + " has been deleted!");
+                } else {
+                    this.error(test.get().toAbsolutePath() + " was meant to be deleted, but it's missing! Something is not right... This is not critical error however.");
+                }
             }
         }
 

@@ -32,6 +32,9 @@ public final class CatDownloader {
             // Decode Arguments and store them in ARD Instance.
             ARD.decodeArguments(args);
 
+            // Printing out Argument / Configuration values.
+            ARD.printConfiguration("Program Configuration from Arguments:");
+
             // Run Post-int on Logger.
             logger.postInit();
 
@@ -40,12 +43,6 @@ public final class CatDownloader {
             if (!ARD.isLoggerActive()){
                 logger.exit();
             }
-
-            System.out.println(logger.hashCode());
-            System.out.println(logger.hashCode());
-
-            // Printing out Argument / Configuration values.
-            ARD.printConfiguration("Program Configuration from Arguments:");
 
             // "What the hell did I just run" section.
             System.out.println("---------------------------------------------------------------------");

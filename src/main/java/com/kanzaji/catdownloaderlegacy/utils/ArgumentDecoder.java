@@ -48,7 +48,7 @@ public class ArgumentDecoder {
             logger.log(Argument);
             this.WorkingDirectory = decodePathArgument(Argument, "-WorkingDirectory:", "Working directory", this.WorkingDirectory);
             this.SettingsPath = decodePathArgument(Argument, "-SettingsPath", "Settings path", this.SettingsPath);
-            this.LogPath = decodePathArgument(Argument, "-LogsPath:", "Logs path", this.LogPath);
+            this.LogPath = decodePathArgument(Argument, "-LogsPath:", "Logs path", this.LogPath, true);
             this.ThreadCount = decodeIntArgument(Argument, "-ThreadCount:", this.ThreadCount);
             this.DownloadAttempts = decodeIntArgument(Argument, "-DownloadAttempts:", this.DownloadAttempts);
             this.LogStockSize = decodeIntArgument(Argument, "-LogStockSize:", this.LogStockSize);
@@ -189,10 +189,27 @@ public class ArgumentDecoder {
      * @throws FileNotFoundException when specified Path doesn't exist.
      */
     private String decodePathArgument(String Argument, String ArgumentName, String Message, String OriginalValue) throws FileNotFoundException {
+        return decodePathArgument(Argument, ArgumentName, Message, OriginalValue, false);
+    }
+
+    /**
+     * Used to automatically decode Path Arguments.
+     * @param Argument String Argument.
+     * @param ArgumentName String with the name of the Argument.
+     * @param Message Name of the Argument to print in the message if Path doesn't exist.
+     * @param OriginalValue Original Value to return if Argument is not the one required.
+     * @param Override Overrides path existence check.
+     * @return String with a value of the Argument.
+     * @throws FileNotFoundException when specified Path doesn't exist.
+     */
+    private String decodePathArgument(String Argument, String ArgumentName, String Message, String OriginalValue, Boolean Override) throws FileNotFoundException {
         if (decodeArgument(Argument, ArgumentName)) {
             String ArgumentValue = Argument.substring(ArgumentName.indexOf(":")+1);
             Path ArgumentPath = Path.of(ArgumentValue);
             if (!Files.exists(ArgumentPath)) {
+                if (Override) {
+                    return ArgumentValue;
+                }
                 logger.error("Specified " + Message + " does not exists!");
                 logger.error(ArgumentPath.toAbsolutePath().toString());
                 throw new FileNotFoundException("Specified " + Message + " does not exists!");
@@ -230,7 +247,6 @@ public class ArgumentDecoder {
      * Prints entire ARD Configuration to a log file.
      */
     public void printConfiguration(String message) {
-        System.out.println(logger.hashCode());
         logger.log("---------------------------------------------------------------------");
         logger.log(message);
         logger.log("> Working directory: " + this.WorkingDirectory);
