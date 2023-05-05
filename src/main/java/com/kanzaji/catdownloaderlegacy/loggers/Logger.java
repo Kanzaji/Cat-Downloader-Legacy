@@ -1,6 +1,6 @@
-package com.kanzaji.catdownloaderlegacy.utils.loggers;
+package com.kanzaji.catdownloaderlegacy.loggers;
 
-import com.kanzaji.catdownloaderlegacy.utils.ArgumentDecoder;
+import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.utils.DateUtils;
 import com.kanzaji.catdownloaderlegacy.utils.FileUtils;
 import org.jetbrains.annotations.Nullable;

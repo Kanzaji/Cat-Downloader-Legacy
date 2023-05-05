@@ -1,4 +1,4 @@
-package com.kanzaji.catdownloaderlegacy.utils.loggers;
+package com.kanzaji.catdownloaderlegacy.loggers;
 
 import org.jetbrains.annotations.Nullable;
 import java.io.IOException;

@@ -1,6 +1,7 @@
 package com.kanzaji.catdownloaderlegacy.utils;
 
-import com.kanzaji.catdownloaderlegacy.utils.loggers.LoggerCustom;
+import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
+import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
 import java.io.IOException;
 import java.io.InputStream;

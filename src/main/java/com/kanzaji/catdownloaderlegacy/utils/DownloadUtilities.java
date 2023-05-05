@@ -2,7 +2,8 @@ package com.kanzaji.catdownloaderlegacy.utils;
 
 import static com.kanzaji.catdownloaderlegacy.utils.FileVerificationUtils.verifyFile;
 
-import com.kanzaji.catdownloaderlegacy.utils.loggers.LoggerCustom;
+import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
+import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;

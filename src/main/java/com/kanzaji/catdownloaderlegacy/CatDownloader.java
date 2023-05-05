@@ -5,7 +5,7 @@ import com.kanzaji.catdownloaderlegacy.jsons.MinecraftInstance;
 import com.kanzaji.catdownloaderlegacy.utils.*;
 
 import com.google.gson.Gson;
-import com.kanzaji.catdownloaderlegacy.utils.loggers.LoggerCustom;
+import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
 import java.nio.file.*;
 import java.util.Objects;

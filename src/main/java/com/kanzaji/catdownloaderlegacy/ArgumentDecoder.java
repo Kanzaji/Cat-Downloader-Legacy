@@ -1,7 +1,7 @@
-package com.kanzaji.catdownloaderlegacy.utils;
+package com.kanzaji.catdownloaderlegacy;
 
 import com.kanzaji.catdownloaderlegacy.jsons.Settings;
-import com.kanzaji.catdownloaderlegacy.utils.loggers.LoggerCustom;
+import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
