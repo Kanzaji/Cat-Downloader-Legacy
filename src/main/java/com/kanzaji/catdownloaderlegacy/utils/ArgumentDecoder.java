@@ -1,6 +1,7 @@
 package com.kanzaji.catdownloaderlegacy.utils;
 
 import com.kanzaji.catdownloaderlegacy.jsons.Settings;
+import com.kanzaji.catdownloaderlegacy.utils.loggers.LoggerCustom;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
@@ -9,7 +10,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 public class ArgumentDecoder {
-    private static final Logger logger = Logger.getInstance();
+    private static final LoggerCustom logger = new LoggerCustom("ARD");
     private static final class InstanceHolder {private static final ArgumentDecoder instance = new ArgumentDecoder();}
     private ArgumentDecoder() {}
     private String WorkingDirectory = "";

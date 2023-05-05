@@ -3,8 +3,8 @@ package com.kanzaji.catdownloaderlegacy;
 import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
 import com.kanzaji.catdownloaderlegacy.utils.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.utils.DownloadUtilities;
-import com.kanzaji.catdownloaderlegacy.utils.Logger;
 import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
+import com.kanzaji.catdownloaderlegacy.utils.loggers.LoggerCustom;
 
 import static com.kanzaji.catdownloaderlegacy.utils.FileVerificationUtils.verifyFile;
 
@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 public class SyncManager {
-    private static final Logger logger = Logger.getInstance();
+    private static final LoggerCustom logger = new LoggerCustom("SyncManager");
     private static final class InstanceHolder {private static final SyncManager instance = new SyncManager();}
     private SyncManager() {}
     private ExecutorService downloadExecutor;

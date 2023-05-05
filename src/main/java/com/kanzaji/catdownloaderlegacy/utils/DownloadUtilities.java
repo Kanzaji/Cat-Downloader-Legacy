@@ -2,6 +2,7 @@ package com.kanzaji.catdownloaderlegacy.utils;
 
 import static com.kanzaji.catdownloaderlegacy.utils.FileVerificationUtils.verifyFile;
 
+import com.kanzaji.catdownloaderlegacy.utils.loggers.LoggerCustom;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -15,7 +16,7 @@ import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
 
 public class DownloadUtilities {
-    private static final Logger logger = Logger.getInstance();
+    private static final LoggerCustom logger = new LoggerCustom("DownloadUtilities");
 
     /**
      * Used to download a file from URL without any verification. For that, use FileVerificationUtils#verifyFile.

@@ -3,6 +3,7 @@ package com.kanzaji.catdownloaderlegacy.utils;
 import com.kanzaji.catdownloaderlegacy.jsons.Settings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.kanzaji.catdownloaderlegacy.utils.loggers.LoggerCustom;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,7 +18,7 @@ import java.util.List;
  * @see SettingsManager#initSettings()
  */
 public class SettingsManager {
-    private static final Logger logger = Logger.getInstance();
+    private static final LoggerCustom logger = new LoggerCustom("SettingsManager");
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().setLenient().create();
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
     private static final Path SettingsFile = Path.of(ARD.getSettingsPath(),"Cat-Downloader-Legacy Settings.json5");

@@ -1,6 +1,6 @@
 package com.kanzaji.catdownloaderlegacy.jsons;
 
-import com.kanzaji.catdownloaderlegacy.utils.Logger;
+import com.kanzaji.catdownloaderlegacy.utils.loggers.LoggerCustom;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -30,7 +30,7 @@ public class Manifest {
         //TODO: Rework this.. again :kek:
         public ModFile getData(minecraft minecraftData) {
             ModFile ModFileData = new ModFile();
-            Logger logger = Logger.getInstance();
+            LoggerCustom logger = new LoggerCustom("Manifest");
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
             logger.log("Getting data for project with ID: " + projectID + " with file ID: " + fileID);
 

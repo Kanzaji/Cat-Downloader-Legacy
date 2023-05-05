@@ -5,6 +5,7 @@ import com.kanzaji.catdownloaderlegacy.jsons.MinecraftInstance;
 import com.kanzaji.catdownloaderlegacy.utils.*;
 
 import com.google.gson.Gson;
+import com.kanzaji.catdownloaderlegacy.utils.loggers.LoggerCustom;
 
 import java.nio.file.*;
 import java.util.Objects;
@@ -14,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 public final class CatDownloader {
     // Launch fresh instances of required utilities.
-    private static final Logger logger = Logger.getInstance();
+    private static final LoggerCustom logger = new LoggerCustom("Main");
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
 
     // Some other variables
@@ -162,9 +163,12 @@ public final class CatDownloader {
             SyncManager fm = SyncManager.getInstance();
             fm.passData(ModsFolder, ManifestData, ARD.getThreads());
             fm.runSync();
+            logger.log("Cat-Downloader Legacy is created and maintained by Kanzaji! Find the source and issue tracker here:");
+            logger.log("https://github.com/Kanzaji/Cat-Downloader-Legacy");
         } catch (Exception | Error e) {
             System.out.println("CatDownloader crashed! More details are in the log file at \"" + logger.getLogPath() + "\".");
             logger.logStackTrace("Something horrible happened...", e);
+            logger.error("For bug reports and help with issues, go to my github at: https://github.com/Kanzaji/Cat-Downloader-Legacy");
             System.exit(1);
         }
     }
