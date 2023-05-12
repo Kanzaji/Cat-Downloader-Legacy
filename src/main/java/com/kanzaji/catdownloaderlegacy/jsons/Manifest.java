@@ -1,9 +1,11 @@
 package com.kanzaji.catdownloaderlegacy.jsons;
 
+import com.kanzaji.catdownloaderlegacy.SyncManager;
 import com.kanzaji.catdownloaderlegacy.utils.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -40,13 +42,34 @@ public class Manifest {
                     data downloadData = gson.fromJson(in, data.class);
 
                     if (downloadData.download == null) {
-                        logger.warn("No data was received for file id " + fileID + " from project " + projectID + "! Falling back to latest version of the mod for minecraft version the modpack is on (" + minecraftData.version + ").");
+                        logger.warn("No data was received for file id " + fileID + " from project " + projectID + "! Falling back to latest version of the mod for minecraft version requested by the modpack (" + minecraftData.version + ").");
                         for (legacyFile file : downloadData.files) {
                             Set<String> asSet = new HashSet<>(Arrays.asList(file.versions));
                             if (!asSet.contains(minecraftData.version)) continue;
-                            // TODO: Fix this because this one below is pretty useless
-                            if (!asSet.contains((minecraftData.modLoaders[0].id.startsWith("forge")) ? "Forge" : (minecraftData.modLoaders[0].id.startsWith("fabric")) ? "Fabric" : "Quilt"))
-                                continue;
+                            if (!asSet.contains((minecraftData.modLoaders[0].id.startsWith("forge")) ? "Forge" : (minecraftData.modLoaders[0].id.startsWith("fabric")) ? "Fabric" : "Quilt")) {
+                                if ((
+                                    // Forge Checks
+                                    minecraftData.modLoaders[0].id.startsWith("forge")) ?
+                                    asSet.contains("Fabric") || asSet.contains("Quilt")
+                                    // Fabric Checks
+                                    : (minecraftData.modLoaders[0].id.startsWith("fabric")) ?
+                                    asSet.contains("Forge") || asSet.contains("Quilt")
+                                    // Quilt Checks
+                                    : asSet.contains("Forge")
+                                ) continue;
+                                String warning;
+                                if (minecraftData.modLoaders[0].id.startsWith("quilt") && asSet.contains("Fabric")) {
+                                    warning = "Latest version found is for Fabric and is missing Quilt mod loader tag. This might work, however there is no guarantee on that. If the mod causes a crash, this is the reason!" +
+                                              "\n     > CurseForge project link: " + ((downloadData.urls.curseforge == null) ? downloadData.urls.project : downloadData.urls.curseforge) +
+                                              "\n     > CurseForge file link: " + file.url;
+                                } else {
+                                    warning = "Latest version found doesn't have mod loader tag! If minecraft version is below 1.14, you can probably ignore this warning, if not, and the file causes a crash, make sure the correct mod loader version got installed!" +
+                                              "\n     > CurseForge link: " + ((downloadData.urls.curseforge == null) ? downloadData.urls.project : downloadData.urls.curseforge) +
+                                              "\n     > CurseForge file link: " + file.url;
+                                }
+                                logger.warn(warning);
+                                SyncManager.getInstance().DataGatheringWarnings.add(warning);
+                            }
                             ModFileData.downloadUrl = (
                                     "https://edge.forgecdn.net/files/" +
                                             String.valueOf(file.id).substring(0, 4) +
@@ -108,17 +131,25 @@ public class Manifest {
     }
 
     private static class data {
+        private urls urls;
         private legacyFile[] files;
         private downloadData download;
     }
 
     private static class downloadData {
+        private String url;
         private Number id;
         private String name;
         private Number filesize;
     }
 
+    private static class urls {
+        private String curseforge;
+        private String project;
+    }
+
     private static class legacyFile {
+        private String url;
         private Number id;
         private String name;
         private Number filesize;
