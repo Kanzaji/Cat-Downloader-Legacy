@@ -163,7 +163,7 @@ public final class CatDownloader {
             SyncManager fm = SyncManager.getInstance();
             fm.passData(ModsFolder, ManifestData, ARD.getThreads());
             fm.runSync();
-            logger.log("Cat-Downloader Legacy is created and maintained by Kanzaji! Find the source and issue tracker here:");
+            logger.log("Cat-Downloader Legacy is created and maintained by Kanzaji! Find the source code and issue tracker here:");
             logger.log("https://github.com/Kanzaji/Cat-Downloader-Legacy");
         } catch (Exception | Error e) {
             System.out.println("CatDownloader crashed! More details are in the log file at \"" + logger.getLogPath() + "\".");
