@@ -39,6 +39,7 @@ public class SyncManager {
     private final List<String> FailedRemovals = new LinkedList<>();
     private final List<String> IgnoredVerification = new LinkedList<>();
     private final List<String> IgnoredRemoval = new LinkedList<>();
+    public final List<String> DataGatheringWarnings = new LinkedList<>();
 
     /**
      * Used to get a reference to an instance of the SyncManager.
@@ -68,8 +69,7 @@ public class SyncManager {
      * @throws InterruptedException when Executor is interrupted.
      * @throws RuntimeException when downloading process takes over a day.
      */
-    public void runSync() throws NullPointerException, IOException, InterruptedException, RuntimeException{
-        System.out.println(logger.hashCode());
+    public void runSync() throws NullPointerException, IOException, InterruptedException, RuntimeException {
         long StartingTime = System.currentTimeMillis();
         if (this.ModFolderPath == null || this.ManifestData == null || this.downloadExecutor == null || this.verificationExecutor == null) {
             if (this.ModFolderPath == null) {
@@ -282,7 +282,16 @@ public class SyncManager {
             System.out.println("\nFor more details, check your configuration file or the log at:\n\"" + logger.getLogPath() + "\"");
             System.out.println("---------------------------------------------------------------------");
         }
-
+        if (this.DataGatheringWarnings.size() > 0) {
+            logger.warn("Warnings were found while doing synchronisation of the profile!");
+            System.out.println("Warnings were found while doing synchronisation of the profile!");
+            System.out.println("Warnings present: " + DataGatheringWarnings.size());
+            for (String Warning : DataGatheringWarnings) {
+                logger.warn(Warning);
+            }
+            System.out.println("For more details, check log file at " + logger.getLogPath());
+            System.out.println("---------------------------------------------------------------------");
+        }
         if (
                 this.FailedRemovals.size() > 0 ||
                 this.FailedDownloads.size() > 0 ||
@@ -317,7 +326,7 @@ public class SyncManager {
             System.out.println("For more details, check log file at " + logger.getLogPath());
             logger.error("Files that failed verification with an exception:");
             if (this.FailedVerifications.size() > 0) {
-                for (String FileName:this.FailedVerifications) {
+                for (String FileName : this.FailedVerifications) {
                     logger.error("  " + FileName);
                 }
             } else {
@@ -325,7 +334,7 @@ public class SyncManager {
             }
             logger.error("Files that weren't possible to remove:");
             if (this.FailedRemovals.size() > 0) {
-                for (String FileName:this.FailedRemovals) {
+                for (String FileName : this.FailedRemovals) {
                     logger.error("  " + FileName);
                 }
             } else {
@@ -333,7 +342,7 @@ public class SyncManager {
             }
             logger.error("Files that failed to Download:");
             if (this.FailedDownloads.size() > 0) {
-                for (String FileName:this.FailedDownloads) {
+                for (String FileName : this.FailedDownloads) {
                     logger.error("  " + FileName);
                 }
             } else {
