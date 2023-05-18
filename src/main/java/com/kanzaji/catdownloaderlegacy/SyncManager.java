@@ -1,7 +1,7 @@
 package com.kanzaji.catdownloaderlegacy;
 
 import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
-import com.kanzaji.catdownloaderlegacy.utils.DownloadUtilities;
+import com.kanzaji.catdownloaderlegacy.utils.DownloadUtils;
 import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
@@ -109,16 +109,16 @@ public class SyncManager {
                 logger.log(FileName + " not found! Added to download queue.");
                 DownloadQueue += 1;
                 this.DownloadQueueL.add(() -> {
-                    DownloadUtilities.download(ModFile, mod.downloadUrl, FileName);
+                    DownloadUtils.download(ModFile, mod.downloadUrl, FileName);
                     try {
                         logger.log("Verifying " + FileName + " after download...");
                         if (!verifyFile(ModFile, mod.fileSize, mod.downloadUrl)) {
                             logger.warn("Mod " + FileName + " appears to have not downloaded correctly! Re-downloading...");
-                            if(DownloadUtilities.reDownload(ModFile, mod.downloadUrl, FileName, mod.fileSize)) {
+                            if(DownloadUtils.reDownload(ModFile, mod.downloadUrl, FileName, mod.fileSize)) {
                                 logger.log("Re-download of " + FileName + " was successful!");
                                 this.DownloadSuccess += 1;
                             } else {
-                                logger.error("Re-download of " + FileName + " after " + ArgumentDecoder.getInstance().getDownloadAttempts() + "attempts failed!");
+                                logger.error("Re-download of " + FileName + " after " + ArgumentDecoder.getInstance().getDownloadAttempts() + " attempts failed!");
                                 this.FailedDownloads.add(FileName);
                             }
                         } else {
@@ -126,7 +126,7 @@ public class SyncManager {
                             this.DownloadSuccess += 1;
                         }
                     } catch (Exception e) {
-                        logger.logStackTrace("Exception thrown while re-downloading " + FileName + " !", e);
+                        logger.logStackTrace("Exception thrown while re-downloading " + FileName + "!", e);
                         this.FailedDownloads.add(FileName);
                     }
                 });
@@ -141,15 +141,15 @@ public class SyncManager {
                             this.DownloadQueueL.add(() -> {
                                 logger.log("Re-downloading " + FileName + " ...");
                                 try {
-                                    if(DownloadUtilities.reDownload(ModFile, mod.downloadUrl, FileName, mod.fileSize)) {
+                                    if(DownloadUtils.reDownload(ModFile, mod.downloadUrl, FileName, mod.fileSize)) {
                                         logger.log("Re-download of " + FileName + " was successful!");
                                         this.DownloadSuccess += 1;
                                     } else {
-                                        logger.error("Re-download of " + FileName + " after " + ArgumentDecoder.getInstance().getDownloadAttempts() + "attempts failed!");
+                                        logger.error("Re-download of " + FileName + " after " + ArgumentDecoder.getInstance().getDownloadAttempts() + " attempts failed!");
                                         this.FailedDownloads.add(FileName);
                                     }
                                 } catch (Exception e) {
-                                    logger.logStackTrace("Exception thrown while re-downloading " + FileName + " !", e);
+                                    logger.logStackTrace("Exception thrown while re-downloading " + FileName + "!", e);
                                     this.FailedDownloads.add(FileName);
                                 }
                             });
