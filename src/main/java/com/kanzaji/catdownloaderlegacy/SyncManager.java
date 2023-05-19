@@ -163,8 +163,13 @@ public class SyncManager {
                 });
             }
         }
-
-        System.out.println("Found " + this.ModFileNames.size() + ((this.ModFileNames.size() == 1)? " mod":" mods") + ((this.VerificationQueueL.size() > 0)? ", Verifying installation...": "!"));
+        //TODO: Finish rework of this prompt (I do much and much more to do stuff that I don't finish I'm great)
+        String msg =
+        ((this.VerificationQueueL.size() > 0)?
+            "Found " + this.VerificationQueueL.size() + ((this.VerificationQueueL.size() == 1)? " mod": "mods") + " on the drive. Verifying installation..." :
+            "No installed mods found."
+        );
+        System.out.println(msg);
         logger.log("Found " + this.ModFileNames.size() + ((this.ModFileNames.size() == 1)? " mod":" mods") + ((this.VerificationQueueL.size() > 0)? ", Verifying installation...": "!"));
 
         for (Runnable Task: this.VerificationQueueL) { this.verificationExecutor.submit(Task); }

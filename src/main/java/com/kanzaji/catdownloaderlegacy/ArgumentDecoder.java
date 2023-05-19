@@ -287,6 +287,8 @@ public class ArgumentDecoder {
 
     // Just a spam of Get methods. nothing spectacular to see here.
     public String getMode() {return this.Mode;}
+    public boolean isPackMode() {return Objects.equals(this.Mode, "pack");}
+    public boolean isInstanceMode() {return !isPackMode();}
     public String getWorkingDir() {return this.WorkingDirectory;}
     public String getSettingsPath() {return this.SettingsPath;}
     public String getLogPath() {return this.LogPath;}
