@@ -159,8 +159,10 @@ public class SettingsManager {
         logger.log("Adding auto-generation note...");
         Files.writeString(
             SettingsFile,
-        "\n// This file was auto-generated with use of Arguments! If you want to know what things in here do, delete this file and run the app without any arguments!\n" +
-            "// You can also check out my github (https://github.com/Kanzaji/Cat-Downloader-Legacy) for more details.",
+                """
+
+                        // This file was auto-generated with use of Arguments! If you want to know what things in here do, delete this file and run the app without any arguments!
+                        // You can also check out my github (https://github.com/Kanzaji/Cat-Downloader-Legacy) for more details.""",
             StandardOpenOption.APPEND
         );
         logger.log("Note added!");
