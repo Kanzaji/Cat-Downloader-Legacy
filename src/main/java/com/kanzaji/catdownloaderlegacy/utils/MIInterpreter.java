@@ -4,9 +4,10 @@ import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
 import com.kanzaji.catdownloaderlegacy.jsons.MinecraftInstance;
 
 import com.google.gson.Gson;
+import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
 public class MIInterpreter {
-    private static final Logger logger = Logger.getInstance();
+    private static final LoggerCustom logger = new LoggerCustom("MIInterpreter");
     public static Manifest decode(MinecraftInstance MinecraftInstanceFile) throws UnsupportedOperationException {
         Gson gson = new Gson();
         Manifest manifest = new Manifest();

@@ -1,5 +1,8 @@
 package com.kanzaji.catdownloaderlegacy.utils;
 
+import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
+import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -10,7 +13,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 public class FileVerificationUtils {
-    private static final Logger logger = Logger.getInstance();
+    private static final LoggerCustom logger = new LoggerCustom("FileVerUtils");
 
     /**
      * Used to verify integrity of the file with use of Length and Hash verification!

@@ -1,5 +1,8 @@
-package com.kanzaji.catdownloaderlegacy.utils;
+package com.kanzaji.catdownloaderlegacy.loggers;
 
+import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
+import com.kanzaji.catdownloaderlegacy.utils.DateUtils;
+import com.kanzaji.catdownloaderlegacy.utils.FileUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.*;
@@ -12,7 +15,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
-public class Logger {
+public class Logger implements ILogger {
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
     private static final class InstanceHolder {private static final Logger instance = new Logger();}
     private Logger() {}
@@ -184,7 +187,6 @@ public class Logger {
 
     /**
      * Used to disable Logger and remove log file.
-     * Logger *can not* be re-activated.
      * @throws IOException when log deletion failed.
      */
     public void exit() throws IOException {
@@ -192,54 +194,6 @@ public class Logger {
         this.disabled = true;
         Files.deleteIfExists(this.LogFile);
         this.LogFile = null;
-    }
-
-    /**
-     * Logs a message to a log file.
-     * @param msg String message to log.
-     */
-    public void log(String msg) {
-        this.logType(msg, 0);
-    }
-
-    /**
-     * Logs a message with level WARN to a log file.
-     * @param msg String message to log as WARN.
-     */
-    public void warn(String msg) {
-        this.logType(msg, 1);
-    }
-
-    /**
-     * Logs a message with level ERROR to a log file.
-     * @param msg String message to log as ERROR.
-     */
-    public void error(String msg) {
-        this.logType(msg, 2);
-    }
-
-    /**
-     * Logs a message with specified level to a log file.<br>
-     * Available levels:
-     * <ul>
-     *     <li>0 | LOG</li>
-     *     <li>1 | WARN</li>
-     *     <li>2 | ERROR</li>
-     * </ul>
-     * @param msg String message to log with specified level.
-     * @param type Int between 0 and 2 specifying selected level. Out of range defaults to 0.
-     */
-    public void logType(String msg, int type) {
-        this.log(msg, type, null);
-    }
-
-    /**
-     * Logs a message with ERROR level and Stacktrace of Exception into a log.
-     * @param msg String message attached to an Exception.
-     * @param throwable Exception to log.
-     */
-    public void logStackTrace(String msg, Throwable throwable) {
-        this.logCustom(msg, 2, throwable);
     }
 
     /**
@@ -255,26 +209,10 @@ public class Logger {
      * @param throwable Exception to log. (Nullable)
      */
     public void logCustom(String msg, int type, @Nullable Throwable throwable) {
-        this.log(msg, type, throwable);
-    }
-
-    /**
-     * Integral Method used to log messages and exceptions to a log file on different levels.
-     * Available levels:
-     * <ul>
-     *     <li>0 | LOG</li>
-     *     <li>1 | WARN</li>
-     *     <li>2 | ERROR</li>
-     * </ul>
-     * @param msg String message
-     * @param type Int level (Nullable)
-     * @param error Exception (Nullable)
-     */
-    private void log(String msg, int type,@Nullable Throwable error) {
         if (disabled) {
             System.out.println(msg);
-            if (error != null) {
-                error.printStackTrace();
+            if (throwable != null) {
+                throwable.printStackTrace();
             }
             return;
         }
@@ -286,13 +224,13 @@ public class Logger {
 
         try {
             Files.writeString(this.LogFile, "[" + new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new Date()) + "] [" + Type + "] " + msg + "\n", StandardOpenOption.APPEND);
-            if (error != null) {
-                StackTraceElement[] stackTraceList = error.getStackTrace();
+            if (throwable != null) {
+                StackTraceElement[] stackTraceList = throwable.getStackTrace();
                 StringBuilder stackTrace = new StringBuilder();
                 for (StackTraceElement stackTraceElement : stackTraceList) {
                     stackTrace.append("    at ").append(stackTraceElement).append("\n");
                 }
-                Files.writeString(this.LogFile, "[" + new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new Date()) + "] [" + Type + "] " + error + "\n" + stackTrace + "\n", StandardOpenOption.APPEND);
+                Files.writeString(this.LogFile, "[" + new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new Date()) + "] [" + Type + "] " + throwable + "\n" + stackTrace + "\n", StandardOpenOption.APPEND);
             }
         } catch (NoSuchFileException e) {
             this.init();

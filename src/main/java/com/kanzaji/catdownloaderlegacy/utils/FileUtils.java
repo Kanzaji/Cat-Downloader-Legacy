@@ -1,5 +1,7 @@
 package com.kanzaji.catdownloaderlegacy.utils;
 
+import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,7 +11,7 @@ import java.util.MissingResourceException;
 import java.util.zip.GZIPOutputStream;
 
 public class FileUtils {
-    private static final Logger logger = Logger.getInstance();
+    private static final LoggerCustom logger = new LoggerCustom("FileUtils");
     public static InputStream getInternalFile(String url) {
         InputStream file = FileUtils.class.getResourceAsStream("/assets/" + url);
         if (file == null) {

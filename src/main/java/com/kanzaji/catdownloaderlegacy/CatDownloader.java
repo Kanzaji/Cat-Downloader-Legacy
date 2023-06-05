@@ -5,6 +5,7 @@ import com.kanzaji.catdownloaderlegacy.jsons.MinecraftInstance;
 import com.kanzaji.catdownloaderlegacy.utils.*;
 
 import com.google.gson.Gson;
+import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
 import java.nio.file.*;
 import java.util.Objects;
@@ -14,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 public final class CatDownloader {
     // Launch fresh instances of required utilities.
-    private static final Logger logger = Logger.getInstance();
+    private static final LoggerCustom logger = new LoggerCustom("Main");
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
 
     // Some other variables
@@ -58,35 +59,49 @@ public final class CatDownloader {
             System.out.println("Running in " + dir.toAbsolutePath());
 
             // Checking Program mode and getting required Manifest File.
-            if (Objects.equals(ARD.getMode(), "pack")) {
+            if (ARD.isPackMode()) {
                 manifestFile = Path.of(dir.toAbsolutePath().toString(), "manifest.json");
             } else {
                 manifestFile = Path.of(dir.toAbsolutePath().toString(), "minecraftinstance.json");
             }
 
             if (!manifestFile.toFile().exists()) {
-                System.out.println("No Manifest file exists in this directory, aborting!");
-                logger.error("Manifest file not found! Make sure you are running in correct mode.");
+                System.out.println("Manifest file not found!");
+                logger.error("Manifest file not found!");
+                String msg = null;
+                if (ARD.isPackMode()) {
+                    if (Files.exists(Path.of(dir.toAbsolutePath().toString(), "minecraftinstance.json"))) {
+                        msg = "It appears `minecraftinstance.json` exists in the current working directory, did you mean to run the app in \"Instance\" mode?";
+                    }
+                } else {
+                    if (Files.exists(Path.of(dir.toAbsolutePath().toString(), "manifest.json"))) {
+                        msg = "It appears `manifest.json` exists in the current working directory, did you mean to run the app in \"Pack\" mode?";
+                    }
+                }
+                if (msg != null) {
+                    System.out.println(msg);
+                    logger.error(msg);
+                }
                 System.exit(1);
             }
 
             // Parsing data from Manifest file.
             Gson gson = new Gson();
             logger.log("Reading data from Manifest file...");
-            if (Objects.equals(ARD.getMode(), "instance")) {
+            if (ARD.isPackMode()) {
+                Legacy = true;
+                ManifestData = gson.fromJson(Files.readString(manifestFile),Manifest.class);
+            } else {
                 // Translating from MinecraftInstance format to Manifest format.
                 MinecraftInstance MI = gson.fromJson(Files.readString(manifestFile),MinecraftInstance.class);
                 ManifestData = MIInterpreter.decode(MI);
-            } else {
-                Legacy = true;
-                ManifestData = gson.fromJson(Files.readString(manifestFile),Manifest.class);
             }
 
             logger.log("Data fetched. Found " + ManifestData.files.length + " Mods, on version " + ManifestData.minecraft.version + " " + ManifestData.minecraft.modLoaders[0].id);
 
             // Checking if Manifest contains modpack name.
             if (ManifestData.name == null) {
-                System.out.println("manifest.json doesn't have modpack name!");
+                System.out.println("Manifest file doesn't have an instance name!");
                 logger.warn("The name of the instance is missing!");
             } else {
                 System.out.println("Installing modpack: " + ManifestData.name + " " + ManifestData.version);
@@ -100,6 +115,25 @@ public final class CatDownloader {
                 System.out.println("That requires ModLoader: " + ManifestData.minecraft.version + " " + ManifestData.minecraft.modLoaders[0].id);
                 logger.log("Mod Loader: " + ManifestData.minecraft.modLoaders[0].id);
             }
+
+            System.out.println("---------------------------------------------------------------------");
+
+            // Checking if /mods directory exists and can be used
+            Path ModsFolder = Path.of(dir.toAbsolutePath().toString(), "mods");
+            if(ModsFolder.toFile().exists() && !ModsFolder.toFile().isDirectory()) {
+                System.out.println("Folder \"mods\" exists, but it is a file!");
+                logger.error("Folder \"mods\" exists, but it is a file!");
+                System.exit(1);
+            }
+
+            if(!ModsFolder.toFile().exists()) {
+                logger.log("Folder \"mods\" is missing. Creating...");
+                Files.createDirectory(ModsFolder);
+                logger.log("Created \"mods\" folder in working directory. Path: " + dir.toAbsolutePath() + "\\mods");
+            } else {
+                logger.log("Found \"mods\" folder in working directory. Path: " + dir.toAbsolutePath() + "\\mods");
+            }
+
             // Checking if Manifest has any mods.
             if (ManifestData.files == null || ManifestData.files.length == 0) {
                 System.out.println("Manifest file doesn't have any mods in it!");
@@ -107,15 +141,13 @@ public final class CatDownloader {
                 System.exit(0);
             }
 
-            System.out.println("---------------------------------------------------------------------");
-
-            System.out.println("Found " + ManifestData.files.length + " mods!");
+            System.out.println("Found " + ManifestData.files.length + " mods in Manifest file!");
             // If in Legacy mode, gather data from CFWidget API required for downloads. (THIS IS REALLY UNSTABLE).
             if (Legacy) {
                 logger.log("Getting data for ids specified in the Manifest file...");
                 System.out.println("Gathering Data about mods... This may take a while.");
                 if (ARD.isExperimental()) {
-                    logger.warn("EXPERIMENTAL MODE TURNED ON. USE ON YOUR OWN RISK!");
+                    logger.warn("EXPERIMENTAL MODE TURNED ON. USE AT YOUR OWN RISK!");
                     ExecutorService Executor = Executors.newFixedThreadPool(ARD.getThreads());
                     int Index = 0;
                     for (Manifest.ModFile mod : ManifestData.files) {
@@ -142,29 +174,16 @@ public final class CatDownloader {
                 System.out.println("Finished gathering data!");
             }
 
-            // Checking if /mods directory exists and can be used
-            Path ModsFolder = Path.of(dir.toAbsolutePath().toString(), "mods");
-            if(ModsFolder.toFile().exists() && !ModsFolder.toFile().isDirectory()) {
-                System.out.println("Folder \"mods\" exists, but it is a file!");
-                logger.error("Folder \"mods\" exists, but it is a file!");
-                System.exit(1);
-            }
-
-            if(!ModsFolder.toFile().exists()) {
-                logger.log("Folder \"mods\" is missing. Creating...");
-                Files.createDirectory(ModsFolder);
-                logger.log("Created \"mods\" folder in working directory. Path: " + dir.toAbsolutePath() + "\\mods");
-            } else {
-                logger.log("Found \"mods\" folder in working directory. Path: " + dir.toAbsolutePath() + "\\mods");
-            }
-
             // Getting FileManager ready and starting sync of the profile.
             SyncManager fm = SyncManager.getInstance();
             fm.passData(ModsFolder, ManifestData, ARD.getThreads());
             fm.runSync();
+            logger.log("Cat-Downloader Legacy is created and maintained by Kanzaji! Find the source code and issue tracker here:");
+            logger.log("https://github.com/Kanzaji/Cat-Downloader-Legacy");
         } catch (Exception | Error e) {
             System.out.println("CatDownloader crashed! More details are in the log file at \"" + logger.getLogPath() + "\".");
             logger.logStackTrace("Something horrible happened...", e);
+            logger.error("For bug reports and help with issues, go to my github at: https://github.com/Kanzaji/Cat-Downloader-Legacy");
             System.exit(1);
         }
     }

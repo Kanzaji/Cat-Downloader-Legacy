@@ -1,14 +1,15 @@
 package com.kanzaji.catdownloaderlegacy.jsons;
 
-import com.kanzaji.catdownloaderlegacy.SyncManager;
-import com.kanzaji.catdownloaderlegacy.utils.Logger;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.kanzaji.catdownloaderlegacy.SyncManager;
+import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
+import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -31,19 +32,20 @@ public class Manifest {
         //TODO: Rework this.. again :kek:
         public ModFile getData(minecraft minecraftData) {
             ModFile ModFileData = new ModFile();
-            Logger logger = Logger.getInstance();
+            LoggerCustom logger = new LoggerCustom("Manifest");
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
             logger.log("Getting data for project with ID: " + projectID + " with file ID: " + fileID);
 
             try {
-                URL url = new URL("https://api.cfwidget.com/" + projectID + "?&version=" + fileID);
-                try (BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
+                HttpsURLConnection url = (HttpsURLConnection) new URL("https://api.cfwidget.com/" + projectID + "?&version=" + fileID).openConnection();
+                try (BufferedReader in = new BufferedReader(new InputStreamReader(url.getInputStream(), StandardCharsets.UTF_8))) {
                     data downloadData = gson.fromJson(in, data.class);
-
                     if (downloadData.download == null) {
                         logger.warn("No data was received for file id " + fileID + " from project " + projectID + "! Falling back to latest version of the mod for minecraft version requested by the modpack (" + minecraftData.version + ").");
                         for (legacyFile file : downloadData.files) {
                             Set<String> asSet = new HashSet<>(Arrays.asList(file.versions));
+
                             if (!asSet.contains(minecraftData.version)) continue;
                             if (!asSet.contains((minecraftData.modLoaders[0].id.startsWith("forge")) ? "Forge" : (minecraftData.modLoaders[0].id.startsWith("fabric")) ? "Fabric" : "Quilt")) {
                                 if ((
@@ -56,6 +58,7 @@ public class Manifest {
                                     // Quilt Checks
                                     : asSet.contains("Forge")
                                 ) continue;
+
                                 String warning;
                                 if (minecraftData.modLoaders[0].id.startsWith("quilt") && asSet.contains("Fabric")) {
                                     warning = "Latest version found is for Fabric and is missing Quilt mod loader tag. This might work, however there is no guarantee on that. If the mod causes a crash, this is the reason!" +
@@ -66,9 +69,11 @@ public class Manifest {
                                               "\n     > CurseForge link: " + ((downloadData.urls.curseforge == null) ? downloadData.urls.project : downloadData.urls.curseforge) +
                                               "\n     > CurseForge file link: " + file.url;
                                 }
+
                                 logger.warn(warning);
                                 SyncManager.getInstance().DataGatheringWarnings.add(warning);
                             }
+
                             ModFileData.downloadUrl = (
                                     "https://edge.forgecdn.net/files/" +
                                             String.valueOf(file.id).substring(0, 4) +
@@ -106,6 +111,16 @@ public class Manifest {
                     ).replaceAll(" ", "%20");
 
                     ModFileData.fileSize = downloadData.download.filesize;
+
+                } catch (Exception e) {
+                    //TODO: Finish response code handling!
+                    int responseCode = url.getResponseCode();
+                    if (
+                            Objects.equals(responseCode, 500) ||
+                            Objects.equals(responseCode, 202)
+                    ) {
+                        logger.warn("APi returned response code " + responseCode + ", trying requesting data again in few seconds...");
+                    }
                 }
             } catch (Exception e) {
                 logger.logStackTrace("Failed to get Data for project with ID " + projectID, e);
