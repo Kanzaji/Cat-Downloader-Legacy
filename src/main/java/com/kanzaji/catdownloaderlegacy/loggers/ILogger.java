@@ -50,6 +50,15 @@ interface ILogger {
     }
 
     /**
+     * Logs a message with level INFO to a log file, additionally printing the message to the console.
+     * @param msg String message to log as INFO.
+     */
+    default void print(String msg) {
+        this.logType(msg, 0);
+        System.out.println(msg);
+    }
+
+    /**
      * Logs a message with specified level to a log file.<br>
      * Available levels:
      * <ul>

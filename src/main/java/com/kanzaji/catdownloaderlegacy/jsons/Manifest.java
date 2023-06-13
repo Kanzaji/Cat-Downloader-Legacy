@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
@@ -18,8 +19,9 @@ import java.util.Set;
 
 public class Manifest {
     public String version;
-    public ModFile[] files;
     public String name;
+    public String author;
+    public ModFile[] files;
     public minecraft minecraft;
 
     public static class ModFile {

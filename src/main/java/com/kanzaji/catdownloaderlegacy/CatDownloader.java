@@ -22,7 +22,6 @@ public final class CatDownloader {
     public static final String VERSION = "1.1";
     public static Path manifestFile;
     private static Manifest ManifestData = new Manifest();
-    private static boolean Legacy = false;
 
     public static void main(String[] args) {
         // Initialize Logger.
@@ -89,7 +88,6 @@ public final class CatDownloader {
             Gson gson = new Gson();
             logger.log("Reading data from Manifest file...");
             if (ARD.isPackMode()) {
-                Legacy = true;
                 ManifestData = gson.fromJson(Files.readString(manifestFile),Manifest.class);
             } else {
                 // Translating from MinecraftInstance format to Manifest format.
@@ -104,15 +102,15 @@ public final class CatDownloader {
                 System.out.println("Manifest file doesn't have an instance name!");
                 logger.warn("The name of the instance is missing!");
             } else {
-                System.out.println("Installing modpack: " + ManifestData.name + " " + ManifestData.version);
+                System.out.println("Installing modpack " + ManifestData.name + " " + ManifestData.version + ((Objects.equals(ManifestData.author, "") || Objects.equals(ManifestData.author, " "))? "": " created by " + ManifestData.author));
                 logger.log("Instance name: " + ManifestData.name);
             }
             // Checking if Manifest file contains required modLoader.
             if (ManifestData.minecraft.modLoaders[0].id == null) {
-                System.out.println("Manifest file doesn't have any mod loader specified! Is this vanilla?");
+                System.out.println("For Minecraft " + ManifestData.minecraft.version + " Vanilla");
                 logger.warn("This instance seems to be vanilla? No mod loader found!");
             } else {
-                System.out.println("That requires ModLoader: " + ManifestData.minecraft.version + " " + ManifestData.minecraft.modLoaders[0].id);
+                System.out.println("For Minecraft " + ManifestData.minecraft.version + " using " + ManifestData.minecraft.modLoaders[0].id);
                 logger.log("Mod Loader: " + ManifestData.minecraft.modLoaders[0].id);
             }
 
@@ -136,45 +134,48 @@ public final class CatDownloader {
 
             // Checking if Manifest has any mods.
             if (ManifestData.files == null || ManifestData.files.length == 0) {
-                System.out.println("Manifest file doesn't have any mods in it!");
+                System.out.println("Manifest file doesn't have any mods in it. Is this vanilla?");
                 logger.error("Manifest files does not have any mods in it. Is this intentional?");
                 System.exit(0);
             }
 
             System.out.println("Found " + ManifestData.files.length + " mods in Manifest file!");
             // If in Legacy mode, gather data from CFWidget API required for downloads. (THIS IS REALLY UNSTABLE).
-            if (Legacy) {
+            if (ARD.isPackMode()) {
                 logger.log("Getting data for ids specified in the Manifest file...");
                 System.out.println("Gathering Data about mods... This may take a while.");
+                ExecutorService Executor;
                 if (ARD.isExperimental()) {
-                    logger.warn("EXPERIMENTAL MODE TURNED ON. USE AT YOUR OWN RISK!");
-                    ExecutorService Executor = Executors.newFixedThreadPool(ARD.getThreads());
-                    int Index = 0;
-                    for (Manifest.ModFile mod : ManifestData.files) {
-                        int finalIndex = Index;
-                        Executor.submit(() -> {
-                            ManifestData.files[finalIndex] = mod.getData(ManifestData.minecraft);
-                        });
-                        Index += 1;
-                    }
-                    Executor.shutdown();
-                    if (!Executor.awaitTermination(1, TimeUnit.DAYS)) {
-                        logger.error("Data gathering takes over a day! This for sure isn't right???");
-                        System.out.println("Data gathering interrupted due to taking over a day! This for sure isn't right???");
-                        throw new RuntimeException("Data gathering is taking over a day! Something is horribly wrong.");
-                    }
+                    logger.warn("Experimental mode turned on! This may cause unexpected behaviour and issues with data gathering process.");
+                    logger.warn("Use at your own risk!");
+                    Executor = Executors.newFixedThreadPool(ARD.getThreads());
                 } else {
-                    int Index = 0;
-                    for (Manifest.ModFile mod : ManifestData.files) {
-                        ManifestData.files[Index] = mod.getData(ManifestData.minecraft);
-                        Index += 1;
-                    }
+                    // I think improving the file speed by like, the factor of 2 is good enough here, Executor with 2 threads should do the job.
+                    Executor = Executors.newFixedThreadPool(2);
                 }
+
+                int Index = 0;
+                for (Manifest.ModFile mod : ManifestData.files) {
+                    int finalIndex = Index;
+                    Executor.submit(() -> {
+                        ManifestData.files[finalIndex] = mod.getData(ManifestData.minecraft);
+                    });
+                    Index += 1;
+                }
+
+                Executor.shutdown();
+                if (!Executor.awaitTermination(1, TimeUnit.DAYS)) {
+                    logger.error("Data gathering takes over a day! This for sure isn't right???");
+                    System.out.println("Data gathering interrupted due to taking over a day! This for sure isn't right???");
+                    throw new RuntimeException("Data gathering is taking over a day! Something is horribly wrong.");
+                }
+
                 logger.log("Finished gathering data!");
                 System.out.println("Finished gathering data!");
             }
 
             // Getting FileManager ready and starting sync of the profile.
+            // This shouldn't be a god-damn singleton, however I am too lazy to change it now and I will fix that on the Launcher version.
             SyncManager fm = SyncManager.getInstance();
             fm.passData(ModsFolder, ManifestData, ARD.getThreads());
             fm.runSync();
