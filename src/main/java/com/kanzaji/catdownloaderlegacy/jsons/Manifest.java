@@ -30,7 +30,7 @@ public class Manifest {
         public Boolean required;
         public Number fileSize;
 
-        //TODO: Rework this.. again :kek: Also add notes! Because this is the only shit I didn't document.
+        //TODO: Rework this.. again :kek: Also add notes! Because this is the only stuff I didn't document.
 
         public ModFile getData(minecraft minecraftData) {
             return getData(minecraftData, false);
