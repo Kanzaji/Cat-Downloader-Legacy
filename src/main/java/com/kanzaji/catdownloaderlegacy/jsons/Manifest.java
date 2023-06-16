@@ -4,14 +4,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.kanzaji.catdownloaderlegacy.SyncManager;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+import com.kanzaji.catdownloaderlegacy.utils.Updater;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
@@ -31,8 +30,13 @@ public class Manifest {
         public Boolean required;
         public Number fileSize;
 
-        //TODO: Rework this.. again :kek:
+        //TODO: Rework this.. again :kek: Also add notes! Because this is the only shit I didn't document.
+
         public ModFile getData(minecraft minecraftData) {
+            return getData(minecraftData, false);
+        }
+
+        public ModFile getData(minecraft minecraftData, boolean error403) {
             ModFile ModFileData = new ModFile();
             LoggerCustom logger = new LoggerCustom("Manifest");
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -40,15 +44,33 @@ public class Manifest {
             logger.log("Getting data for project with ID: " + projectID + " with file ID: " + fileID);
 
             try {
-                HttpsURLConnection url = (HttpsURLConnection) new URL("https://api.cfwidget.com/" + projectID + "?&version=" + fileID).openConnection();
+                HttpsURLConnection url;
+
+                if (error403) {
+                    url = (HttpsURLConnection) new URL("https://api.cfwidget.com/" + projectID).openConnection();
+                    url.setUseCaches(false);
+                    url.setRequestProperty("Cache-Control", "no-store");
+                } else {
+                    url = (HttpsURLConnection) new URL("https://api.cfwidget.com/" + projectID + "?&version=" + fileID).openConnection();
+                }
+
                 try (BufferedReader in = new BufferedReader(new InputStreamReader(url.getInputStream(), StandardCharsets.UTF_8))) {
                     data downloadData = gson.fromJson(in, data.class);
+
                     if (downloadData.download == null) {
+                        //TODO: Create ANOTHER Alternate method if downloadData is null.
+                        // Appears CFWidget API doesn't support additional files, and just maybe, hidden files can also be accessed by the CF Site.
+                        // Plan is simple, trying to connect with the PROJECT URL to CF Site, and extract what I need from the HTML code. If that doesn't work, fallback to the current solution.
+                        // OKAY This is not going to happen. CF Server doesn't want to send the data I need, and (at least for this project) I am not going to implement full blown web-browser here.
+                        // Note is staying however for future, and because I will be importing this project to the one I am going to actually implement a web browser.
+
                         logger.warn("No data was received for file id " + fileID + " from project " + projectID + "! Falling back to latest version of the mod for minecraft version requested by the modpack (" + minecraftData.version + ").");
+
                         for (legacyFile file : downloadData.files) {
                             Set<String> asSet = new HashSet<>(Arrays.asList(file.versions));
 
                             if (!asSet.contains(minecraftData.version)) continue;
+
                             if (!asSet.contains((minecraftData.modLoaders[0].id.startsWith("forge")) ? "Forge" : (minecraftData.modLoaders[0].id.startsWith("fabric")) ? "Fabric" : "Quilt")) {
                                 if ((
                                     // Forge Checks
@@ -61,19 +83,21 @@ public class Manifest {
                                     : asSet.contains("Forge")
                                 ) continue;
 
-                                String warning;
+                                String warning = null;
                                 if (minecraftData.modLoaders[0].id.startsWith("quilt") && asSet.contains("Fabric")) {
                                     warning = "Latest version found is for Fabric and is missing Quilt mod loader tag. This might work, however there is no guarantee on that. If the mod causes a crash, this is the reason!" +
                                               "\n     > CurseForge project link: " + ((downloadData.urls.curseforge == null) ? downloadData.urls.project : downloadData.urls.curseforge) +
                                               "\n     > CurseForge file link: " + file.url;
-                                } else {
-                                    warning = "Latest version found doesn't have mod loader tag! If minecraft version is below 1.14, you can probably ignore this warning, if not, and the file causes a crash, make sure the correct mod loader version got installed!" +
+                                } else if (Updater.compareVersions(minecraftData.version, "1.14")){
+                                    warning = "Latest version found doesn't have mod loader tag! If " + file.name + " causes a crash, make sure the correct version got installed!" +
                                               "\n     > CurseForge link: " + ((downloadData.urls.curseforge == null) ? downloadData.urls.project : downloadData.urls.curseforge) +
                                               "\n     > CurseForge file link: " + file.url;
                                 }
 
-                                logger.warn(warning);
-                                SyncManager.getInstance().DataGatheringWarnings.add(warning);
+                                if (warning != null) {
+                                    logger.warn(warning);
+                                    SyncManager.getInstance().DataGatheringWarnings.add(warning);
+                                }
                             }
 
                             ModFileData.downloadUrl = (
@@ -88,12 +112,13 @@ public class Manifest {
                             ModFileData.fileSize = file.filesize;
                             break;
                         }
+
                         if (ModFileData.downloadUrl == null) {
                             logger.error("No file for version " + minecraftData.version + " was found in project with id " + projectID + "! Please report this to the pack creator.");
                             return null;
-                        } else {
-                            return ModFileData;
                         }
+
+                        return ModFileData;
                     }
 
                     if (!Objects.equals(downloadData.download.id, fileID)) {
@@ -116,12 +141,37 @@ public class Manifest {
 
                 } catch (Exception e) {
                     //TODO: Finish response code handling!
+                    if (!e.getMessage().startsWith("Server returned")) {
+                        throw e;
+                    }
+
                     int responseCode = url.getResponseCode();
+
+                    if (Objects.equals(responseCode, 403)) {
+
+                        if (error403) {
+                            logger.error("Attempt of parsing data after Response code 403 for project id: " + projectID + " failed!");
+                            SyncManager.getInstance().DataGatheringWarnings.add(
+                                    "403 (Access denied) Error occurred while trying to request data for project " + projectID + "! Mod has to be downloaded manually at this moment." +
+                                    "\n     > Site with CurseForge link: https://cfwidget.com/" + projectID + "?&version=" + fileID +
+                                    "\n     > Please report it on my github (Link at the end of the log file) if this still happens after waiting few minutes!"
+                            );
+                            ModFileData.projectID = projectID;
+                            return ModFileData;
+                        }
+
+                        logger.error("Response code 403 (Access Denied) returned for project id: " + projectID + " trying to get data for file id: " + fileID + ". Trying to request data without version parameter...");
+                        return getData(minecraftData, true);
+                    }
+
                     if (
                             Objects.equals(responseCode, 500) ||
                             Objects.equals(responseCode, 202)
                     ) {
-                        logger.warn("APi returned response code " + responseCode + ", trying requesting data again in few seconds...");
+                        logger.warn("API returned response code " + responseCode + ", trying requesting data again in few seconds...");
+                    } else {
+                        logger.error("Unknown response code (" + responseCode + ") returned for project id: " + projectID + " while trying to request data for file id: " + fileID);
+                        return null;
                     }
                 }
             } catch (Exception e) {

@@ -5,7 +5,7 @@
 
   <groupId>org.kanzaji.app</groupId>
   <artifactId>Cat-Downloader-Legacy</artifactId>
-  <version>1.1</version>
+  <version>2.0-DEVELOP</version>
 
   <name>Cat Downloader Legacy</name>
   <url>https://github.com/Kanzaji/Cat-Downloader-Legacy</url>
@@ -30,12 +30,18 @@
       <artifactId>gson</artifactId>
       <version>2.10.1</version>
     </dependency>
-      <dependency>
-          <groupId>org.jetbrains</groupId>
-          <artifactId>annotations</artifactId>
-          <version>24.0.1</version>
-          <scope>compile</scope>
-      </dependency>
+    <dependency>
+        <groupId>org.jetbrains</groupId>
+        <artifactId>annotations</artifactId>
+        <version>24.0.1</version>
+        <scope>compile</scope>
+    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>org.htmlunit</groupId>-->
+<!--      <artifactId>htmlunit</artifactId>-->
+<!--      <version>3.3.0</version>-->
+<!--      <scope>compile</scope>-->
+<!--    </dependency>-->
   </dependencies>
 
   <build>

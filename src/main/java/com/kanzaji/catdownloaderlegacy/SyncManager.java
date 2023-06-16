@@ -1,5 +1,7 @@
 package com.kanzaji.catdownloaderlegacy;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
 import com.kanzaji.catdownloaderlegacy.utils.DownloadUtils;
 import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
@@ -69,7 +71,6 @@ public class SyncManager {
      * @throws RuntimeException when downloading process takes over a day.
      */
     public void runSync() throws NullPointerException, IOException, InterruptedException, RuntimeException {
-        long StartingTime = System.currentTimeMillis();
         if (ModFolderPath == null || ManifestData == null || downloadExecutor == null || verificationExecutor == null) {
             if (ModFolderPath == null) {
                 throw new NullPointerException("ModFolderPath is null!");
@@ -87,13 +88,19 @@ public class SyncManager {
         logger.log("Checking for already existing files, and getting download queue ready...");
 
         for (Manifest.ModFile mod: ManifestData.files) {
-            // I have no idea why this is required here (downloadUrl one) however I've got one crash because downloadUrl was null so better to check >.>
-            if (mod == null || mod.downloadUrl == null) {
+            // DownloadURL shouldn't be necessary here, however for some reason 403 can happen at some random mods, and this will result in "non-null" mods that are empty!
+            // I took advantage of that and if 403 happens, projectID is being returned, so if projectID isn't null, 403 happened, and we don't count that to null mods.
+            if (mod == null || mod.downloadUrl == null || mod.fileSize == null) {
+                if (mod != null && mod.projectID != null) {
+                    logger.error("Mod with 403 error found! Skipping...");
+                    continue;
+                }
                 logger.error("Mod without any data found! Skipping...");
                 NullMods += 1;
                 continue;
             }
 
+            // Getting required data about mod file.
             String FileName = mod.getFileName();
             Path ModFile = Path.of(ModFolderPath.toString(), FileName);
             ModFileNames.add(FileName);
@@ -105,7 +112,7 @@ public class SyncManager {
                 continue;
             }
 
-            // I know this is slower, but it checks few times if the file exists, and that was an issue with original
+            // I know this is slower, but it checks few times if the file exists, and that was an issue with original InstanceSync
             if (Files.notExists(ModFile, LinkOption.NOFOLLOW_LINKS)) {
                 logger.log(FileName + " not found! Added to the download queue.");
                 DownloadQueueL.add(() -> {
@@ -182,7 +189,8 @@ public class SyncManager {
         if (VerificationQueueL.size() > 0) logger.print("Verification of existing files finished!");
 
         logger.log("Required data received for " + ModFileNames.size() + " out of " + ManifestData.files.length + ((ManifestData.files.length == 1)? " mod.": " mods"));
-        System.out.println("> Data received for " + ModFileNames.size() + " out of " + ManifestData.files.length + ((ManifestData.files.length == 1)? " mod.": " mods"));
+        if (ArgumentDecoder.getInstance().isPackMode()) System.out.println("> Data received for " + ModFileNames.size() + " out of " + ManifestData.files.length + ((ManifestData.files.length == 1)? " mod.": " mods."));
+
         if (DownloadQueueL.size() > 0) {
             logger.log("Mods designated to download: " + DownloadQueueL.size());
             System.out.println("> Mods designated to download: " + DownloadQueueL.size());
@@ -287,6 +295,7 @@ public class SyncManager {
             System.out.println("\nFor more details, check your configuration file or the log at:\n\"" + logger.getLogPath() + "\"");
             System.out.println("---------------------------------------------------------------------");
         }
+
         if (DataGatheringWarnings.size() > 0) {
             logger.warn("Warnings were found while doing synchronisation of the profile!");
             System.out.println("Warnings were found while doing synchronisation of the profile!");
@@ -297,12 +306,10 @@ public class SyncManager {
             System.out.println("For more details, check log file at " + logger.getLogPath());
             System.out.println("---------------------------------------------------------------------");
         }
-        if (
-                FailedRemovals.size() > 0 ||
-                FailedDownloads.size() > 0 ||
-                FailedVerifications.size() > 0 ||
-                NullMods > 0
-        ) {
+
+        int errors = FailedRemovals.size() + FailedDownloads.size() + FailedVerifications.size() + NullMods;
+
+        if (errors > 0) {
             logger.error("Errors were found while doing synchronisation of the profile!");
             System.out.println("Errors were found while doing synchronisation of the profile!");
 
@@ -367,8 +374,5 @@ public class SyncManager {
             logger.log("Finished syncing profile!");
             System.out.print("Finished syncing profile!");
         }
-
-        System.out.println("(Entire process took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s)");
-        logger.log("Sync took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s");
     }
 }

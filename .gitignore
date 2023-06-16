@@ -25,3 +25,6 @@ hs_err_pid*
 # Custom stuff
 target
 TestingArea
+Important Logs
+src/main/java/com/kanzaji/catdownloaderlegacy/TestMain.java
+

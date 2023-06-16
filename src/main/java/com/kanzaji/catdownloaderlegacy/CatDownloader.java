@@ -18,15 +18,22 @@ public final class CatDownloader {
     private static final LoggerCustom logger = new LoggerCustom("Main");
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
 
-    // Some other variables
-    public static final String VERSION = "1.1";
+    // Global variables
+    public static final String VERSION = "2.0-DEVELOP";
+    public static String REPOSITORY = "https://github.com/Kanzaji/Cat-Downloader-Legacy";
+    public static String NAME = "Cat Downloader Legacy";
+
+    // Locally used variables
     public static Path manifestFile;
     private static Manifest ManifestData = new Manifest();
 
     public static void main(String[] args) {
+        // Time estimate! Okay more like how long it took but still.
+        long StartingTime = System.currentTimeMillis();
+
         // Initialize Logger.
         logger.init();
-        logger.log("Cat Downloader version: " + VERSION);
+        logger.log(NAME + " version: " + VERSION);
 
         try {
             // Decode Arguments and store them in ARD Instance.
@@ -46,7 +53,7 @@ public final class CatDownloader {
 
             // "What the hell did I just run" section.
             System.out.println("---------------------------------------------------------------------");
-            System.out.println("     Cat Downloader " + VERSION);
+            System.out.println("     " + NAME + " " + VERSION);
             System.out.println("     Created by: Kanzaji");
             System.out.println("---------------------------------------------------------------------");
 
@@ -102,7 +109,17 @@ public final class CatDownloader {
                 System.out.println("Manifest file doesn't have an instance name!");
                 logger.warn("The name of the instance is missing!");
             } else {
-                System.out.println("Installing modpack " + ManifestData.name + " " + ManifestData.version + ((Objects.equals(ManifestData.author, "") || Objects.equals(ManifestData.author, " "))? "": " created by " + ManifestData.author));
+                System.out.println("Installing modpack " +
+                    ManifestData.name +
+                    ((ManifestData.name.endsWith(" "))? "": " ") +
+                    ManifestData.version +
+                    ((
+                        Objects.equals(ManifestData.author, "") ||
+                        Objects.equals(ManifestData.author, " ") ||
+                        Objects.equals(ManifestData.author, null)
+                    )? "": " created by " + ManifestData.author)
+                );
+
                 logger.log("Instance name: " + ManifestData.name);
             }
             // Checking if Manifest file contains required modLoader.
@@ -179,6 +196,10 @@ public final class CatDownloader {
             SyncManager fm = SyncManager.getInstance();
             fm.passData(ModsFolder, ManifestData, ARD.getThreads());
             fm.runSync();
+
+            System.out.println(" (Entire process took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s)");
+            logger.log("Sync took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s");
+
             logger.log("Cat-Downloader Legacy is created and maintained by Kanzaji! Find the source code and issue tracker here:");
             logger.log("https://github.com/Kanzaji/Cat-Downloader-Legacy");
         } catch (Exception | Error e) {

@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Custom" type="Application" factoryName="Application" folderName="Pack tests">
+    <option name="MAIN_CLASS_NAME" value="com.kanzaji.catdownloaderlegacy.CatDownloader" />
+    <module name="Cat-Downloader-Legacy" />
+    <option name="PROGRAM_PARAMETERS" value="-LogsPath:Logs -Settings:False -WorkingDirectory:&quot;Monstrosity&quot; -Experimental:true -Mode:Pack -LogsPath:Logs" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/TestingArea" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
