@@ -91,9 +91,15 @@ public class SyncManager {
             // DownloadURL shouldn't be necessary here, however for some reason 403 can happen at some random mods, and this will result in "non-null" mods that are empty!
             // I took advantage of that and if 403 happens, projectID is being returned, so if projectID isn't null, 403 happened, and we don't count that to null mods.
             if (mod == null || mod.downloadUrl == null || mod.fileSize == null) {
-                if (mod != null && mod.projectID != null) {
-                    logger.error("Mod with 403 error found! Skipping...");
-                    continue;
+                if (mod != null) {
+                    if (mod.error403) {
+                        logger.error("Mod with 403 error found! Skipping...");
+                        continue;
+                    }
+                    if (mod.error202) {
+                        logger.error("Mod with 202/500 Response code and failed regathering found! Skipping...");
+                        continue;
+                    }
                 }
                 logger.error("Mod without any data found! Skipping...");
                 NullMods += 1;

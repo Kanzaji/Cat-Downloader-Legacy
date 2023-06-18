@@ -161,14 +161,16 @@ public final class CatDownloader {
             if (ARD.isPackMode()) {
                 logger.log("Getting data for ids specified in the Manifest file...");
                 System.out.println("Gathering Data about mods... This may take a while.");
-                ExecutorService Executor;
+                ExecutorService Executor, FailExecutor;
                 if (ARD.isExperimental()) {
                     logger.warn("Experimental mode turned on! This may cause unexpected behaviour and issues with data gathering process.");
                     logger.warn("Use at your own risk!");
                     Executor = Executors.newFixedThreadPool(ARD.getThreads());
+                    FailExecutor = Executors.newFixedThreadPool(ARD.getThreads());
                 } else {
-                    // I think improving the file speed by like, the factor of 2 is good enough here, Executor with 2 threads should do the job.
+                    // I think improving the gathering speed by like, the factor of 2 is good enough here, Executor with 2 threads should do the job.
                     Executor = Executors.newFixedThreadPool(2);
+                    FailExecutor = Executors.newFixedThreadPool(2);
                 }
 
                 int Index = 0;
@@ -176,12 +178,24 @@ public final class CatDownloader {
                     int finalIndex = Index;
                     Executor.submit(() -> {
                         ManifestData.files[finalIndex] = mod.getData(ManifestData.minecraft);
+                        if (ManifestData.files[finalIndex] != null && (ManifestData.files[finalIndex].error202 || ManifestData.files[finalIndex].error403)) {
+                            FailExecutor.submit(() -> {
+                                ManifestData.files[finalIndex] = mod.getData(ManifestData.minecraft);
+                            });
+                        }
                     });
                     Index += 1;
                 }
 
                 Executor.shutdown();
                 if (!Executor.awaitTermination(1, TimeUnit.DAYS)) {
+                    logger.error("Data gathering takes over a day! This for sure isn't right???");
+                    System.out.println("Data gathering interrupted due to taking over a day! This for sure isn't right???");
+                    throw new RuntimeException("Data gathering is taking over a day! Something is horribly wrong.");
+                }
+
+                FailExecutor.shutdown();
+                if (!FailExecutor.awaitTermination(1, TimeUnit.DAYS)) {
                     logger.error("Data gathering takes over a day! This for sure isn't right???");
                     System.out.println("Data gathering interrupted due to taking over a day! This for sure isn't right???");
                     throw new RuntimeException("Data gathering is taking over a day! Something is horribly wrong.");
@@ -202,6 +216,7 @@ public final class CatDownloader {
 
             logger.log("Cat-Downloader Legacy is created and maintained by Kanzaji! Find the source code and issue tracker here:");
             logger.log("https://github.com/Kanzaji/Cat-Downloader-Legacy");
+            System.exit(0);
         } catch (Exception | Error e) {
             System.out.println("CatDownloader crashed! More details are in the log file at \"" + logger.getLogPath() + "\".");
             logger.logStackTrace("Something horrible happened...", e);

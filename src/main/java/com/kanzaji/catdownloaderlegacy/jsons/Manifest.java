@@ -24,19 +24,18 @@ public class Manifest {
     public minecraft minecraft;
 
     public static class ModFile {
+        public boolean error403 = false;
+        public boolean error202 = false;
+
         public Number projectID;
         public Number fileID;
         public String downloadUrl;
-        public Boolean required;
+        public boolean required;
         public Number fileSize;
 
         //TODO: Rework this.. again :kek: Also add notes! Because this is the only stuff I didn't document.
 
         public ModFile getData(minecraft minecraftData) {
-            return getData(minecraftData, false);
-        }
-
-        public ModFile getData(minecraft minecraftData, boolean error403) {
             ModFile ModFileData = new ModFile();
             LoggerCustom logger = new LoggerCustom("Manifest");
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -140,7 +139,6 @@ public class Manifest {
                     ModFileData.fileSize = downloadData.download.filesize;
 
                 } catch (Exception e) {
-                    //TODO: Finish response code handling!
                     if (!e.getMessage().startsWith("Server returned")) {
                         throw e;
                     }
@@ -149,26 +147,32 @@ public class Manifest {
 
                     if (Objects.equals(responseCode, 403)) {
 
-                        if (error403) {
+                        if (error403 || error202) {
                             logger.error("Attempt of parsing data after Response code 403 for project id: " + projectID + " failed!");
                             SyncManager.getInstance().DataGatheringWarnings.add(
                                     "403 (Access denied) Error occurred while trying to request data for project " + projectID + "! Mod has to be downloaded manually at this moment." +
                                     "\n     > Site with CurseForge link: https://cfwidget.com/" + projectID + "?&version=" + fileID +
                                     "\n     > Please report it on my github (Link at the end of the log file) if this still happens after waiting few minutes!"
                             );
-                            ModFileData.projectID = projectID;
                             return ModFileData;
                         }
 
-                        logger.error("Response code 403 (Access Denied) returned for project id: " + projectID + " trying to get data for file id: " + fileID + ". Trying to request data without version parameter...");
-                        return getData(minecraftData, true);
+                        logger.error("Response code 403 (Access Denied) returned for project id: " + projectID + " trying to get data for file id: " + fileID + ". Trying to request data without version parameter at the end of the queue.");
+                        ModFileData.error403 = true;
+                        return ModFileData;
                     }
 
                     if (
                             Objects.equals(responseCode, 500) ||
                             Objects.equals(responseCode, 202)
                     ) {
-                        logger.warn("API returned response code " + responseCode + ", trying requesting data again in few seconds...");
+                        logger.warn("API returned response code " + responseCode + " (Wait for the request), trying requesting data again at the end of the queue!");
+                        ModFileData.error202 = true;
+                        if (error403) {
+                            error403 = false;
+                            return getData(minecraftData);
+                        }
+                        return ModFileData;
                     } else {
                         logger.error("Unknown response code (" + responseCode + ") returned for project id: " + projectID + " while trying to request data for file id: " + fileID);
                         return null;
