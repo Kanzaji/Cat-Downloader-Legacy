@@ -7,6 +7,7 @@ import com.kanzaji.catdownloaderlegacy.utils.*;
 
 import com.google.gson.Gson;
 
+import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,9 +22,19 @@ public final class CatDownloader {
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
 
     // Global variables
-    public static final String VERSION = "2.0-DEVELOP";
-    public static String REPOSITORY = "https://github.com/Kanzaji/Cat-Downloader-Legacy";
-    public static String NAME = "Cat Downloader Legacy";
+    public static final String VERSION = "1.0";
+    public static final String REPOSITORY = "https://github.com/Kanzaji/Cat-Downloader-Legacy";
+    public static final String NAME = "Cat Downloader Legacy";
+    public static Path APPPATH = null;
+
+    static {
+        try {
+            APPPATH = Path.of(Updater.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath().replaceFirst("/", ""));
+        } catch (URISyntaxException e) {
+            // I think this should not happen? But just for safety better to log it.
+            logger.logStackTrace("Failed to get App directory!", e);
+        }
+    }
 
     // Locally used variables
     public static Path manifestFile;
@@ -31,12 +42,17 @@ public final class CatDownloader {
     public static List<Runnable> dataGatheringFails = new LinkedList<>();
 
     public static void main(String[] args) {
+        //TODO: Add a bit more documentation.
+        // What I mean is add docs to the classes (because some of them have it and some don't) and add links etc to all docs that are currently live.
+        // Trust me future Kanz, IT WILL BE WORTH IT.
+
         // Time estimate! Okay more like how long it took but still.
         long StartingTime = System.currentTimeMillis();
 
         // Initialize Logger.
         logger.init();
         logger.log(NAME + " version: " + VERSION);
+        logger.log("App path: " + APPPATH.toAbsolutePath());
 
         try {
             // Decode Arguments and store them in ARD Instance.

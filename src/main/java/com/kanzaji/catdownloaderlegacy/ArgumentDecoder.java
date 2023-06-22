@@ -21,7 +21,7 @@ public class ArgumentDecoder {
     private int DownloadAttempts = 5;
     private int LogStockSize = 10;
     private boolean LoggerActive = true;
-    private boolean StockPileLogs = true;
+    private boolean StockpileLogs = true;
     private boolean CompressStockPiledLogs = true;
     private boolean FileSizeVerification = true;
     private boolean HashVerification = true;
@@ -77,9 +77,9 @@ public class ArgumentDecoder {
                     this.LoggerActive = false;
                 }
             }
-            if (decodeArgument(Argument,"-StockPileLogs:")) {
+            if (decodeArgument(Argument,"-StockpileLogs:")) {
                 if (getOffBoolean(Argument)) {
-                    this.StockPileLogs = false;
+                    this.StockpileLogs = false;
                 }
             }
             if (decodeArgument(Argument,"-CompressLogs:")) {
@@ -258,7 +258,7 @@ public class ArgumentDecoder {
         logger.log("> Settings Path: " + this.SettingsPath);
         logger.log("- Full Path: " + Path.of(this.SettingsPath).toAbsolutePath());
         logger.log("> Logger enabled: " + this.LoggerActive);
-        logger.log("> Stockpiling logs active: " + this.StockPileLogs);
+        logger.log("> Stockpiling logs active: " + this.StockpileLogs);
         logger.log("> Amount of logs to keep: " + this.LogStockSize);
         logger.log("> Compressing of logs active: " + this.CompressStockPiledLogs);
         logger.log("> Logs Path: " + this.LogPath);
@@ -277,11 +277,16 @@ public class ArgumentDecoder {
     public void loadFromSettings(Settings SettingsData, boolean Print) {
         this.Mode = SettingsData.mode;
         this.WorkingDirectory = SettingsData.workingDirectory;
+        this.LogPath = SettingsData.logDirectory;
+        this.LoggerActive = SettingsData.isLoggerActive;
+        this.CompressStockPiledLogs = SettingsData.shouldCompressLogFiles;
+        this.StockpileLogs = SettingsData.shouldStockpileLogs;
+        this.LogStockSize = SettingsData.logStockpileSize;
         this.ThreadCount = SettingsData.threadCount;
         this.DownloadAttempts = SettingsData.downloadAttempts;
-        this.LoggerActive = SettingsData.isLoggerActive;
         this.FileSizeVerification = SettingsData.isFileSizeVerificationActive;
         this.HashVerification = SettingsData.isHashVerificationActive;
+        this.Experimental = SettingsData.experimental;
         if (Print) { printConfiguration("Program Configuration from Settings:");}
     }
 
@@ -298,7 +303,7 @@ public class ArgumentDecoder {
     public boolean areSettingsEnabled() {return this.Settings;}
     public boolean shouldDefaultSettings() {return this.DefaultSettingsFromTemplate;}
     public boolean isLoggerActive() {return this.LoggerActive;}
-    public boolean shouldStockPileLogs() {return this.StockPileLogs;}
+    public boolean shouldStockpileLogs() {return this.StockpileLogs;}
     public boolean shouldCompressLogs() {return this.CompressStockPiledLogs;}
     public boolean isFileSizeVerActive() {return this.FileSizeVerification;}
     public boolean isHashVerActive() {return this.HashVerification;}

@@ -77,7 +77,7 @@ public class Logger implements ILogger {
             } else {
                 this.log("Custom path for logs has been specified: \"" + logPath.toAbsolutePath() + "\".");
             }
-            if (ARD.shouldStockPileLogs()) {
+            if (ARD.shouldStockpileLogs()) {
                 // Cat-Downloader Archived.log handling.
                 if (Files.exists(archivedLogInLogPath)) {
                     this.warn("Found old pre-full-archive log file in specified Path! This might signal a crash in the last post-init phase of the logger!");
@@ -130,7 +130,7 @@ public class Logger implements ILogger {
         } else {
             this.log("No custom path for Logs has been specified, using working directory for logging!");
             if (Files.exists(archivedLog)) {
-                if(ARD.shouldStockPileLogs()) {
+                if(ARD.shouldStockpileLogs()) {
                     this.log("Old log file found! Archiving the log file...");
                     if (ARD.shouldCompressLogs()) {
                         FileUtils.compressToGz(archivedLog, DateUtils.getCurrentFullDate() + ".log", true);
@@ -146,7 +146,7 @@ public class Logger implements ILogger {
             }
         }
 
-        if(ARD.shouldStockPileLogs()) {
+        if(ARD.shouldStockpileLogs()) {
             this.log("Stockpiling logs is enabled! Stockpile limit is " + ((ARD.getLogStockSize() == 0)? "infinite!": ARD.getLogStockSize()));
             List<Path> archivedLogs = new LinkedList<>();
             try(Stream<Path> directoryList = Files.list(logPath)) {
@@ -203,6 +203,7 @@ public class Logger implements ILogger {
      *     <li>0 | LOG</li>
      *     <li>1 | WARN</li>
      *     <li>2 | ERROR</li>
+     *     <li>3 | CRITICAL</li>
      * </ul>
      * @param msg String message to log to a log file.
      * @param type Int between 0 and 2 specifying selected level. Defaults to 0. (Nullable)
@@ -219,6 +220,7 @@ public class Logger implements ILogger {
         String Type = switch (type) {
             case 1 -> "WARN";
             case 2 -> "ERROR";
+            case 3 -> "CRITICAL";
             default -> "INFO";
         };
 

@@ -24,7 +24,6 @@ interface ILogger {
      */
     void exit() throws IOException;
 
-
     /**
      * Logs a message to a log file.
      * @param msg String message to log.
@@ -48,6 +47,12 @@ interface ILogger {
     default void error(String msg) {
         this.logType(msg, 2);
     }
+
+    /**
+     * Logs a message with level CRITICAL to a log file.
+     * @param msg String message to log as CRITICAL.
+     */
+    default void critical(String msg) { this.logType(msg, 3);}
 
     /**
      * Logs a message with level INFO to a log file, additionally printing the message to the console.
@@ -79,7 +84,7 @@ interface ILogger {
      * @param throwable Exception to log.
      */
     default void logStackTrace(String msg, Throwable throwable) {
-        this.logCustom(msg, 2, throwable);
+        this.logCustom(msg, 3, throwable);
     }
 
     /**
@@ -90,9 +95,10 @@ interface ILogger {
      *     <li>0 | LOG</li>
      *     <li>1 | WARN</li>
      *     <li>2 | ERROR</li>
+     *     <li>3 | CRITICAL</li>
      * </ul>
      * @param msg String message to log to a log file.
-     * @param type Int between 0 and 2 specifying selected level. Defaults to 0. (Nullable)
+     * @param type Int between 0 and 3 specifying selected level. Defaults to 0. (Nullable)
      * @param throwable Exception to log. (Nullable)
      */
     void logCustom(String msg, int type, @Nullable Throwable throwable);
