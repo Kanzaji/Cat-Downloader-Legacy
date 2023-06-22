@@ -1,9 +1,9 @@
 # [Cat-Downloader Legacy](https://kanzaji.github.io/Cat-Downloader-Legacy/)
 Cat-Downloader Legacy is an app that is meant to allow for easy synchronization of minecraft mods between modpack developers, with use of, for example, Git hooks.
 
-It supports CurseForge mods, and is compatible both with CurseForge Launcher `minecraftinstance.json` format and CurseForge site `manifest.json` format.
+It supports CurseForge `minecraftinstance.json` format, and has **Experimental** support for CurseForge site format `manifest.json`. *Modrinth support is Work in Progress!*
 
-It also features file verification with Checksum (SHA-256) and size check!
+It also features file verification with Checksum (SHA-256), File Size Check and automatic updates for the app!
 
 ## Configuration
 Cat-Downloader Legacy can be configured in two ways, to customize the behaviour of the app.<br>

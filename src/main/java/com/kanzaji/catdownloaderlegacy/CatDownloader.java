@@ -2,12 +2,14 @@ package com.kanzaji.catdownloaderlegacy;
 
 import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
 import com.kanzaji.catdownloaderlegacy.jsons.MinecraftInstance;
+import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import com.kanzaji.catdownloaderlegacy.utils.*;
 
 import com.google.gson.Gson;
-import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
 import java.nio.file.*;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -26,6 +28,7 @@ public final class CatDownloader {
     // Locally used variables
     public static Path manifestFile;
     private static Manifest ManifestData = new Manifest();
+    public static List<Runnable> dataGatheringFails = new LinkedList<>();
 
     public static void main(String[] args) {
         // Time estimate! Okay more like how long it took but still.
@@ -67,6 +70,7 @@ public final class CatDownloader {
             // Checking Program mode and getting required Manifest File.
             if (ARD.isPackMode()) {
                 manifestFile = Path.of(dir.toAbsolutePath().toString(), "manifest.json");
+                System.out.println("CurseForge site format support is experimental! Use at your own responsibility.");
             } else {
                 manifestFile = Path.of(dir.toAbsolutePath().toString(), "minecraftinstance.json");
             }
@@ -163,14 +167,14 @@ public final class CatDownloader {
                 System.out.println("Gathering Data about mods... This may take a while.");
                 ExecutorService Executor, FailExecutor;
                 if (ARD.isExperimental()) {
-                    logger.warn("Experimental mode turned on! This may cause unexpected behaviour and issues with data gathering process.");
-                    logger.warn("Use at your own risk!");
+                    logger.warn("Experimental mode for CurseForge support turned on! This may cause unexpected behaviour and issues with data gathering process.");
+                    logger.warn("Use at your own risk! Try to not over-use it.");
                     Executor = Executors.newFixedThreadPool(ARD.getThreads());
-                    FailExecutor = Executors.newFixedThreadPool(ARD.getThreads());
+                    FailExecutor = Executors.newFixedThreadPool(ARD.getThreads()/4);
                 } else {
                     // I think improving the gathering speed by like, the factor of 2 is good enough here, Executor with 2 threads should do the job.
                     Executor = Executors.newFixedThreadPool(2);
-                    FailExecutor = Executors.newFixedThreadPool(2);
+                    FailExecutor = Executors.newFixedThreadPool(1);
                 }
 
                 int Index = 0;
@@ -179,7 +183,9 @@ public final class CatDownloader {
                     Executor.submit(() -> {
                         ManifestData.files[finalIndex] = mod.getData(ManifestData.minecraft);
                         if (ManifestData.files[finalIndex] != null && (ManifestData.files[finalIndex].error202 || ManifestData.files[finalIndex].error403)) {
-                            FailExecutor.submit(() -> {
+                            mod.error403 = ManifestData.files[finalIndex].error403;
+                            mod.error202 = ManifestData.files[finalIndex].error202;
+                            dataGatheringFails.add(() -> {
                                 ManifestData.files[finalIndex] = mod.getData(ManifestData.minecraft);
                             });
                         }
@@ -192,6 +198,11 @@ public final class CatDownloader {
                     logger.error("Data gathering takes over a day! This for sure isn't right???");
                     System.out.println("Data gathering interrupted due to taking over a day! This for sure isn't right???");
                     throw new RuntimeException("Data gathering is taking over a day! Something is horribly wrong.");
+                }
+
+                if (dataGatheringFails.size() > 0) {
+                    logger.warn("Data gathering errors present! Trying to re-run unsuccessful data requests. Errors present: " + dataGatheringFails.size());
+                    dataGatheringFails.forEach(FailExecutor::submit);
                 }
 
                 FailExecutor.shutdown();

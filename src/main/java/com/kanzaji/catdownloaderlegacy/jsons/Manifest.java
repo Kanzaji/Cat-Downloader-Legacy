@@ -56,7 +56,7 @@ public class Manifest {
                 try (BufferedReader in = new BufferedReader(new InputStreamReader(url.getInputStream(), StandardCharsets.UTF_8))) {
                     data downloadData = gson.fromJson(in, data.class);
 
-                    if (downloadData.download == null) {
+                    if (downloadData.download == null || error403) {
                         //TODO: Create ANOTHER Alternate method if downloadData is null.
                         // Appears CFWidget API doesn't support additional files, and just maybe, hidden files can also be accessed by the CF Site.
                         // Plan is simple, trying to connect with the PROJECT URL to CF Site, and extract what I need from the HTML code. If that doesn't work, fallback to the current solution.
