@@ -15,7 +15,14 @@ public class FileUtils {
     public static InputStream getInternalFile(String url) {
         InputStream file = FileUtils.class.getResourceAsStream("/assets/" + url);
         if (file == null) {
-            throw new MissingResourceException("One of the integral assets is missing!\nThis may signal corrupted app. Please consider reinstalling the program.\nMissing asset: " + url + "\nError StackTrace:", url, url);
+            throw new MissingResourceException(
+                "\n----------------------------------------------------------------------------------------------------\n" +
+                "    One of the integral assets is missing!\n" +
+                "    This may signal corrupted app. Please consider reinstalling the program.\n" +
+                "    Missing asset: \"/assets/" + url + "\"" +
+                "\n----------------------------------------------------------------------------------------------------\n" +
+                "StackTrace:",
+            url, url);
         }
         return file;
     }

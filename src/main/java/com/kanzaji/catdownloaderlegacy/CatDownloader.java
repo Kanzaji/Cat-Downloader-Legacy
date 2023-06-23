@@ -64,12 +64,6 @@ public final class CatDownloader {
             // Run Post-int on Logger.
             logger.postInit();
 
-            // Turns off Logger if user wants it (NOT RECOMMENDED!!!!)
-            // Redirects entire output to a console!
-            if (!ARD.isLoggerActive()){
-                logger.exit();
-            }
-
             // "What the hell did I just run" section.
             System.out.println("---------------------------------------------------------------------");
             System.out.println("     " + NAME + " " + VERSION);
@@ -78,6 +72,12 @@ public final class CatDownloader {
 
             // Initialize SettingsManager
             if (ARD.areSettingsEnabled()) { SettingsManager.initSettings(); }
+
+            // Turns off Logger if user wants it (NOT RECOMMENDED!!!!)
+            // Redirects entire output to a console!
+            if (!ARD.isLoggerActive()){
+                logger.exit();
+            }
 
             // Setting directory where program was turned on
             Path dir = Path.of(ARD.getWorkingDir());

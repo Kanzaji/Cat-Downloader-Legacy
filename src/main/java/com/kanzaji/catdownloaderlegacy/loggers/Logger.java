@@ -192,6 +192,7 @@ public class Logger implements ILogger {
     public void exit() throws IOException {
         System.out.println("LOGGER WAS DISABLED. If any errors occur they will not be logged and can be not shown in the console! Use at your own risk.");
         this.disabled = true;
+        Files.readAllLines(this.LogFile).forEach(System.out::println);
         Files.deleteIfExists(this.LogFile);
         this.LogFile = null;
     }
@@ -210,19 +211,20 @@ public class Logger implements ILogger {
      * @param throwable Exception to log. (Nullable)
      */
     public void logCustom(String msg, int type, @Nullable Throwable throwable) {
-        if (disabled) {
-            System.out.println(msg);
-            if (throwable != null) {
-                throwable.printStackTrace();
-            }
-            return;
-        }
         String Type = switch (type) {
             case 1 -> "WARN";
             case 2 -> "ERROR";
             case 3 -> "CRITICAL";
             default -> "INFO";
         };
+
+        if (disabled) {
+            System.out.println("[" + new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new Date()) + "] [" + Type + "] " + msg);
+            if (throwable != null) {
+                throwable.printStackTrace();
+            }
+            return;
+        }
 
         try {
             Files.writeString(this.LogFile, "[" + new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new Date()) + "] [" + Type + "] " + msg + "\n", StandardOpenOption.APPEND);

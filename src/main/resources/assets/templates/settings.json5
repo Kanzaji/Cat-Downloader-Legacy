@@ -18,17 +18,17 @@
   "logDirectory": "",
 
   // isLoggerActive -> Determines if the logger is enabled. *It is not recommended to disable Logger service*. Entire Logger output will be printed to the console!
-  // Accepts: Boolean Value (Example: True)
+  // Accepts: Boolean Value (Example: true)
   // Argument representation: -Logger:
   "isLoggerActive": true,
 
   // shouldCompressLogFiles -> Determines if log file Compression is active.
-  // Accepts: Boolean Value (Example: True)
+  // Accepts: Boolean Value (Example: true)
   // Argument representation: -CompressLogs:
   "shouldCompressLogFiles": true,
 
   // shouldStockpileLogs -> Determines if stockpiling of the logs is active.
-  // Accepts: Boolean Value (Example: True)
+  // Accepts: Boolean Value (Example: true)
   // Argument representation: -StockpileLogs:
   "shouldStockpileLogs": true,
 
@@ -48,12 +48,12 @@
   "downloadAttempts": 5,
 
   // isFileSizeVerificationActive -> Determines if file size verification is turned on. Barely-Visible performance gain and will result in corrupted mods if disabled.
-  // Accepts: Boolean Values (Example: True)
+  // Accepts: Boolean Values (Example: true)
   // Argument representation: -SizeVerification:
   "isFileSizeVerificationActive": true,
 
   // isHashVerificationActive -> Determines if Hash verification is turned on. HUGE Performance gain but can result in corrupted mods if disabled!
-  // Accepts: Boolean Values (Example: True)
+  // Accepts: Boolean Values (Example: true)
   // Argument representation: -HashVerification:
   "isHashVerificationActive": true,
 

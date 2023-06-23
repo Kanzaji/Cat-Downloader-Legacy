@@ -6,14 +6,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
+import javax.sound.sampled.Line;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -46,9 +45,12 @@ public class SettingsManager {
                 logger.log("Override of the settings finished!");
             } else {
                 Settings SettingsFileData = parseSettings();
+                // Saving will automatically re-add missing values!
+                saveSettings(SettingsFileData);
+                // Parse Data again to get any missing values!
+                SettingsFileData = parseSettings();
                 if (validateSettings(SettingsFileData)) {
                     loadSettings(SettingsFileData);
-                    saveSettings(SettingsFileData);
                 } else {
                     throw new IllegalArgumentException("Settings contain illegal values! \n Check the settings file at " + SettingsFile.toAbsolutePath());
                 }
@@ -69,6 +71,8 @@ public class SettingsManager {
                 System.out.println("---------------------------------------------------------------------");
                 System.out.println("Path to configuration file: " + SettingsFile.toAbsolutePath());
                 System.out.println("---------------------------------------------------------------------");
+                System.out.println("You can configure the Path to the Settings file with use of \"-SettingsPath:\" app argument!");
+                System.out.println("---------------------------------------------------------------------");
                 System.exit(0);
             } else {
                 saveSettingsFromARD();
@@ -86,8 +90,7 @@ public class SettingsManager {
         logger.log("Parsing data from settings file...");
         try {
             Settings SettingsFileData = gson.fromJson(Files.readString(SettingsFile), Settings.class);
-//            ModBlackList = Arrays.stream(SettingsFileData.modBlacklist).toList();
-            ModBlackList = SettingsFileData.modBlacklist;
+            ModBlackList = (Objects.isNull(SettingsFileData.modBlacklist))? new Settings.BlackList<>(): SettingsFileData.modBlacklist;
             logger.log("Parsing of Settings was successful!");
             return SettingsFileData;
         } catch (Exception e) {
@@ -106,11 +109,14 @@ public class SettingsManager {
     private static boolean validateSettings(Settings SettingsData) {
         logger.log("Validating settings...");
         List<String> errors = new LinkedList<>();
-
-        if (!ArgumentDecoder.validateMode(SettingsData.mode)) {
+        if (Objects.isNull(SettingsData.mode)) {
+            errors.add("Mode is null! Available modes are: Pack // Instance");
+        } else if (!ArgumentDecoder.validateMode(SettingsData.mode.toLowerCase(Locale.ROOT))) {
             errors.add("Mode: " + SettingsData.mode + " is not correct! Available modes are: Pack // Instance");
         }
-        if (!Files.exists(Path.of(SettingsData.workingDirectory))) {
+        if (Objects.isNull(SettingsData.workingDirectory)) {
+            errors.add("Working Directory is null!");
+        } else if (!Files.exists(Path.of(SettingsData.workingDirectory))) {
             errors.add("Working Directory in Settings file does not exists!");
         }
         if (Objects.isNull(SettingsData.logDirectory)) {
@@ -136,6 +142,8 @@ public class SettingsManager {
             });
             logger.error("---------------------------------------------------------------------");
             System.out.println("---------------------------------------------------------------------");
+            System.out.println("Check the settings file at \"" + SettingsFile.toAbsolutePath() + "\"");
+            System.out.println("---------------------------------------------------------------------");
             return false;
         } else {
             return true;
@@ -153,42 +161,35 @@ public class SettingsManager {
     }
 
     /**
-     * Used to save {@link Settings} to a settings file!
+     * Used to save {@link Settings} to a settings file! Adds all missing entries to the settings file, if not present.
      * @param SettingsData {@link Settings} object containing data to save.
      * @throws IOException when IO Exception occurs.
      */
     private static void saveSettings(Settings SettingsData) throws IOException {
         if (!Files.exists(SettingsFile)) {
-            logger.warn("Settings file appears to be missing??? Creating empty file...");
-            Files.createFile(SettingsFile);
-            logger.warn("Created empty Settings file at " + SettingsFile.toAbsolutePath());
-        } else {
-            logger.log("Saving settings to a file...");
-            List<String> SettingsLines = Files.readAllLines(SettingsFile);
-            Files.writeString(SettingsFile, "", StandardOpenOption.TRUNCATE_EXISTING);
-            AtomicReference<String> lastLine = new AtomicReference<>();
-            lastLine.set(null);
-            SettingsLines.forEach(Line -> {
-                if (!Objects.isNull(lastLine.get())) {
-                    if (Line.contains("}")) lastLine.set(lastLine.get().substring(0,lastLine.get().lastIndexOf(",")));
-                    try {
-                        Files.writeString(SettingsFile, lastLine.get() + "\n", StandardOpenOption.APPEND);
-                    } catch (IOException e) {
-                        logger.logStackTrace("Exception occurred while writing to a Settings file!", e);
-                        throw new RuntimeException("Failed to save Settings!");
-                    }
-                }
+            logger.warn("Settings file appears to be missing??? Creating default settings file...");
+            Files.copy(FileUtils.getInternalFile("templates/settings.json5"), SettingsFile, StandardCopyOption.REPLACE_EXISTING);
+            logger.warn("Created default Settings file at " + SettingsFile.toAbsolutePath());
+        }
 
-                String currentKey = null;
-                for (String settingsKey : Settings.SettingsKeys) {
-                    if (Line.contains("\"" + settingsKey + "\":")) {
-                        currentKey = settingsKey;
-                        break;
-                    }
-                }
+        logger.log("Saving settings to a file...");
+        // Reading all lines of the Settings file
+        List<String> SettingsLines = Files.readAllLines(SettingsFile);
+        // Clearing a file!
+        Files.writeString(SettingsFile, "", StandardOpenOption.TRUNCATE_EXISTING);
+        AtomicReference<List<String>> existingKeys = new AtomicReference<>();
+        // Manually copying the List to the LinkedList<>, Just because Arrays#asList() doesn't allow removal of the elements.
+        existingKeys.set(new LinkedList<>());
+        for (String settingsKey : Settings.SettingsKeys) {
+            existingKeys.get().add(settingsKey);
+        }
 
-                if (!Objects.isNull(currentKey)) {
-                    Line = "  \"" + currentKey + "\": " + switch (currentKey) {
+        SettingsLines.forEach(Line -> {
+            for (String settingsKey : Settings.SettingsKeys) {
+                if (Line.contains("\"" + settingsKey + "\":") && existingKeys.get().contains(settingsKey)) {
+                    existingKeys.get().remove(settingsKey);
+
+                    Line = Line.substring(0,Line.indexOf(settingsKey)).replaceFirst("//","") + settingsKey + "\": " + switch (settingsKey) {
                         case "mode" -> "\"" + SettingsData.mode + "\"";
                         case "workingDirectory" -> "\"" + SettingsData.workingDirectory + "\"";
                         case "logDirectory" -> "\"" + SettingsData.logDirectory + "\"";
@@ -200,23 +201,32 @@ public class SettingsManager {
                         case "shouldCompressLogFiles" -> SettingsData.shouldCompressLogFiles;
                         case "isFileSizeVerificationActive" -> SettingsData.isFileSizeVerificationActive;
                         case "isHashVerificationActive" -> SettingsData.isHashVerificationActive;
-                        // modBlacklist requires special handling! But... I don't care for now XD
-                        case "modBlacklist" -> SettingsData.modBlacklist.toString();
+                        case "modBlacklist" -> (Objects.isNull(SettingsData.modBlacklist))? "[]": SettingsData.modBlacklist.toString();
                         default -> throw new IllegalArgumentException("Illegal key in the SettingsFile!");
                     } + ",";
+
+                    if (existingKeys.get().size() < 1 && Line.contains(",")) Line = Line.substring(0,Line.lastIndexOf(","));
+
+                    break;
                 }
-                lastLine.set(Line);
-            });
+            }
 
             try {
-                Files.writeString(SettingsFile, lastLine.get() + "\n", StandardOpenOption.APPEND);
+                Files.writeString(SettingsFile, Line + "\n", StandardOpenOption.APPEND);
             } catch (IOException e) {
                 logger.logStackTrace("Exception occurred while writing to a Settings file!", e);
                 throw new RuntimeException("Failed to save Settings!");
             }
+        });
 
-            logger.log("Settings have been saved!");
+        if (existingKeys.get().size() > 0) {
+            logger.warn("Found missing entries in the Settings file! Adding missing entries...");
+            Files.copy(FileUtils.getInternalFile("templates/settings.json5"), SettingsFile, StandardCopyOption.REPLACE_EXISTING);
+            saveSettings(SettingsData);
+            logger.warn("Settings file replaced with default one, and values from the old file has been saved!");
         }
+
+        logger.log("Settings have been saved!");
     }
 
     /**
