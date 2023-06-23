@@ -224,6 +224,15 @@ public class SettingsManager {
             Files.copy(FileUtils.getInternalFile("templates/settings.json5"), SettingsFile, StandardCopyOption.REPLACE_EXISTING);
             saveSettings(SettingsData);
             logger.warn("Settings file replaced with default one, and values from the old file has been saved!");
+
+            // Console output to the user
+            System.out.println("Settings file has been updated! Go check out new options!");
+            System.out.println("---------------------------------------------------------------------");
+            System.out.println("Path to configuration file: " + SettingsFile.toAbsolutePath());
+            System.out.println("---------------------------------------------------------------------");
+            System.out.println("You can configure the Path to the Settings file with use of \"-SettingsPath:\" app argument!");
+            System.out.println("---------------------------------------------------------------------");
+            System.exit(0);
         }
 
         logger.log("Settings have been saved!");
