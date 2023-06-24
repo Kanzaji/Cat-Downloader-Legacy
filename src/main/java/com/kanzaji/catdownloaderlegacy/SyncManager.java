@@ -88,8 +88,6 @@ public class SyncManager {
         logger.log("Checking for already existing files, and getting download queue ready...");
 
         for (Manifest.ModFile mod: ManifestData.files) {
-            // DownloadURL shouldn't be necessary here, however for some reason 403 can happen at some random mods, and this will result in "non-null" mods that are empty!
-            // I took advantage of that and if 403 happens, projectID is being returned, so if projectID isn't null, 403 happened, and we don't count that to null mods.
             if (mod == null || mod.downloadUrl == null || mod.fileSize == null) {
                 if (mod != null) {
                     if (mod.error403) {
@@ -106,19 +104,16 @@ public class SyncManager {
                 continue;
             }
 
-            // Getting required data about mod file.
             String FileName = mod.getFileName();
             Path ModFile = Path.of(ModFolderPath.toString(), FileName);
             ModFileNames.add(FileName);
 
-            // Check if the filename exists in the Blacklist
             if (SettingsManager.ModBlackList.contains(FileName)) {
                 logger.warn("Skipping " + FileName + " in verification because its present on the blacklist!");
                 IgnoredVerification.add(FileName);
                 continue;
             }
 
-            // I know this is slower, but it checks few times if the file exists, and that was an issue with original InstanceSync
             if (Files.notExists(ModFile, LinkOption.NOFOLLOW_LINKS)) {
                 logger.log(FileName + " not found! Added to the download queue.");
                 DownloadQueueL.add(() -> {

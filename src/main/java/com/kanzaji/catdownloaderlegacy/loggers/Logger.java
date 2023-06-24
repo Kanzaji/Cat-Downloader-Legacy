@@ -76,7 +76,6 @@ public class Logger implements ILogger {
 
         // Move Log files to the log Path if specified.
         if (!FileUtils.getFolder(Path.of(logPath.toString(), ".")).toString().equals(FileUtils.getFolder(this.LogFile).toString())) {
-            // Checking if the Specified Log Path exists.
             if (Files.notExists(logPath)) {
                 this.log("Custom path for logs has been specified, but it doesn't exists! Creating \"" + logPath.toAbsolutePath() + "\".");
                 Files.createDirectory(logPath);

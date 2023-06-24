@@ -33,7 +33,7 @@ public class Manifest {
         public boolean required;
         public Number fileSize;
 
-        //TODO: Rework this.. again :kek: Also add notes! Because this is the only stuff I didn't document.
+        //TODO: Rework this.. again. Also add notes!
 
         public ModFile getData(minecraft minecraftData) {
             ModFile ModFileData = new ModFile();

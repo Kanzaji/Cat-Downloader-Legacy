@@ -7,6 +7,8 @@ import static com.kanzaji.catdownloaderlegacy.CatDownloader.VERSION;
 import static com.kanzaji.catdownloaderlegacy.CatDownloader.REPOSITORY;
 
 import com.google.gson.Gson;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -27,9 +29,10 @@ public class Updater {
     private static final String GithubAPIUrl = "https://api.github.com/repos/" + REPOSITORY.replaceFirst("https://github.com/", "");
     private static final Gson gson = new Gson();
     private static final LoggerCustom logger = new LoggerCustom("Updater");
+    private static boolean isUpdated = false;
 
     /**
-     * This method calls GitHub repository and returns {@code true}, if newer version of the app is available.
+     * This method calls GitHub repository and returns {@code true}, if newer version of the app is available, additionally setting up GUI for user choice.
      * @return Boolean depending on the result of update check.
      */
     public static boolean checkUpdates() throws IOException {
@@ -65,12 +68,18 @@ public class Updater {
                     UpdaterGUI.setUpdateVersion(VERSION, responseData.tag_name);
                     UpdaterGUI.setChangelogText(responseData.body.replaceAll("###", " - ").replaceAll("\\*\\*", ""));
                     UpdaterGUI.setupButtons();
+                    return true;
                 }
             }
         }
+    }
 
-        logger.error("Unknown error occurred while trying to get update data?");
-        return false;
+    /**
+     * Used to check if Update is finished. If Updater is disabled, returns always true.
+     * @return {@link Boolean} with the status of the update. True when finished or Updater is disabled.
+     */
+    public static boolean isUpdated() {
+        return !ArgumentDecoder.getInstance().isUpdaterActive() || isUpdated;
     }
 
     /**
@@ -119,7 +128,7 @@ public class Updater {
         // If equal and latest version map size is higher, return false
         // If not equal, return true. (If latest was higher it would return false earlier on)
         // If Equal and current version map size is higher / equal, return true
-        // Yes this is here just so I will not mess this up lol;
+        // Yes this is here just so I will not mess this up;
         return !equal || currentVersionMap.size() >= latestVersionMap.size();
     }
 
@@ -127,10 +136,11 @@ public class Updater {
      * This class holds all data structures for the {@link Updater}.
      */
     private static class UpdaterData {
-        // Why I added a toString() methods here? I have no idea, I was just experimenting with them for fun. (And yes I know I could use GSON for this, shh)
+        // Why I added a toString() methods here? I have no idea, I was just experimenting with them.
         private static class releaseData {
+            @Contract(pure = true)
             @Override
-            public String toString() {
+            public @NotNull String toString() {
                 return
                     "{" +
                     "\n    \"body\": " + body +
@@ -147,8 +157,9 @@ public class Updater {
             public Assets[] assets;
 
             private static class Assets {
+                @Contract(pure = true)
                 @Override
-                public String toString() {
+                public @NotNull String toString() {
                     return "{\n        \"browser_download_url\": " + browser_download_url + ",\n        \"name\": " + name + ",\n        \"size\": " + size + "\n    }";
                 }
                 public String browser_download_url;

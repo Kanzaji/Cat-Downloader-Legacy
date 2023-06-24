@@ -45,9 +45,9 @@ public class SettingsManager {
                 logger.log("Override of the settings finished!");
             } else {
                 Settings SettingsFileData = parseSettings();
-                // Saving will automatically re-add missing values!
+                // Saving will automatically re-add missing values
                 saveSettings(SettingsFileData);
-                // Parse Data again to get any missing values!
+                // Parse Data again to get any missing values
                 SettingsFileData = parseSettings();
                 if (validateSettings(SettingsFileData)) {
                     loadSettings(SettingsFileData);
@@ -65,7 +65,6 @@ public class SettingsManager {
                 Files.copy(FileUtils.getInternalAsset("templates/settings.json5"), SettingsFile);
                 logger.log("Template created! Halting program to allow configuration changes.");
 
-                // Console output to the user
                 System.out.println("It seems like you are running Cat-Downloader-Legacy for the first time!");
                 System.out.println("In the working directory, a settings file has been generated, go take a look!");
                 System.out.println("---------------------------------------------------------------------");
@@ -173,12 +172,9 @@ public class SettingsManager {
         }
 
         logger.log("Saving settings to a file...");
-        // Reading all lines of the Settings file
         List<String> SettingsLines = Files.readAllLines(SettingsFile);
-        // Clearing a file!
         Files.writeString(SettingsFile, "", StandardOpenOption.TRUNCATE_EXISTING);
         AtomicReference<List<String>> existingKeys = new AtomicReference<>();
-        // Manually copying the List to the LinkedList<>, Just because Arrays#asList() doesn't allow removal of the elements.
         existingKeys.set(new LinkedList<>());
         for (String settingsKey : Settings.SettingsKeys) {
             existingKeys.get().add(settingsKey);
@@ -225,7 +221,6 @@ public class SettingsManager {
             saveSettings(SettingsData);
             logger.warn("Settings file replaced with default one, and values from the old file has been saved!");
 
-            // Console output to the user
             System.out.println("Settings file has been updated! Go check out new options!");
             System.out.println("---------------------------------------------------------------------");
             System.out.println("Path to configuration file: " + SettingsFile.toAbsolutePath());

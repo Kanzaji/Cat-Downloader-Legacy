@@ -45,6 +45,7 @@ public class ArgumentDecoder {
      * @param arguments String[] with arguments passed to the program.
      */
     public void decodeArguments(String[] arguments) throws IllegalArgumentException, FileNotFoundException {
+        // TODO: Rework this again.
         logger.log("Running with arguments:");
         for (String Argument : arguments) {
             logger.log(Argument);

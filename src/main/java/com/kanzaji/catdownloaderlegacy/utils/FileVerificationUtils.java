@@ -103,7 +103,7 @@ public class FileVerificationUtils {
      * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm.
      */
     private static byte[] getHash(String DownloadURL, Path FilePath, String Algorithm) throws IOException, NoSuchAlgorithmException {
-        // Logger commands are commented out because they are making a lot of mess in the log itself, and they aren't that important tbh.
+        // Logger commands are commented out because they are making a lot of mess in the log itself, and they aren't that important
         if (DownloadURL == null && FilePath == null) {
             throw new NullPointerException("Both arguments for Hash verification are null!");
         }

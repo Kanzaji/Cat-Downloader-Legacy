@@ -4,8 +4,6 @@ import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Objects;
 
 public class UpdaterGUI {
@@ -21,7 +19,6 @@ public class UpdaterGUI {
      */
     public static void startGUI() {
 
-        // Getting the screen resolution, so the app can scale itself with the resolution the user uses
         logger.log("Starting GUI...");
         GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
         int gWidth = gd.getDisplayMode().getWidth();

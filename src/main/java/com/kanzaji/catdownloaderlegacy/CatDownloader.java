@@ -12,9 +12,7 @@ import java.nio.file.*;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public final class CatDownloader {
     // Launch fresh instances of required utilities.
@@ -27,15 +25,6 @@ public final class CatDownloader {
     public static final String NAME = "Cat Downloader Legacy";
     public static Path APPPATH = null;
 
-    static {
-        try {
-            APPPATH = Path.of(Updater.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath().replaceFirst("/", ""));
-        } catch (URISyntaxException e) {
-            // I think this should not happen? But just for safety better to log it.
-            logger.logStackTrace("Failed to get App directory!", e);
-        }
-    }
-
     // Locally used variables
     public static Path manifestFile;
     private static Manifest ManifestData = new Manifest();
@@ -45,50 +34,42 @@ public final class CatDownloader {
         //TODO: Add a bit more documentation.
         // What I mean is add docs to the classes (because some of them have it and some don't) and add links etc to all docs that are currently live.
         // Trust me future Kanz, IT WILL BE WORTH IT.
-
-        // Time estimate! Okay more like how long it took but still.
-        long StartingTime = System.currentTimeMillis();
-
-        // Initialize Logger.
         logger.init();
         logger.log(NAME + " version: " + VERSION);
         logger.log("App path: " + APPPATH.toAbsolutePath());
 
+        long StartingTime = System.currentTimeMillis();
         try {
-            // Decode Arguments and store them in ARD Instance.
+            APPPATH = Path.of(Updater.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath().replaceFirst("/", ""));
+        } catch (URISyntaxException e) {
+            logger.logStackTrace("Failed to get App directory!", e);
+        }
+
+        try {
             ARD.decodeArguments(args);
-
-            // Printing out Argument / Configuration values.
             ARD.printConfiguration("Program Configuration from Arguments:");
-
-            // Initialize SettingsManager
-            if (ARD.areSettingsEnabled()) { SettingsManager.initSettings(); }
-
-            // Run Post-int on Logger.
+            if (ARD.areSettingsEnabled()) SettingsManager.initSettings();
             logger.postInit();
-
-            // Turns off Logger if user wants it (NOT RECOMMENDED!!!!)
             // Redirects entire output to a console!
-            if (!ARD.isLoggerActive()){
-                logger.exit();
-            }
+            if (!ARD.isLoggerActive()) logger.exit();
 
-            // "What the hell did I just run" section.
             System.out.println("---------------------------------------------------------------------");
             System.out.println("     " + NAME + " " + VERSION);
             System.out.println("     Created by: Kanzaji");
             System.out.println("---------------------------------------------------------------------");
 
-            // Setting directory where program was turned on
-            Path dir = Path.of(ARD.getWorkingDir());
-            System.out.println("Running in " + dir.toAbsolutePath());
+            if (Updater.checkUpdates()) {
 
-            // Checking Program mode and getting required Manifest File.
+            }
+
+            Path workingDirectory = Path.of(ARD.getWorkingDir());
+            System.out.println("Running in " + workingDirectory.toAbsolutePath());
+
             if (ARD.isPackMode()) {
-                manifestFile = Path.of(dir.toAbsolutePath().toString(), "manifest.json");
                 System.out.println("CurseForge site format support is experimental! Use at your own responsibility.");
+                manifestFile = Path.of(workingDirectory.toAbsolutePath().toString(), "manifest.json");
             } else {
-                manifestFile = Path.of(dir.toAbsolutePath().toString(), "minecraftinstance.json");
+                manifestFile = Path.of(workingDirectory.toAbsolutePath().toString(), "minecraftinstance.json");
             }
 
             if (!manifestFile.toFile().exists()) {
@@ -96,11 +77,11 @@ public final class CatDownloader {
                 logger.error("Manifest file not found!");
                 String msg = null;
                 if (ARD.isPackMode()) {
-                    if (Files.exists(Path.of(dir.toAbsolutePath().toString(), "minecraftinstance.json"))) {
+                    if (Files.exists(Path.of(workingDirectory.toAbsolutePath().toString(), "minecraftinstance.json"))) {
                         msg = "It appears `minecraftinstance.json` exists in the current working directory, did you mean to run the app in \"Instance\" mode?";
                     }
                 } else {
-                    if (Files.exists(Path.of(dir.toAbsolutePath().toString(), "manifest.json"))) {
+                    if (Files.exists(Path.of(workingDirectory.toAbsolutePath().toString(), "manifest.json"))) {
                         msg = "It appears `manifest.json` exists in the current working directory, did you mean to run the app in \"Pack\" mode?";
                     }
                 }
@@ -111,7 +92,6 @@ public final class CatDownloader {
                 System.exit(1);
             }
 
-            // Parsing data from Manifest file.
             Gson gson = new Gson();
             logger.log("Reading data from Manifest file...");
             if (ARD.isPackMode()) {
@@ -124,7 +104,6 @@ public final class CatDownloader {
 
             logger.log("Data fetched. Found " + ManifestData.files.length + " Mods, on version " + ManifestData.minecraft.version + " " + ManifestData.minecraft.modLoaders[0].id);
 
-            // Checking if Manifest contains modpack name.
             if (ManifestData.name == null) {
                 System.out.println("Manifest file doesn't have an instance name!");
                 logger.warn("The name of the instance is missing!");
@@ -142,7 +121,7 @@ public final class CatDownloader {
 
                 logger.log("Instance name: " + ManifestData.name);
             }
-            // Checking if Manifest file contains required modLoader.
+
             if (ManifestData.minecraft.modLoaders[0].id == null) {
                 System.out.println("For Minecraft " + ManifestData.minecraft.version + " Vanilla");
                 logger.warn("This instance seems to be vanilla? No mod loader found!");
@@ -153,8 +132,7 @@ public final class CatDownloader {
 
             System.out.println("---------------------------------------------------------------------");
 
-            // Checking if /mods directory exists and can be used
-            Path ModsFolder = Path.of(dir.toAbsolutePath().toString(), "mods");
+            Path ModsFolder = Path.of(workingDirectory.toAbsolutePath().toString(), "mods");
             if(ModsFolder.toFile().exists() && !ModsFolder.toFile().isDirectory()) {
                 System.out.println("Folder \"mods\" exists, but it is a file!");
                 logger.error("Folder \"mods\" exists, but it is a file!");
@@ -164,12 +142,11 @@ public final class CatDownloader {
             if(!ModsFolder.toFile().exists()) {
                 logger.log("Folder \"mods\" is missing. Creating...");
                 Files.createDirectory(ModsFolder);
-                logger.log("Created \"mods\" folder in working directory. Path: " + dir.toAbsolutePath() + "\\mods");
+                logger.log("Created \"mods\" folder in working directory. Path: " + workingDirectory.toAbsolutePath() + "\\mods");
             } else {
-                logger.log("Found \"mods\" folder in working directory. Path: " + dir.toAbsolutePath() + "\\mods");
+                logger.log("Found \"mods\" folder in working directory. Path: " + workingDirectory.toAbsolutePath() + "\\mods");
             }
 
-            // Checking if Manifest has any mods.
             if (ManifestData.files == null || ManifestData.files.length == 0) {
                 System.out.println("Manifest file doesn't have any mods in it. Is this vanilla?");
                 logger.error("Manifest files does not have any mods in it. Is this intentional?");
@@ -177,7 +154,7 @@ public final class CatDownloader {
             }
 
             System.out.println("Found " + ManifestData.files.length + " mods in Manifest file!");
-            // If in Legacy mode, gather data from CFWidget API required for downloads. (THIS IS REALLY UNSTABLE).
+
             if (ARD.isPackMode()) {
                 logger.log("Getting data for ids specified in the Manifest file...");
                 System.out.println("Gathering Data about mods... This may take a while.");
@@ -188,7 +165,7 @@ public final class CatDownloader {
                     Executor = Executors.newFixedThreadPool(ARD.getThreads());
                     FailExecutor = Executors.newFixedThreadPool(ARD.getThreads()/4);
                 } else {
-                    // I think improving the gathering speed by like, the factor of 2 is good enough here, Executor with 2 threads should do the job.
+                    // If without Experimental there are issues with Data Gathering process, this is to blame.
                     Executor = Executors.newFixedThreadPool(2);
                     FailExecutor = Executors.newFixedThreadPool(1);
                 }
@@ -201,9 +178,7 @@ public final class CatDownloader {
                         if (ManifestData.files[finalIndex] != null && (ManifestData.files[finalIndex].error202 || ManifestData.files[finalIndex].error403)) {
                             mod.error403 = ManifestData.files[finalIndex].error403;
                             mod.error202 = ManifestData.files[finalIndex].error202;
-                            dataGatheringFails.add(() -> {
-                                ManifestData.files[finalIndex] = mod.getData(ManifestData.minecraft);
-                            });
+                            dataGatheringFails.add(() -> ManifestData.files[finalIndex] = mod.getData(ManifestData.minecraft));
                         }
                     });
                     Index += 1;
@@ -232,15 +207,13 @@ public final class CatDownloader {
                 System.out.println("Finished gathering data!");
             }
 
-            // Getting FileManager ready and starting sync of the profile.
-            // This shouldn't be a god-damn singleton, however I am too lazy to change it now and I will fix that on the Launcher version.
+            // This shouldn't be a singleton, however it is good enough for now.
             SyncManager fm = SyncManager.getInstance();
             fm.passData(ModsFolder, ManifestData, ARD.getThreads());
             fm.runSync();
 
             System.out.println(" (Entire process took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s)");
             logger.log("Sync took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s");
-
             logger.log("Cat-Downloader Legacy is created and maintained by Kanzaji! Find the source code and issue tracker here:");
             logger.log("https://github.com/Kanzaji/Cat-Downloader-Legacy");
             System.exit(0);

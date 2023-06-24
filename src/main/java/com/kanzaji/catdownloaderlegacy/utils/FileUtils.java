@@ -104,7 +104,8 @@ public class FileUtils {
      * @throws IOException when IO Exception occurs.
      */
     public static void compressToGz(@NotNull Path File, @Nullable String FileName, boolean DeleteOriginal, boolean Override) throws IllegalArgumentException, FileNotFoundException, IOException {
-        // Okay I have actually no idea how I can set the file name in the gz file itself... Soo I'm going to just rename the final file afterwards if the FileName is provided.
+        // Couldn't find out how to change the file name in the GZ Archive, or is it even possible.
+        // Current solution -> Rename final archive to the custom name specified.
         if (Files.isDirectory(File)) {
             throw new IllegalArgumentException("Tried to compress directory with use of GZ!");
         } else if (Files.notExists(File)) {
