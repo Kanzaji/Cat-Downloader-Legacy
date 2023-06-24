@@ -11,6 +11,11 @@
   // Argument representation: -WorkingDirectory:
   "workingDirectory": "",
 
+  // isUpdaterActive -> Determines if the Updater is enabled.
+  // Accepts: Boolean Value (Example: true)
+  // Argument representation: -Updater:
+  "isUpdaterActive": true,
+
   // LogDirectory -> Determines a directory where app will generate and store log files.
   // Empty string will result in the app generating log files in the WorkingDirectory.
   // Accepts: Both relative and absolute Paths as String.
@@ -33,7 +38,7 @@
   "shouldStockpileLogs": true,
 
   // logStockpileSize -> Determines maximum backlog of logs in the logs folder.
-  // Accepts: Any Integer Values equal or above 1!
+  // Accepts: Any Integer Values equal or above 0!
   // Argument representation: -LogStockSize:
   "logStockpileSize": 10,
 

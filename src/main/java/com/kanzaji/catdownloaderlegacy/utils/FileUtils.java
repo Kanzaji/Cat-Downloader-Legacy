@@ -2,75 +2,123 @@ package com.kanzaji.catdownloaderlegacy.utils;
 
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.zip.GZIPOutputStream;
 
+/**
+ * {@link FileUtils} holds Utility methods for interacting with Files! <br>
+ * @see FileUtils#getInternalFile(String)
+ * @see FileUtils#compressToGz(Path)
+ * @see FileUtils#getFileName(Path)
+ */
 public class FileUtils {
     private static final LoggerCustom logger = new LoggerCustom("FileUtils");
-    public static InputStream getInternalFile(String url) {
-        InputStream file = FileUtils.class.getResourceAsStream("/assets/" + url);
+
+    /**
+     * Used to get an {@link InputStream} for an internal resource. Starts from the `root` directory of the jar.
+     * @param Path {@link String} Path to the file, starting from `root`
+     * @return Not Null {@link InputStream} with internal resource.
+     * @throws MissingResourceException when internal resource couldn't be found.
+     */
+    public static @NotNull InputStream getInternalFile(@NotNull String Path) throws MissingResourceException {
+        InputStream file = FileUtils.class.getResourceAsStream(Path);
         if (file == null) {
             throw new MissingResourceException(
                 "\n----------------------------------------------------------------------------------------------------\n" +
                 "    One of the integral assets is missing!\n" +
                 "    This may signal corrupted app. Please consider reinstalling the program.\n" +
-                "    Missing asset: \"/assets/" + url + "\"" +
+                "    Missing asset: \"/assets/" + Path + "\"" +
                 "\n----------------------------------------------------------------------------------------------------\n" +
                 "StackTrace:",
-            url, url);
+            Path, Path);
         }
         return file;
     }
 
-    public static Path getFolder(Path File) {return File.toAbsolutePath().getParent();}
+    /**
+     * Used to get an {@link InputStream} for an internal resource. Starts from the `assets` directory of the jar.
+     * @param Path {@link String} Path to the file, starting from `root`
+     * @return Not Null {@link InputStream} with internal resource.
+     * @throws MissingResourceException when internal resource couldn't be found.
+     */
+    public static @NotNull InputStream getInternalAsset(@NotNull String Path) throws MissingResourceException {
+        return getInternalFile("/assets/" + Path);
+    }
 
-    public static String rename(Path File, String Name) throws IOException {
-        if (Files.exists(Path.of(getFolder(File).toString(), Name))) {
+    /**
+     * Used to rename specified file to a specified name. Adds numeric Suffix to the file name if a file with the same name exists.
+     * @param File Not Null {@link Path} to a file to rename.
+     * @param Name Not Null {@link String} with new name for a File.
+     * @return Not Null {@link String} with new name for a File (Includes added Suffix)
+     * @throws IOException when IO Exception occurs.
+     */
+    public static @NotNull String rename(@NotNull Path File, @NotNull String Name) throws IOException {
+        if (Files.exists(Path.of(getFolderAsString(File), Name))) {
             logger.warn("Found existing file with name: \"" + Name + "\"! Adding numeric suffix to the file name...");
             String newName;
             String fileExtension = null;
+
             if (Name.lastIndexOf(".") == -1) {
                 newName = Name;
             } else {
                 newName = Name.substring(0, Name.lastIndexOf("."));
                 fileExtension = Name.substring(Name.lastIndexOf("."));
             }
+
             long suffix = 1;
-            while (Files.exists(Path.of(newName + " (" + suffix + ")" + ((fileExtension != null)? fileExtension:"")))) {
+            while (Files.exists(Path.of(getFolderAsString(File),newName + " (" + suffix + ")" + ((fileExtension != null)? fileExtension:"")))) {
                 suffix++;
             }
-            Path newFile = Path.of(getFolder(File).toString(),newName + " (" + suffix + ")" + ((fileExtension != null)? fileExtension:""));
+
+            Path newFile = Path.of(getFolderAsString(File),newName + " (" + suffix + ")" + ((fileExtension != null)? fileExtension:""));
             Files.move(File, newFile);
+
             logger.warn("New file name: \"" + newFile.getFileName() + "\"");
             logger.log("Renamed file \"" + File.toAbsolutePath().getFileName() + "\" to \"" + newFile.getFileName() + "\".");
+
             return newFile.getFileName().toString();
         } else {
-            Files.move(File, Path.of(getFolder(File).toString(),Name));
+            Files.move(File, Path.of(getFolderAsString(File),Name));
             logger.log("Renamed file \"" + File.toAbsolutePath().getFileName() + "\" to \"" + Name + "\".");
             return Name;
         }
     }
 
-    // Okay I have actually no idea how I can set the file name in the gz file itself... Soo I'm going to just rename the final file afterwards if the FileName is provided.
-    public static void compressToGz(Path File, String FileName, boolean DeleteOriginal, boolean Override) throws IOException {
+    /**
+     * Used to compress specified File to a Gz archive.
+     * @param File Not Null {@link Path} to a file specified for compression.
+     * @param FileName Nullable {@link String} with name for an archive.
+     * @param DeleteOriginal {@link Boolean} if uncompressed file has to be deleted.
+     * @param Override {@link Boolean} if should delete an archive with the same name, if found.
+     * @throws IllegalArgumentException when File is a directory.
+     * @throws FileNotFoundException when File specified for compression doesn't exist.
+     * @throws IOException when IO Exception occurs.
+     */
+    public static void compressToGz(@NotNull Path File, @Nullable String FileName, boolean DeleteOriginal, boolean Override) throws IllegalArgumentException, FileNotFoundException, IOException {
+        // Okay I have actually no idea how I can set the file name in the gz file itself... Soo I'm going to just rename the final file afterwards if the FileName is provided.
         if (Files.isDirectory(File)) {
             throw new IllegalArgumentException("Tried to compress directory with use of GZ!");
         } else if (Files.notExists(File)) {
             throw new FileNotFoundException("Tried compressing \"" + File.toAbsolutePath() + "\" but it doesn't exists!");
         }
 
-        Path gzFile = Path.of(FileUtils.getFolder(File).toString(), File.getFileName() + ".gz");
-        Path customFile = Path.of(FileUtils.getFolder(File).toString(),FileName + ".gz");
+        Path gzFile = Path.of(getFolderAsString(File), File.getFileName() + ".gz");
+        Path customFile = Path.of(getFolderAsString(File),FileName + ".gz");
         boolean gzFileExists = Files.exists(gzFile);
-        boolean fileNameExists = Files.exists(customFile);
+        boolean fileNameExists = false;
 
         if (FileName != null) {
             logger.log("Custom file name for archive specified! Archive will be saved under name: \"" + FileName + ".gz\"");
+            fileNameExists = Files.exists(customFile);
         }
 
         logger.log("Compressing file \"" + File.toAbsolutePath() + "\"...");
@@ -83,15 +131,13 @@ public class FileUtils {
                 logger.warn("Compressed file \"" + ((fileNameExists)? customFile: gzFile).toAbsolutePath() + "\" has been deleted!");
             } else {
                 logger.warn("Adding numeric suffix to the file name...");
-                String gzFileName = ((fileNameExists)? customFile: gzFile).getFileName().toString();
-                String gzNewFileName = gzFileName.substring(0,gzFileName.lastIndexOf("."));
+                String gzNewFileName = getFileName((fileNameExists)? customFile: gzFile).substring(0,(getFileName((fileNameExists)? customFile: gzFile)).lastIndexOf("."));
                 long suffix = 1;
-                while (Files.exists(Path.of(gzNewFileName + " (" + suffix + ").gz"))) {
+                while (Files.exists(Path.of(getFolderAsString(File), gzNewFileName + " (" + suffix + ").gz"))) {
                     suffix++;
                 }
-                Path newGzFile = Path.of(FileUtils.getFolder(File).toString(),gzNewFileName + " (" + suffix + ").gz");
-                Files.move((fileNameExists)? customFile: gzFile, newGzFile);
-                logger.warn("New file name: " + newGzFile.getFileName());
+                gzFile = Path.of(getFolderAsString(File), gzNewFileName + " (" + suffix + ").gz");
+                logger.warn("New file name: " + gzFile.getFileName());
             }
         }
 
@@ -112,9 +158,75 @@ public class FileUtils {
         }
     }
 
-    public static void compressToGz(Path File) throws IOException { compressToGz(File, null, false, false);}
-    public static void compressToGz(Path File, boolean DeleteOriginal) throws IOException {compressToGz(File, null, DeleteOriginal, false);}
-    public static void compressToGz(Path File, boolean DeleteOriginal, boolean Override) throws IOException {compressToGz(File, null, DeleteOriginal, Override);}
-    public static void compressToGz(Path File, String FileName) throws IOException {compressToGz(File, FileName, false, false);}
-    public static void compressToGz(Path File, String FileName, boolean DeleteOriginal) throws IOException {compressToGz(File, FileName, DeleteOriginal, false);}
+    /**
+     * Used to compress specified File to a Gz archive.
+     * @param File Not Null {@link Path} to a file specified for compression.
+     * @throws IllegalArgumentException when File is a directory.
+     * @throws FileNotFoundException when File specified for compression doesn't exist.
+     * @throws IOException when IO Exception occurs.
+     */
+    public static void compressToGz(@NotNull Path File) throws IllegalArgumentException, FileNotFoundException, IOException { compressToGz(File, null, false, false);}
+
+    /**
+     * Used to compress specified File to a Gz archive.
+     * @param File Not Null {@link Path} to a file specified for compression.
+     * @param DeleteOriginal {@link Boolean} if uncompressed file has to be deleted.
+     * @throws IllegalArgumentException when File is a directory.
+     * @throws FileNotFoundException when File specified for compression doesn't exist.
+     * @throws IOException when IO Exception occurs.
+     */
+    public static void compressToGz(@NotNull Path File, boolean DeleteOriginal) throws IllegalArgumentException, FileNotFoundException, IOException { compressToGz(File, null, DeleteOriginal, false);}
+
+    /**
+     * Used to compress specified File to a Gz archive.
+     * @param File Not Null {@link Path} to a file specified for compression.
+     * @param DeleteOriginal {@link Boolean} if uncompressed file has to be deleted.
+     * @param Override {@link Boolean} if should delete an archive with the same name, if found.
+     * @throws IllegalArgumentException when File is a directory.
+     * @throws FileNotFoundException when File specified for compression doesn't exist.
+     * @throws IOException when IO Exception occurs.
+     */
+    public static void compressToGz(@NotNull Path File, boolean DeleteOriginal, boolean Override) throws IllegalArgumentException, FileNotFoundException, IOException { compressToGz(File, null, DeleteOriginal, Override);}
+
+    /**
+     * Used to compress specified File to a Gz archive.
+     * @param File Not Null {@link Path} to a file specified for compression.
+     * @param FileName Nullable {@link String} with name for an archive.
+     * @throws IllegalArgumentException when File is a directory.
+     * @throws FileNotFoundException when File specified for compression doesn't exist.
+     * @throws IOException when IO Exception occurs.
+     */
+    public static void compressToGz(@NotNull Path File, @Nullable String FileName) throws IllegalArgumentException, FileNotFoundException, IOException { compressToGz(File, FileName, false, false);}
+
+    /**
+     * Used to compress specified File to a Gz archive.
+     * @param File Not Null {@link Path} to a file specified for compression.
+     * @param FileName Nullable {@link String} with name for an archive.
+     * @param DeleteOriginal {@link Boolean} if uncompressed file has to be deleted.
+     * @throws IllegalArgumentException when File is a directory.
+     * @throws FileNotFoundException when File specified for compression doesn't exist.
+     * @throws IOException when IO Exception occurs.
+     */
+    public static void compressToGz(@NotNull Path File, @Nullable String FileName, boolean DeleteOriginal) throws IllegalArgumentException, FileNotFoundException, IOException { compressToGz(File, FileName, DeleteOriginal, false);}
+
+    /**
+     * Used to get parent folder for specified {@link Path}.
+     * @param File Not Null {@link Path} to get a parent of.
+     * @return Not Null {@link Path} with the parent of the directory, or File if there is no Parent.
+     */
+    public static @NotNull Path getFolder(@NotNull Path File) {return (Objects.isNull(File.toAbsolutePath().getParent())? File: File.toAbsolutePath().getParent());}
+
+    /**
+     * Used to get parent folder for specified {@link Path} as a String.
+     * @param File Not Null {@link Path} to get a parent of.
+     * @return Not Null {@link String} with the parent of the directory, or File if there is no Parent.
+     */
+    public static @NotNull String getFolderAsString(@NotNull Path File) {return getFolder(File).toString();}
+
+    /**
+     * Used to get a name of the file.
+     * @param File Not Null {@link Path} to get a name of.
+     * @return Not Null {@link String} with the name of the file.
+     */
+    public static @NotNull String getFileName(@NotNull Path File) {return File.getFileName().toString();}
 }

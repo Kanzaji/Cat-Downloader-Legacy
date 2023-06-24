@@ -1,5 +1,6 @@
 package com.kanzaji.catdownloaderlegacy.utils;
 
+import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
 import static com.kanzaji.catdownloaderlegacy.CatDownloader.VERSION;
@@ -12,7 +13,6 @@ import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * This class holds most (if not all) Update Checking + Updating related methods.
+ * This class holds all Update Checking + Updating related methods.
  */
 public class Updater {
     private static final String GithubAPIUrl = "https://api.github.com/repos/" + REPOSITORY.replaceFirst("https://github.com/", "");
@@ -29,11 +29,16 @@ public class Updater {
     private static final LoggerCustom logger = new LoggerCustom("Updater");
 
     /**
-     * This method calls GitHub repository and returns true, if newer version of the app is available.
+     * This method calls GitHub repository and returns {@code true}, if newer version of the app is available.
      * @return Boolean depending on the result of update check.
      */
     public static boolean checkUpdates() throws IOException {
         // TODO: Finish Updater!
+        if (!ArgumentDecoder.getInstance().isUpdaterActive()) {
+            logger.warn("Updater is disabled! Checking for updates is not possible.");
+            return false;
+        }
+
         logger.log("Checking for app updates...");
         // Getting the latest version from the GitHub API!
         // This has... weird rate-limit. Might cause issues, but I doubt someone is going to run this app like... over 100 times in an hour. And if so, it's going to update a bit later that's it.
@@ -73,19 +78,21 @@ public class Updater {
      * It does not support version numbers with characters.
      * @param currentVersion Current Version to compare.
      * @param latestVersion Latest Version to compare against.
-     * @return Boolean True when current version is the same or higher than latest, otherwise false.
+     * @return Boolean {@code true} when current version is the same or higher than latest and when it contains "develop" at the end, otherwise {@code false}.
+     * @throws NumberFormatException when version with non-Number character is passed!
      */
     public static boolean compareVersions(String currentVersion, String latestVersion) throws NumberFormatException  {
         return compareVersions(currentVersion, latestVersion, "\\.");
     }
 
     /**
-     * This method is used to compare current version numbers with a given separator.
+     * This method is used to compare current version numbers with a given separator.<br>
      * It does not support version numbers with characters.
      * @param currentVersion Current Version to compare.
      * @param latestVersion Latest Version to compare against.
-     * @param separator A String used to separate numbers in passed version schema (Regex).
-     * @return Boolean True when current version is the same or higher than latest and when it contains "develop" at the end, otherwise false.
+     * @param separator A {@link String} used to separate numbers in passed version schema (Regex).
+     * @return Boolean {@code true} when current version is the same or higher than latest and when it contains "develop" at the end, otherwise {@code false}.
+     * @throws NumberFormatException when version with non-Number character is passed!
      */
     public static boolean compareVersions(String currentVersion, String latestVersion, String separator) throws NumberFormatException {
         if (currentVersion.toLowerCase().endsWith("develop")) return true;
@@ -105,7 +112,7 @@ public class Updater {
                     }
                 }
             } catch (Exception E) {
-                throw new NumberFormatException("Non-Int character found in the version schema! (current = " + currentVersion + "; latest = " + latestVersion + ";) Comparison can't continue.");
+                throw new NumberFormatException("Non-Number character found in the version schema! (current = " + currentVersion + "; latest = " + latestVersion + ";) Comparison can't continue.");
             }
         }
 
@@ -117,7 +124,7 @@ public class Updater {
     }
 
     /**
-     * This class holds all data structures for the Updater.
+     * This class holds all data structures for the {@link Updater}.
      */
     private static class UpdaterData {
         // Why I added a toString() methods here? I have no idea, I was just experimenting with them for fun. (And yes I know I could use GSON for this, shh)

@@ -20,6 +20,7 @@ public class ArgumentDecoder {
     private int ThreadCount = 16;
     private int DownloadAttempts = 5;
     private int LogStockSize = 10;
+    private boolean UpdaterActive = true;
     private boolean LoggerActive = true;
     private boolean StockpileLogs = true;
     private boolean CompressStockPiledLogs = true;
@@ -70,6 +71,11 @@ public class ArgumentDecoder {
             if (decodeArgument(Argument,"-HashVerification:")) {
                 if (getOffBoolean(Argument)) {
                     this.HashVerification = false;
+                }
+            }
+            if (decodeArgument(Argument,"-Updater:")) {
+                if (getOffBoolean(Argument)) {
+                    this.UpdaterActive = false;
                 }
             }
             if (decodeArgument(Argument,"-Logger:")) {
@@ -245,7 +251,7 @@ public class ArgumentDecoder {
     }
 
     /**
-     * Prints entire ARD Configuration to a log file.
+     * Prints entire {@link ArgumentDecoder} Configuration to a log file.
      */
     public void printConfiguration(String message) {
         logger.log("---------------------------------------------------------------------");
@@ -253,6 +259,7 @@ public class ArgumentDecoder {
         logger.log("> Working directory: " + this.WorkingDirectory);
         logger.log("- Full Path: " + Path.of(this.WorkingDirectory).toAbsolutePath());
         logger.log("> Program Mode: " + this.Mode);
+        logger.log("> Updater enabled: " + this.UpdaterActive);
         logger.log("> Settings enabled: " + this.Settings);
         logger.log("> Default Settings from the template: " + this.DefaultSettingsFromTemplate);
         logger.log("> Settings Path: " + this.SettingsPath);
@@ -302,6 +309,7 @@ public class ArgumentDecoder {
     public int getLogStockSize() {return this.LogStockSize;}
     public boolean areSettingsEnabled() {return this.Settings;}
     public boolean shouldDefaultSettings() {return this.DefaultSettingsFromTemplate;}
+    public boolean isUpdaterActive() {return this.UpdaterActive;}
     public boolean isLoggerActive() {return this.LoggerActive;}
     public boolean shouldStockpileLogs() {return this.StockpileLogs;}
     public boolean shouldCompressLogs() {return this.CompressStockPiledLogs;}

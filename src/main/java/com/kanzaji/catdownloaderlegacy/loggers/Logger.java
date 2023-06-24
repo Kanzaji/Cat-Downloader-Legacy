@@ -62,7 +62,12 @@ public class Logger implements ILogger {
         this.log("Logger Initialization completed.");
     }
 
-    public void postInit() throws IOException {
+    /**
+     * Used to finish initialization of the Logger. Handles function of Stockpiling of the logs, and moving the log file to a new location.
+     * @throws IllegalStateException when reading attributes of the compressed log files is not possible.
+     * @throws IOException when IO Exception occurs.
+     */
+    public void postInit() throws IllegalStateException, IOException {
         this.log("Post-Initialization of Logger started!");
         Path logPath = Path.of(ARD.getLogPath());
         Path archivedLog = Path.of("Cat-Downloader Archived.log");
@@ -71,21 +76,28 @@ public class Logger implements ILogger {
 
         // Move Log files to the log Path if specified.
         if (!FileUtils.getFolder(Path.of(logPath.toString(), ".")).toString().equals(FileUtils.getFolder(this.LogFile).toString())) {
+            // Checking if the Specified Log Path exists.
             if (Files.notExists(logPath)) {
                 this.log("Custom path for logs has been specified, but it doesn't exists! Creating \"" + logPath.toAbsolutePath() + "\".");
                 Files.createDirectory(logPath);
             } else {
                 this.log("Custom path for logs has been specified: \"" + logPath.toAbsolutePath() + "\".");
             }
-            if (ARD.shouldStockpileLogs()) {
-                // Cat-Downloader Archived.log handling.
-                if (Files.exists(archivedLogInLogPath)) {
-                    this.warn("Found old pre-full-archive log file in specified Path! This might signal a crash in the last post-init phase of the logger!");
-                    this.warn("The log file is going to be saved as Unknown.log.gz for future inspection.");
-                    String unknownName = FileUtils.rename(archivedLogInLogPath, "unknown.log");
-                    FileUtils.compressToGz(Path.of(logPath.toString(), unknownName), true);
-                }
-                if (Files.exists(archivedLog)) {
+
+            // Checking if non-fully-archived log is present in the new log location.
+            if (Files.exists(archivedLogInLogPath)) {
+                this.warn("Found old pre-full-archive log file in specified Path! This might signal a crash in the last post-init phase of the logger!");
+                this.warn("The log file is going to be saved as unknown.log" + (ARD.shouldCompressLogs()? ".gz": "") + " for future inspection.");
+                 if (ARD.shouldCompressLogs()) {
+                     FileUtils.compressToGz(archivedLogInLogPath,"unknown.log", true);
+                 } else {
+                     FileUtils.rename(archivedLogInLogPath, "unknown.log");
+                 }
+            }
+
+            // Cat-Downloader Archived.log handling.
+            if (Files.exists(archivedLog)) {
+                if (ARD.shouldStockpileLogs()) {
                     this.log("Found archived log in working directory! Moving archived log to new location...");
                     Files.move(archivedLog, archivedLogInLogPath);
                     archivedLog = archivedLogInLogPath;
@@ -96,12 +108,18 @@ public class Logger implements ILogger {
                         this.log("Moved archived log to new location! Changing the filename...");
                         FileUtils.rename(archivedLog, DateUtils.getCurrentFullDate() + ".log");
                     }
-                    this.log("Log has been archived!");
+                    this.log("Old log file has been archived!");
+                } else {
+                    this.log("Found archived log in working directory! However, stockpiling of the logs has been disabled. Deleting old log file...");
+                    Files.deleteIfExists(archivedLog);
+                    this.log("Old log file has been deleted!");
                 }
+            }
 
-                // Cat-Downloader.log handling.
-                if (Files.exists(logInLogPath)) {
-                    this.log("Old log file found! Archiving the log file...");
+            // Cat-Downloader.log handling.
+            if (Files.exists(logInLogPath)) {
+                if (ARD.shouldStockpileLogs()) {
+                    this.log("Old log file found in the log Directory! Archiving the log file...");
                     String archivedName = FileUtils.rename(logInLogPath, "Cat-Downloader Archived.log");
                     Path archivedFile = Path.of(logPath.toString(), archivedName);
                     if (ARD.shouldCompressLogs()) {
@@ -109,15 +127,20 @@ public class Logger implements ILogger {
                     } else {
                         FileUtils.rename(archivedFile, DateUtils.getCurrentFullDate() + ".log");
                     }
-                    this.log("Log has been archived!");
+                    this.log("Old log file has been archived!");
+                } else {
+                    this.log("Found old log file in the Log directory! However, stockpiling of the logs has been disabled. Deleting old log file...");
+                    Files.deleteIfExists(logInLogPath);
+                    this.log("Old log file has been deleted!");
                 }
             }
 
+            // Currently Active log handling.
             if (Files.exists(this.LogFile)) {
                 this.log("Moving currently active log file to new location...");
                 if (Files.exists(logInLogPath)) {
                     this.error("Found non-archived log in the final destination, what should not happen at this point of the process!");
-                    this.error("Archiving the log under unknown_latest.log.gz name for future inspection.");
+                    this.error("Archiving the log under unknown_latest.log" + (ARD.shouldCompressLogs()? ".gz": "") + "  name for future inspection.");
                     String unknownName = FileUtils.rename(logInLogPath, "unknown_latest.log");
                     FileUtils.compressToGz(Path.of(logPath.toString(), unknownName), true);
                 }
@@ -139,15 +162,16 @@ public class Logger implements ILogger {
                     }
                     this.log("Log has been archived!");
                 } else {
-                    this.log("Stockpiling of the logs has been disabled! Deleting old log file...");
+                    this.log("Old log file found! However, stockpiling of the logs has been disabled. Deleting old log file...");
                     Files.delete(archivedLog);
                     this.log("Old log file has been deleted.");
                 }
             }
         }
 
+        // Limit handling
         if(ARD.shouldStockpileLogs()) {
-            this.log("Stockpiling logs is enabled! Stockpile limit is " + ((ARD.getLogStockSize() == 0)? "infinite!": ARD.getLogStockSize()));
+            this.log("Stockpiling of the logs is enabled! Stockpile limit is " + ((ARD.getLogStockSize() == 0)? "infinite!": ARD.getLogStockSize()));
             List<Path> archivedLogs = new LinkedList<>();
             try(Stream<Path> directoryList = Files.list(logPath)) {
                 directoryList.forEach((File) -> {
@@ -177,7 +201,7 @@ public class Logger implements ILogger {
                 if (Files.deleteIfExists(test.get())) {
                     this.log(test.get().toAbsolutePath() + " has been deleted!");
                 } else {
-                    this.error(test.get().toAbsolutePath() + " was meant to be deleted, but it's missing! Something is not right... This is not critical error however.");
+                    this.error(test.get().toAbsolutePath() + " was meant to be deleted, but it's missing! Something is not right...");
                 }
             }
         }
@@ -186,7 +210,7 @@ public class Logger implements ILogger {
     }
 
     /**
-     * Used to disable Logger and remove log file.
+     * Used to disable Logger and remove the log file.
      * @throws IOException when log deletion failed.
      */
     public void exit() throws IOException {

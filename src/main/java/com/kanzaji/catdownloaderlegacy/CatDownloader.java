@@ -61,23 +61,23 @@ public final class CatDownloader {
             // Printing out Argument / Configuration values.
             ARD.printConfiguration("Program Configuration from Arguments:");
 
-            // Run Post-int on Logger.
-            logger.postInit();
-
-            // "What the hell did I just run" section.
-            System.out.println("---------------------------------------------------------------------");
-            System.out.println("     " + NAME + " " + VERSION);
-            System.out.println("     Created by: Kanzaji");
-            System.out.println("---------------------------------------------------------------------");
-
             // Initialize SettingsManager
             if (ARD.areSettingsEnabled()) { SettingsManager.initSettings(); }
+
+            // Run Post-int on Logger.
+            logger.postInit();
 
             // Turns off Logger if user wants it (NOT RECOMMENDED!!!!)
             // Redirects entire output to a console!
             if (!ARD.isLoggerActive()){
                 logger.exit();
             }
+
+            // "What the hell did I just run" section.
+            System.out.println("---------------------------------------------------------------------");
+            System.out.println("     " + NAME + " " + VERSION);
+            System.out.println("     Created by: Kanzaji");
+            System.out.println("---------------------------------------------------------------------");
 
             // Setting directory where program was turned on
             Path dir = Path.of(ARD.getWorkingDir());

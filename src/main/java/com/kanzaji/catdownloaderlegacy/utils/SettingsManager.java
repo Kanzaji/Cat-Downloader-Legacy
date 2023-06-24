@@ -62,7 +62,7 @@ public class SettingsManager {
 
             if (ARD.shouldDefaultSettings()) {
                 logger.log("Getting a template for settings file out of internal assets...");
-                Files.copy(FileUtils.getInternalFile("templates/settings.json5"), SettingsFile);
+                Files.copy(FileUtils.getInternalAsset("templates/settings.json5"), SettingsFile);
                 logger.log("Template created! Halting program to allow configuration changes.");
 
                 // Console output to the user
@@ -168,7 +168,7 @@ public class SettingsManager {
     private static void saveSettings(Settings SettingsData) throws IOException {
         if (!Files.exists(SettingsFile)) {
             logger.warn("Settings file appears to be missing??? Creating default settings file...");
-            Files.copy(FileUtils.getInternalFile("templates/settings.json5"), SettingsFile, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(FileUtils.getInternalAsset("templates/settings.json5"), SettingsFile, StandardCopyOption.REPLACE_EXISTING);
             logger.warn("Created default Settings file at " + SettingsFile.toAbsolutePath());
         }
 
@@ -221,7 +221,7 @@ public class SettingsManager {
 
         if (existingKeys.get().size() > 0) {
             logger.warn("Found missing entries in the Settings file! Adding missing entries...");
-            Files.copy(FileUtils.getInternalFile("templates/settings.json5"), SettingsFile, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(FileUtils.getInternalAsset("templates/settings.json5"), SettingsFile, StandardCopyOption.REPLACE_EXISTING);
             saveSettings(SettingsData);
             logger.warn("Settings file replaced with default one, and values from the old file has been saved!");
 
