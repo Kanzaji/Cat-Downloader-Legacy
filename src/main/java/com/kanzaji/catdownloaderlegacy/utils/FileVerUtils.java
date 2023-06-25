@@ -12,15 +12,18 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
-public class FileVerificationUtils {
+/**
+ * This class holds all File Verification methods.
+ */
+public class FileVerUtils {
     private static final LoggerCustom logger = new LoggerCustom("FileVerUtils");
 
     /**
-     * Used to verify integrity of the file with use of Length and Hash verification!
-     * @param File Path to a file designated for verification.
-     * @param Size Expected file length.
-     * @param URL DownloadURL for Hash verification.
-     * @return Boolean with the result of the verification.
+     * Used to verify integrity of the file with use of {@link FileVerUtils#verifyFileSize(Path, int)} and {@link FileVerUtils#verifyHash(Path, String)}.
+     * @param File {@link Path} to a file designated for verification.
+     * @param Size {@link Number} with Expected file length.
+     * @param URL {@link String} DownloadURL for Hash verification.
+     * @return {@link Boolean} with the result of the verification.
      * @throws IOException when IO Operation fails.
      */
     public static boolean verifyFile(Path File, Number Size, String URL) throws IOException, NoSuchAlgorithmException {
@@ -33,9 +36,9 @@ public class FileVerificationUtils {
 
     /**
      * File size verification, can be disabled with an argument!
-     * @param File Path to a file designated for verification.
-     * @param Size Expected file length.
-     * @return Boolean with the result of the verification.
+     * @param File {@link Path} to a file designated for verification.
+     * @param Size {@link Number} with Expected file length..
+     * @return {@link Boolean} with the result of the verification.
      * @throws IOException when IO Operation fails.
      */
     public static boolean verifyFileSize(Path File, Number Size) throws IOException {
@@ -44,9 +47,9 @@ public class FileVerificationUtils {
 
     /**
      * File size verification, can be disabled with an argument!
-     * @param File Path to a file designated for verification.
-     * @param Size Expected file length.
-     * @return Boolean with the result of the verification.
+     * @param File {@link Path} to a file designated for verification.
+     * @param Size {@link Number} with Expected file length.
+     * @return {@link Boolean} with the result of the verification.
      * @throws IOException when IO Operation fails.
      */
     public static boolean verifyFileSize(Path File, int Size) throws IOException {
@@ -58,10 +61,10 @@ public class FileVerificationUtils {
 
     /**
      * Used to verify a file using Hash calculations (SHA-256).
-     * @param File Path to a file designated for verification.
-     * @param DownloadURL URL to a source of the file.
-     * @return Boolean with the result of the verification.
-     * @throws IOException when IO operation fails.
+     * @param File {@link Path} to a file designated for verification.
+     * @param DownloadURL {@link String} DownloadURL to a source file.
+     * @return {@link Boolean} with the result of the verification.
+     * @throws IOException when IO Operation fails.
      * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm for some reason.
      */
     public static boolean verifyHash(Path File, String DownloadURL) throws IOException, NoSuchAlgorithmException {
@@ -72,11 +75,11 @@ public class FileVerificationUtils {
     }
 
     /**
-     * Used to get a Hash (SHA-256) from a URL.
-     * @param DownloadURL URL for data stream to calculate Hash from.
-     * @return Byte array with the result of the Hash calculations
+     * Used to get a Hash (SHA-256) from an URL.
+     * @param DownloadURL {@link String} DownloadURL to a source file.
+     * @return {@link Byte} array with the result of the Hash calculations
      * @throws IOException when IO operation fails.
-     * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm for some reason.
+     * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm.
      */
     public static byte[] getHash(String DownloadURL) throws IOException, NoSuchAlgorithmException {
         return getHash(DownloadURL, null, "SHA-256");
@@ -84,8 +87,8 @@ public class FileVerificationUtils {
 
     /**
      * Used to get a Hash (SHA-256) from a file.
-     * @param FilePath Path to a file to calculate Hash from.
-     * @return Byte array with the result of the Hash calculations
+     * @param FilePath {@link Path} to a file to calculate Hash from.
+     * @return {@link Byte} array with the result of the Hash calculations
      * @throws IOException when IO operation fails.
      * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm for some reason.
      */
@@ -95,10 +98,10 @@ public class FileVerificationUtils {
 
     /**
      * Used to get a Hash from a file or URL.
-     * @param DownloadURL URL for data stream to calculate Hash from.
-     * @param FilePath Path to a file to calculate Hash from.
-     * @param Algorithm Algorithm to use for Calculations.
-     * @return Byte array with the result of the Hash calculations
+     * @param DownloadURL {@link String} URL for data stream to calculate Hash from.
+     * @param FilePath {@link Path} to a file to calculate Hash from.
+     * @param Algorithm {@link String} Algorithm to use for Calculations.
+     * @return {@link Byte} array with the result of the Hash calculations
      * @throws IOException when IO operation fails.
      * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm.
      */

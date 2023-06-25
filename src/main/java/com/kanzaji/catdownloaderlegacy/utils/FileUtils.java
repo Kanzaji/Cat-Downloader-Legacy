@@ -124,6 +124,7 @@ public class FileUtils {
 
         logger.log("Compressing file \"" + File.toAbsolutePath() + "\"...");
 
+        //TODO: Fix this fully, still doesn't completely work >.>
         if (gzFileExists || fileNameExists) {
             logger.warn("Found already compressed file with the same name!");
             if (Override) {

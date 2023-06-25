@@ -16,6 +16,10 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Used to hold information and methods related to {@link Manifest} and manifest.json file.
+ * @see ModFile
+ */
 public class Manifest {
     public String version;
     public String name;
@@ -23,6 +27,10 @@ public class Manifest {
     public ModFile[] files;
     public minecraft minecraft;
 
+    /**
+     * Used to hold information and methods related to a single {@link ModFile} object.
+     * @see ModFile#getData(Manifest.minecraft)
+     */
     public static class ModFile {
         public boolean error403 = false;
         public boolean error202 = false;
@@ -35,6 +43,11 @@ public class Manifest {
 
         //TODO: Rework this.. again. Also add notes!
 
+        /**
+         * Used to gather required data for this object.
+         * @param minecraftData {@link minecraft} object from the main Manifest Object.
+         * @return {@link ModFile} with data acquired in Data Gathering.
+         */
         public ModFile getData(minecraft minecraftData) {
             ModFile ModFileData = new ModFile();
             LoggerCustom logger = new LoggerCustom("Manifest");
@@ -185,6 +198,10 @@ public class Manifest {
             return ModFileData;
         }
 
+        /**
+         * Used to get a file name for this {@link ModFile} object.
+         * @return {@link String} with a file name for this object.
+         */
         public String getFileName() {
             return downloadUrl.substring(downloadUrl.lastIndexOf("/")+1).replaceAll("%20", " ");
         }

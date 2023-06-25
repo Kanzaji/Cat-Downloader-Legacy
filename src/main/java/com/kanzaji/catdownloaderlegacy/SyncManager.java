@@ -1,13 +1,11 @@
 package com.kanzaji.catdownloaderlegacy;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
 import com.kanzaji.catdownloaderlegacy.utils.DownloadUtils;
 import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
-import static com.kanzaji.catdownloaderlegacy.utils.FileVerificationUtils.verifyFile;
+import static com.kanzaji.catdownloaderlegacy.utils.FileVerUtils.verifyFile;
 
 import java.io.IOException;
 import java.nio.file.Files;

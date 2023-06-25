@@ -1,6 +1,6 @@
 package com.kanzaji.catdownloaderlegacy.utils;
 
-import static com.kanzaji.catdownloaderlegacy.utils.FileVerificationUtils.verifyFile;
+import static com.kanzaji.catdownloaderlegacy.utils.FileVerUtils.verifyFile;
 
 import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;

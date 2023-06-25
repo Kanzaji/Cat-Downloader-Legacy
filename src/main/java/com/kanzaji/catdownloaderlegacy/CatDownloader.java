@@ -20,7 +20,7 @@ public final class CatDownloader {
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
 
     // Global variables
-    public static final String VERSION = "1.0";
+    public static final String VERSION = "2.0-DEVELOP";
     public static final String REPOSITORY = "https://github.com/Kanzaji/Cat-Downloader-Legacy";
     public static final String NAME = "Cat Downloader Legacy";
     public static Path APPPATH = null;
@@ -36,14 +36,14 @@ public final class CatDownloader {
         // Trust me future Kanz, IT WILL BE WORTH IT.
         logger.init();
         logger.log(NAME + " version: " + VERSION);
-        logger.log("App path: " + APPPATH.toAbsolutePath());
-
-        long StartingTime = System.currentTimeMillis();
         try {
             APPPATH = Path.of(Updater.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath().replaceFirst("/", ""));
         } catch (URISyntaxException e) {
             logger.logStackTrace("Failed to get App directory!", e);
         }
+        logger.log("App path: " + APPPATH.toAbsolutePath());
+
+        long StartingTime = System.currentTimeMillis();
 
         try {
             ARD.decodeArguments(args);
