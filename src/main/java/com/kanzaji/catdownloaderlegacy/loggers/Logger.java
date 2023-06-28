@@ -1,3 +1,27 @@
+/***************************************************************************************************
+ * MIT License
+ *
+ * Copyright (c) 2023. Kanzaji
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NON INFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ **************************************************************************************************/
+
 package com.kanzaji.catdownloaderlegacy.loggers;
 
 import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
@@ -180,27 +204,34 @@ public class Logger implements ILogger {
                 });
             }
 
+            if (archivedLogs.size() > ARD.getLogStockSize()) {
+                this.log("Limit of stockpile has been reached (Currently found \"" + archivedLogs.size() + "\" log files)! Deleting the oldest files...");
+            }
+
             while (archivedLogs.size() > ARD.getLogStockSize()) {
-                this.log("Limit of stockpile has been reached! Deleting the oldest file...");
-                AtomicReference<Path> test = new AtomicReference<>();
+                AtomicReference<Path> oldestLogFile = new AtomicReference<>();
                 archivedLogs.forEach((File) -> {
                     try {
                         BasicFileAttributes currentFile = Files.readAttributes(File, BasicFileAttributes.class);
-                        if (test.get() == null) {
-                            test.set(File);
-                        } else if (currentFile.creationTime().compareTo(Files.readAttributes(test.get(), BasicFileAttributes.class).creationTime()) < 0) {
-                            test.set(File);
+                        if (oldestLogFile.get() == null) {
+                            oldestLogFile.set(File);
+                        } else if (currentFile.creationTime().compareTo(Files.readAttributes(oldestLogFile.get(), BasicFileAttributes.class).creationTime()) < 0) {
+                            oldestLogFile.set(File);
                         }
                     } catch (Exception e) {
                         this.logStackTrace("Unable to read attributes of file: " + File.toAbsolutePath(), e);
-                        throw new IllegalStateException("Unable to read attributes of the file!");
+//                        throw new IllegalStateException("Unable to read attributes of the file!");
                     }
                 });
-                archivedLogs.remove(test.get());
-                if (Files.deleteIfExists(test.get())) {
-                    this.log(test.get().toAbsolutePath() + " has been deleted!");
-                } else {
-                    this.error(test.get().toAbsolutePath() + " was meant to be deleted, but it's missing! Something is not right...");
+                archivedLogs.remove(oldestLogFile.get());
+                try {
+                    if (Files.deleteIfExists(oldestLogFile.get())) {
+                        this.log(oldestLogFile.get().toAbsolutePath() + " has been deleted!");
+                    } else {
+                        this.error(oldestLogFile.get().toAbsolutePath() + " was meant to be deleted, but it's missing! Something is not right...");
+                    }
+                } catch (Exception e) {
+                    this.logStackTrace("Failed to delete the log file " + oldestLogFile.get().toAbsolutePath(), e);
                 }
             }
         }

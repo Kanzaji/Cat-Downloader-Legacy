@@ -1,12 +1,37 @@
-package com.kanzaji.catdownloaderlegacy.utils;
+/***************************************************************************************************
+ * MIT License
+ *
+ * Copyright (c) 2023. Kanzaji
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NON INFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ **************************************************************************************************/
 
-import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
+package com.kanzaji.catdownloaderlegacy;
+
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+import com.kanzaji.catdownloaderlegacy.utils.UpdaterGUI;
 
 import static com.kanzaji.catdownloaderlegacy.CatDownloader.VERSION;
 import static com.kanzaji.catdownloaderlegacy.CatDownloader.REPOSITORY;
 
 import com.google.gson.Gson;
+
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,6 +65,11 @@ public class Updater {
         if (!ArgumentDecoder.getInstance().isUpdaterActive()) {
             logger.warn("Updater is disabled! Checking for updates is not possible.");
             return false;
+        }
+
+        if (VERSION.endsWith("DEVELOP")) {
+            logger.warn("Running in DEVELOP version (" + VERSION + ") of the app! Disabling Updater for this session.");
+            
         }
 
         logger.log("Checking for app updates...");
