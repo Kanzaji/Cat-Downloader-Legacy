@@ -32,6 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
+import java.util.Comparator;
 import java.util.Date;
 import java.io.IOException;
 import java.util.LinkedList;
@@ -41,6 +42,11 @@ import java.util.stream.Stream;
 
 public class Logger implements ILogger {
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
+
+    private static void accept(Path File) {
+        System.out.println();
+    }
+
     private static final class InstanceHolder {private static final Logger instance = new Logger();}
     private Logger() {}
     private boolean disabled = false;
@@ -193,8 +199,8 @@ public class Logger implements ILogger {
         }
 
         // Limit handling
-        if(ARD.shouldStockpileLogs()) {
-            this.log("Stockpiling of the logs is enabled! Stockpile limit is " + ((ARD.getLogStockSize() == 0)? "infinite!": ARD.getLogStockSize()));
+        if (ARD.shouldStockpileLogs() && ARD.getLogStockSize() > 0) {
+            this.log("Stockpiling of the logs is enabled! Stockpile limit is " +  ARD.getLogStockSize());
             List<Path> archivedLogs = new LinkedList<>();
             try(Stream<Path> directoryList = Files.list(logPath)) {
                 directoryList.forEach((File) -> {
@@ -205,35 +211,38 @@ public class Logger implements ILogger {
             }
 
             if (archivedLogs.size() > ARD.getLogStockSize()) {
-                this.log("Limit of stockpile has been reached (Currently found \"" + archivedLogs.size() + "\" log files)! Deleting the oldest files...");
-            }
+                this.log("Limit of stockpile has been reached (Currently found " + archivedLogs.size() + " log files)! Deleting the oldest files...");
 
-            while (archivedLogs.size() > ARD.getLogStockSize()) {
-                AtomicReference<Path> oldestLogFile = new AtomicReference<>();
-                archivedLogs.forEach((File) -> {
-                    try {
-                        BasicFileAttributes currentFile = Files.readAttributes(File, BasicFileAttributes.class);
-                        if (oldestLogFile.get() == null) {
-                            oldestLogFile.set(File);
-                        } else if (currentFile.creationTime().compareTo(Files.readAttributes(oldestLogFile.get(), BasicFileAttributes.class).creationTime()) < 0) {
-                            oldestLogFile.set(File);
-                        }
+                archivedLogs.sort((e1, e2) -> {
+                    try { return Files
+                            .readAttributes(e1, BasicFileAttributes.class)
+                            .creationTime()
+                            .compareTo(
+                                    Files
+                                            .readAttributes(e2, BasicFileAttributes.class)
+                                            .creationTime()
+                            );
                     } catch (Exception e) {
-                        this.logStackTrace("Unable to read attributes of file: " + File.toAbsolutePath(), e);
-//                        throw new IllegalStateException("Unable to read attributes of the file!");
+                        this.logStackTrace("Unable to read attributes of file: " + e1.toAbsolutePath(), e);
+                        return 0;
                     }
                 });
-                archivedLogs.remove(oldestLogFile.get());
-                try {
-                    if (Files.deleteIfExists(oldestLogFile.get())) {
-                        this.log(oldestLogFile.get().toAbsolutePath() + " has been deleted!");
-                    } else {
-                        this.error(oldestLogFile.get().toAbsolutePath() + " was meant to be deleted, but it's missing! Something is not right...");
+
+                while (archivedLogs.size() > ARD.getLogStockSize()) {
+                    try {
+                        if (Files.deleteIfExists(archivedLogs.get(0))) {
+                            this.log(archivedLogs.get(0).toAbsolutePath() + " has been deleted!");
+                        } else {
+                            this.error(archivedLogs.get(0).toAbsolutePath() + " was meant to be deleted, but it's missing! Something is not right...");
+                        }
+                    } catch (Exception e) {
+                        this.logStackTrace("Failed to delete the log file " + archivedLogs.get(0).toAbsolutePath(), e);
                     }
-                } catch (Exception e) {
-                    this.logStackTrace("Failed to delete the log file " + oldestLogFile.get().toAbsolutePath(), e);
+                    archivedLogs.remove(archivedLogs.get(0));
                 }
             }
+        } else if (ARD.shouldStockpileLogs() && ARD.getLogStockSize() < 1) {
+            this.log("Stockpiling of the logs is enabled! Stockpile limit is infinite!");
         }
 
         this.log("Post-Initialization of Logger finished!");

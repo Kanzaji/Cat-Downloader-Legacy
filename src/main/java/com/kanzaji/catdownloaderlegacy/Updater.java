@@ -69,7 +69,7 @@ public class Updater {
 
         if (VERSION.endsWith("DEVELOP")) {
             logger.warn("Running in DEVELOP version (" + VERSION + ") of the app! Disabling Updater for this session.");
-            
+            return false;
         }
 
         logger.log("Checking for app updates...");
