@@ -119,15 +119,6 @@ public class ArgumentDecoder {
     }
 
     /**
-     * Used to validate selected mode!
-     * @param Mode Mode to verify.
-     * @return boolean True when mode is available.
-     */
-    public static boolean validateMode(String Mode) {
-        return Objects.equals(Mode, "pack") || Objects.equals(Mode, "instance");
-    }
-
-    /**
      * Used to determine if provided {@link String} is one of the accepted Strings for boolean value.
      * Defaults to {@code true} if incorrect String is passed.
      * @param Value {@link String} with boolean value
@@ -188,6 +179,15 @@ public class ArgumentDecoder {
             throw new FileNotFoundException("Specified " + Argument + " does not exists!");
         }
         return path;
+    }
+
+    /**
+     * Used to validate selected mode!
+     * @param Mode Mode to verify.
+     * @return boolean True when mode is available.
+     */
+    public static boolean validateMode(String Mode) {
+        return Objects.equals(Mode, "pack") || Objects.equals(Mode, "instance");
     }
 
     /**
