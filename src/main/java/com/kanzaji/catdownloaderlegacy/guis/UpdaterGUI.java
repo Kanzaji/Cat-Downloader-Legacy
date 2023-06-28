@@ -22,7 +22,7 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.utils;
+package com.kanzaji.catdownloaderlegacy.guis;
 
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 

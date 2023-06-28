@@ -136,33 +136,37 @@ public class FileUtils {
             throw new FileNotFoundException("Tried compressing \"" + File.toAbsolutePath() + "\" but it doesn't exists!");
         }
 
-        Path gzFile = Path.of(getFolderAsString(File), File.getFileName() + ".gz");
-        Path customFile = Path.of(getFolderAsString(File),FileName + ".gz");
-        boolean gzFileExists = Files.exists(gzFile);
-        boolean fileNameExists = false;
-
+        Path gzFile;
         if (FileName != null) {
             logger.log("Custom file name for archive specified! Archive will be saved under name: \"" + FileName + ".gz\"");
-            fileNameExists = Files.exists(customFile);
+            gzFile = Path.of(getFolderAsString(File),FileName + ".gz");
+        } else {
+            gzFile = Path.of(getFolderAsString(File), File.getFileName() + ".gz");
         }
+
+        boolean gzFileExists = Files.exists(gzFile);
 
         logger.log("Compressing file \"" + File.toAbsolutePath() + "\"...");
 
-        //TODO: Fix this fully, still doesn't completely work >.>
-        if (gzFileExists || fileNameExists) {
+        if (gzFileExists) {
             logger.warn("Found already compressed file with the same name!");
             if (Override) {
                 logger.warn("Deleting compressed file...");
-                Files.delete((fileNameExists)? customFile: gzFile);
-                logger.warn("Compressed file \"" + ((fileNameExists)? customFile: gzFile).toAbsolutePath() + "\" has been deleted!");
+                Files.delete(gzFile);
+                logger.warn("Compressed file \"" + gzFile.toAbsolutePath() + "\" has been deleted!");
             } else {
                 logger.warn("Adding numeric suffix to the file name...");
-                String gzNewFileName = getFileName((fileNameExists)? customFile: gzFile).substring(0,(getFileName((fileNameExists)? customFile: gzFile)).lastIndexOf("."));
+                String gzNewFileName = getFileName(gzFile).substring(0,(getFileName(gzFile)).lastIndexOf("."));
+                String extension = "";
+                if (gzNewFileName.lastIndexOf(".") > -1) {
+                    extension = gzNewFileName.substring(gzNewFileName.lastIndexOf("."));
+                    gzNewFileName = gzNewFileName.substring(0, gzNewFileName.lastIndexOf("."));
+                }
                 long suffix = 1;
-                while (Files.exists(Path.of(getFolderAsString(File), gzNewFileName + " (" + suffix + ").gz"))) {
+                while (Files.exists(Path.of(getFolderAsString(File), gzNewFileName + " (" + suffix + ")" + extension + ".gz"))) {
                     suffix++;
                 }
-                gzFile = Path.of(getFolderAsString(File), gzNewFileName + " (" + suffix + ").gz");
+                gzFile = Path.of(getFolderAsString(File), gzNewFileName + " (" + suffix + ")" + extension + ".gz");
                 logger.warn("New file name: " + gzFile.getFileName());
             }
         }
@@ -171,9 +175,6 @@ public class FileUtils {
 
         try (GZIPOutputStream gzOutput = new GZIPOutputStream(Files.newOutputStream(gzFile))) {
             Files.copy(File, gzOutput);
-            if (FileName != null && !gzFile.getFileName().toString().contains(FileName)) {
-                Files.move(gzFile, customFile);
-            }
             if (DeleteOriginal) {
                 logger.log("Compression done! Deleting original file...");
                 Files.delete(File);

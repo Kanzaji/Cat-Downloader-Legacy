@@ -204,7 +204,8 @@ public class Logger implements ILogger {
             List<Path> archivedLogs = new LinkedList<>();
             try(Stream<Path> directoryList = Files.list(logPath)) {
                 directoryList.forEach((File) -> {
-                    if(File.getFileName().toString().endsWith(".gz") && File.getFileName().toString().contains(".log")) {
+                    String fileName = File.getFileName().toString();
+                    if(fileName.contains(".log") && !fileName.equals("Cat-Downloader.log")) {
                         archivedLogs.add(File);
                     }
                 });
