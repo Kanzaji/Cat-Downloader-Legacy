@@ -4,7 +4,7 @@
     <log_file alias="Logs" path="$PROJECT_DIR$/TestingArea/Cat-Downloader.log" show_all="true" />
     <option name="MAIN_CLASS_NAME" value="com.kanzaji.catdownloaderlegacy.CatDownloader" />
     <module name="Cat-Downloader-Legacy" />
-    <option name="PROGRAM_PARAMETERS" value="-Mode:Instance -uPdAter:fALse -HashVerification:false -mode:PacK -woRkinGDiREctoRy:&quot;.\space Astronomy&quot; -SETTinGS:fALsE" />
+    <option name="PROGRAM_PARAMETERS" value="-ModE:InstAncE -uPdAter:fALse -HashVerification:false -woRkinGDiREctoRy:&quot;.\Empty&quot; -SETTinGS:fALsE -SiZEvERIfICAtioN:falSE -seTTinGsPatH:&quot;.&quot; -LogsPATH:&quot;Logs&quot; -THreADCouNT:16 -doWnloADAtteMpts:5 -lOGsToCKsIZE:10 -cOMPRESsLogs:false -dEfaUltSettiNGs:true -experiMEntAl:true" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/TestingArea" />
     <method v="2">
       <option name="Make" enabled="true" />

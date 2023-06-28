@@ -1,31 +1,32 @@
-/***************************************************************************************************
- * MIT License
- *
- * Copyright (c) 2023. Kanzaji
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NON INFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- **************************************************************************************************/
+/**************************************************************************************
+ * MIT License                                                                        *
+ *                                                                                    *
+ * Copyright (c) 2023. Kanzaji                                                        *
+ *                                                                                    *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy       *
+ * of this software and associated documentation files (the "Software"), to deal      *
+ * in the Software without restriction, including without limitation the rights       *
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell          *
+ * copies of the Software, and to permit persons to whom the Software is              *
+ * furnished to do so, subject to the following conditions:                           *
+ *                                                                                    *
+ * The above copyright notice and this permission notice shall be included in all     *
+ * copies or substantial portions of the Software.                                    *
+ *                                                                                    *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR         *
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,           *
+ * FITNESS FOR A PARTICULAR PURPOSE AND NON INFRINGEMENT. IN NO EVENT SHALL THE       *
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER             *
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,      *
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE      *
+ * SOFTWARE.                                                                          *
+ **************************************************************************************/
 
 package com.kanzaji.catdownloaderlegacy;
 
 import com.kanzaji.catdownloaderlegacy.jsons.Settings;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
@@ -65,72 +66,53 @@ public class ArgumentDecoder {
 
     /**
      * Decodes all arguments passed to the program, and saves necessary data in the instance of the ArgumentDecoder.
-     *
      * @param arguments String[] with arguments passed to the program.
      */
-    public void decodeArguments(String[] arguments) throws IllegalArgumentException, FileNotFoundException {
-        // TODO: Rework this again.
+    public void decodeArguments(String @NotNull [] arguments) throws IllegalArgumentException, FileNotFoundException {
         logger.log("Running with arguments:");
-        for (String Argument : arguments) {
-            logger.log(Argument);
-            this.WorkingDirectory = decodePathArgument(Argument, "-WorkingDirectory:", "Working directory", this.WorkingDirectory);
-            this.SettingsPath = decodePathArgument(Argument, "-SettingsPath", "Settings path", this.SettingsPath);
-            this.LogPath = decodePathArgument(Argument, "-LogsPath:", "Logs path", this.LogPath, true);
-            this.ThreadCount = decodeIntArgument(Argument, "-ThreadCount:", this.ThreadCount);
-            this.DownloadAttempts = decodeIntArgument(Argument, "-DownloadAttempts:", this.DownloadAttempts);
-            this.LogStockSize = decodeIntArgument(Argument, "-LogStockSize:", this.LogStockSize);
-            if (decodeArgument(Argument,"-Mode:")) {
-                this.Mode = Argument.substring(6).toLowerCase(Locale.ROOT);
-                if (!validateMode(Mode)) {
-                    logger.error("Wrong mode selected!");
-                    logger.error("Available modes: Pack // Instance");
-                    logger.error("Check my Github Page at https://github.com/Kanzaji/Cat-Downloader-Legacy for more details!");
-                    throw new IllegalArgumentException("Incorrect Mode detected!" + this.Mode);
+        for (String fullArgument : arguments) {
+            logger.log(fullArgument);
+
+            String[] splitArgument = fullArgument.split(":", 2);
+            String argument = splitArgument[0].startsWith("-") ?
+                    splitArgument[0].toLowerCase(Locale.ROOT).replaceFirst("-", "") :
+                    splitArgument[0].toLowerCase(Locale.ROOT);
+            String value = splitArgument[1];
+
+            switch (argument) {
+                // Path Arguments
+                case "workingdirectory" -> this.WorkingDirectory = validatePath(value, "-WorkingDirectory");
+                case "settingspath" -> this.SettingsPath = validatePath(value, "-SettingsPath");
+                case "logspath" -> this.LogPath = validatePath(value, "-LogsPath");
+
+                // Int Arguments
+                case "threadcount" -> this.ThreadCount = getIntValue(value, "-ThreadCount", 1, 128);
+                case "downloadattempts" -> this.DownloadAttempts = getIntValue(value, "-DownloadAttempts", 1, 255);
+                case "logstocksize" -> this.LogStockSize = getIntValue(value, "-LogStockSize", 0, Integer.MAX_VALUE);
+
+                // Boolean Arguments
+                case "sizeverification" -> this.FileSizeVerification = getBooleanValue(value);
+                case "hashverification" -> this.HashVerification = getBooleanValue(value);
+                case "updater" -> this.UpdaterActive = getBooleanValue(value);
+                case "logger" -> this.LoggerActive = getBooleanValue(value);
+                case "stockpilelogs" -> this.StockpileLogs = getBooleanValue(value);
+                case "compresslogs" -> this.CompressStockPiledLogs = getBooleanValue(value);
+                case "settings" -> this.Settings = getBooleanValue(value);
+                case "defaultsettings" -> this.DefaultSettingsFromTemplate = getBooleanValue(value);
+                case "experimental" -> this.Experimental = getBooleanValue(value);
+
+                // Custom
+                case "mode" -> {
+                    value = value.toLowerCase(Locale.ROOT);
+                    if (!validateMode(value)) {
+                        logger.print("Wrong mode selected!", 3);
+                        logger.print("Available modes: Pack // Instance", 3);
+                        logger.print("Check my Github Page at https://github.com/Kanzaji/Cat-Downloader-Legacy for more details!", 3);
+                        throw new IllegalArgumentException("Incorrect Mode detected (" + value + ")!");
+                    }
+                    this.Mode = value;
                 }
-            }
-            if (decodeArgument(Argument,"-SizeVerification:")) {
-                if (getOffBoolean(Argument)) {
-                    this.FileSizeVerification = false;
-                }
-            }
-            if (decodeArgument(Argument,"-HashVerification:")) {
-                if (getOffBoolean(Argument)) {
-                    this.HashVerification = false;
-                }
-            }
-            if (decodeArgument(Argument,"-Updater:")) {
-                if (getOffBoolean(Argument)) {
-                    this.UpdaterActive = false;
-                }
-            }
-            if (decodeArgument(Argument,"-Logger:")) {
-                if (getOffBoolean(Argument)) {
-                    this.LoggerActive = false;
-                }
-            }
-            if (decodeArgument(Argument,"-StockpileLogs:")) {
-                if (getOffBoolean(Argument)) {
-                    this.StockpileLogs = false;
-                }
-            }
-            if (decodeArgument(Argument,"-CompressLogs:")) {
-                if (getOffBoolean(Argument)) {
-                    this.CompressStockPiledLogs = false;
-                }
-            }
-            if (decodeArgument(Argument,"-Settings:")) {
-                if (getOffBoolean(Argument)) {
-                    this.Settings = false;
-                }
-            }
-            if (decodeArgument(Argument,"-DefaultSettings:")) {
-                if (getOffBoolean(Argument)) {
-                    this.DefaultSettingsFromTemplate = false;
-                }
-            }
-            if (decodeArgument(Argument,"-Experimental:")) {
-                if (getOnBoolean(Argument)) {
-                    this.Experimental = true;
+                default -> {
                 }
             }
         }
@@ -146,133 +128,66 @@ public class ArgumentDecoder {
     }
 
     /**
-     * Used to determine if provided String is one of the accepted ones for turning on a feature.<br>
-     * Tries to automatically determine the position of ":". If data of your argument can contain ":" or argument itself has it, please provide the Index for a data search manually.
-     * @param Argument String with argument.
-     * @throws IllegalArgumentException when Index < 0;
-     * @return "True" Boolean when argument has acceptable value.
+     * Used to determine if provided {@link String} is one of the accepted Strings for boolean value.
+     * Defaults to {@code true} if incorrect String is passed.
+     * @param Value {@link String} with boolean value
+     * @return {@link Boolean} with the result of the check.
      */
-    private boolean getOnBoolean(String Argument) {
-        return getOnBoolean(Argument, Argument.lastIndexOf(":")+1);
+    private boolean getBooleanValue(String Value) {
+        Value = Value.toLowerCase(Locale.ROOT);
+        return !(
+            Objects.equals(Value,"false") ||
+            Objects.equals(Value,"disabled") ||
+            Objects.equals(Value,"off") ||
+            Objects.equals(Value,"0")
+        );
     }
 
     /**
-     * Used to determine if provided String is one of the accepted ones for turning on a feature.
-     * @param Argument String with argument.
-     * @param Index Index of `:` in the argument.
-     * @throws IllegalArgumentException when Index < 0;
-     * @return "True" Boolean when argument has acceptable value.
+     * Used to parse {@link Integer} value from a {@link String}, and validate if it's contained in specified threshold.
+     * @param Value {@link String} with Integer value to parse.
+     * @param Argument {@link String} with Name of the argument to provide in Exception.
+     * @param MinValue {@link Integer} with Minimal threshold for parsed Integer.
+     * @param MaxValue {@link Integer} with Maximal threshold for parsed Integer.
+     * @return {@link Integer} parsed from provided String.
+     * @throws IllegalArgumentException when parsed Integer is out of provided threshold.
+     * @throws NumberFormatException when String doesn't contain Integer values!
      */
-    private boolean getOnBoolean(String Argument, int Index) {
-        if (Index < 0) {
-            throw new IllegalArgumentException("Index can not be below 0!");
+    private int getIntValue(String Value, String Argument, int MinValue, int MaxValue) throws IllegalArgumentException, NumberFormatException {
+        int IntValue;
+        try {
+            IntValue = Integer.parseInt(Value);
+        } catch (NumberFormatException e) {
+            throw new NumberFormatException("Invalid String (" + Value + ") passed into the argument " + Argument + "!");
         }
-        return  Objects.equals(Argument.substring(Index).toLowerCase(Locale.ROOT),"true") ||
-                Objects.equals(Argument.substring(Index).toLowerCase(Locale.ROOT),"enabled") ||
-                Objects.equals(Argument.substring(Index).toLowerCase(Locale.ROOT),"on") ||
-                Objects.equals(Argument.substring(Index).toLowerCase(Locale.ROOT),"1");
-    }
-
-    /**
-     * Used to determine if provided String is one of the accepted ones for turning off a feature.<br>
-     * Tries to automatically determine the position of ":". If data of your argument can contain ":" or argument itself has it, please provide the Index for a data search manually.
-     * @param Argument String with argument.
-     * @throws IllegalArgumentException when Index < 0;
-     * @return "True" Boolean when argument has acceptable value.
-     */
-    private boolean getOffBoolean(String Argument) {
-        return getOffBoolean(Argument, Argument.lastIndexOf(":")+1);
-    }
-
-    /**
-     * Used to determine if provided String is one of the accepted ones for turning off a feature.
-     * @param Argument String with argument.
-     * @param Index Index of `:` in the argument.
-     * @throws IllegalArgumentException when Index < 0;
-     * @return "True" Boolean when argument has acceptable value.
-     */
-    private boolean getOffBoolean(String Argument, int Index) {
-        if (Index < 0) {
-            throw new IllegalArgumentException("Index can not be below 0!");
+        if (IntValue < MinValue || IntValue > MaxValue) {
+            throw new IllegalArgumentException(
+                "Value " +
+                ((IntValue < MinValue)? "below minimal": "above maximum") +
+                " threshold passed into the argument \"-" + Argument + "! " +
+                ((IntValue < MinValue)? "Minimal": "Maximal") +
+                " allowed value is " +
+                ((IntValue < MinValue)? MinValue: MaxValue)
+            );
         }
-        return  Objects.equals(Argument.substring(Index).toLowerCase(Locale.ROOT),"false") ||
-                Objects.equals(Argument.substring(Index).toLowerCase(Locale.ROOT),"disabled") ||
-                Objects.equals(Argument.substring(Index).toLowerCase(Locale.ROOT),"off") ||
-                Objects.equals(Argument.substring(Index).toLowerCase(Locale.ROOT),"0");
+        return IntValue;
     }
 
     /**
-     * Used to determine if argument starts with specified value. Ignores upper case.
-     * @param Argument String Argument.
-     * @param ArgumentName String with the name of the Argument.
-     * @return True if Argument starts with provided name.
+     * Used to validate if provided Path exists.
+     * @param path {@link String} with Path to validate.
+     * @param Argument {@link String} with Name of the argument to provide in Exception.
+     * @return {@link String} with provided Path, if it exists.
+     * @throws FileNotFoundException when provided Path doesn't exist.
      */
-    private boolean decodeArgument(String Argument, String ArgumentName) {
-        return Argument.toLowerCase(Locale.ROOT).startsWith(ArgumentName.toLowerCase(Locale.ROOT));
-    }
-
-    /**
-     * Used to automatically decode Path Arguments.
-     * @param Argument String Argument.
-     * @param ArgumentName String with the name of the Argument.
-     * @param Message Name of the Argument to print in the message if Path doesn't exist.
-     * @param OriginalValue Original Value to return if Argument is not the one required.
-     * @return String with a value of the Argument.
-     * @throws FileNotFoundException when specified Path doesn't exist.
-     */
-    private String decodePathArgument(String Argument, String ArgumentName, String Message, String OriginalValue) throws FileNotFoundException {
-        return decodePathArgument(Argument, ArgumentName, Message, OriginalValue, false);
-    }
-
-    /**
-     * Used to automatically decode Path Arguments.
-     * @param Argument String Argument.
-     * @param ArgumentName String with the name of the Argument.
-     * @param Message Name of the Argument to print in the message if Path doesn't exist.
-     * @param OriginalValue Original Value to return if Argument is not the one required.
-     * @param Override Overrides path existence check.
-     * @return String with a value of the Argument.
-     * @throws FileNotFoundException when specified Path doesn't exist.
-     */
-    private String decodePathArgument(String Argument, String ArgumentName, String Message, String OriginalValue, Boolean Override) throws FileNotFoundException {
-        if (decodeArgument(Argument, ArgumentName)) {
-            String ArgumentValue = Argument.substring(ArgumentName.indexOf(":")+1);
-            Path ArgumentPath = Path.of(ArgumentValue);
-            if (!Files.exists(ArgumentPath)) {
-                if (Override) {
-                    return ArgumentValue;
-                }
-                logger.error("Specified " + Message + " does not exists!");
-                logger.error(ArgumentPath.toAbsolutePath().toString());
-                throw new FileNotFoundException("Specified " + Message + " does not exists!");
-            }
-            return ArgumentValue;
+    private String validatePath(String path, String Argument) throws FileNotFoundException {
+        Path ArgumentPath = Path.of(path);
+        if (!Files.exists(ArgumentPath)) {
+            logger.error("Specified " + Argument + " does not exists!");
+            logger.error(ArgumentPath.toAbsolutePath().toString());
+            throw new FileNotFoundException("Specified " + Argument + " does not exists!");
         }
-        return OriginalValue;
-    }
-
-    /**
-     * Used to automatically decode Int Arguments.
-     * @param Argument String Argument.
-     * @param ArgumentName String with the name of the Argument.
-     * @param OriginalValue Original Value to return if Argument is not the one required.
-     * @return Integer with a value of the Argument.
-     */
-    private int decodeIntArgument(String Argument, String ArgumentName ,int OriginalValue) {
-        if (decodeArgument(Argument,ArgumentName)) {
-            int ArgumentValue;
-            try {
-                ArgumentValue = Integer.parseInt(Argument.substring(ArgumentName.indexOf(":")+1));
-                if (ArgumentValue < 1) {
-                    logger.warn("Value below 1 was passed to \"" + ArgumentName + "\" Argument! Defaulting to " + OriginalValue + ".");
-                    return OriginalValue;
-                }
-                return ArgumentValue;
-            } catch (IllegalArgumentException e) {
-                logger.warn("Non-int value was passed to \"" + ArgumentName + "\" Argument! Defaulting to " + OriginalValue + ".");
-            }
-        }
-        return OriginalValue;
+        return path;
     }
 
     /**
@@ -308,6 +223,7 @@ public class ArgumentDecoder {
      */
     public void loadFromSettings(Settings SettingsData, boolean Print) {
         this.Mode = SettingsData.mode;
+        this.UpdaterActive = SettingsData.isUpdaterActive;
         this.WorkingDirectory = SettingsData.workingDirectory;
         this.LogPath = SettingsData.logDirectory;
         this.LoggerActive = SettingsData.isLoggerActive;

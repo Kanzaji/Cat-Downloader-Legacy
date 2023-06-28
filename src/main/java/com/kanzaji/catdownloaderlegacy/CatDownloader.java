@@ -1,26 +1,26 @@
-/***************************************************************************************************
- * MIT License
- *
- * Copyright (c) 2023. Kanzaji
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NON INFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- **************************************************************************************************/
+/**************************************************************************************
+ * MIT License                                                                        *
+ *                                                                                    *
+ * Copyright (c) 2023. Kanzaji                                                        *
+ *                                                                                    *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy       *
+ * of this software and associated documentation files (the "Software"), to deal      *
+ * in the Software without restriction, including without limitation the rights       *
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell          *
+ * copies of the Software, and to permit persons to whom the Software is              *
+ * furnished to do so, subject to the following conditions:                           *
+ *                                                                                    *
+ * The above copyright notice and this permission notice shall be included in all     *
+ * copies or substantial portions of the Software.                                    *
+ *                                                                                    *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR         *
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,           *
+ * FITNESS FOR A PARTICULAR PURPOSE AND NON INFRINGEMENT. IN NO EVENT SHALL THE       *
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER             *
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,      *
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE      *
+ * SOFTWARE.                                                                          *
+ **************************************************************************************/
 
 package com.kanzaji.catdownloaderlegacy;
 
@@ -54,33 +54,36 @@ public final class CatDownloader {
     private static Manifest ManifestData = new Manifest();
     public static List<Runnable> dataGatheringFails = new LinkedList<>();
 
+    //TODO: Add a bit more documentation.
+    // What I mean is add docs to the classes (because some of them have it and some don't) and add links etc to all docs that are currently live.
+    // Trust me future Kanz, IT WILL BE WORTH IT.
     public static void main(String[] args) {
-        //TODO: Add a bit more documentation.
-        // What I mean is add docs to the classes (because some of them have it and some don't) and add links etc to all docs that are currently live.
-        // Trust me future Kanz, IT WILL BE WORTH IT.
+        long StartingTime = System.currentTimeMillis();
+
         logger.init();
         logger.log(NAME + " version: " + VERSION);
         try {
             APPPATH = Path.of(Updater.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath().replaceFirst("/", ""));
+            logger.log("App path: " + APPPATH.toAbsolutePath());
         } catch (URISyntaxException e) {
             logger.logStackTrace("Failed to get App directory!", e);
         }
-        logger.log("App path: " + APPPATH.toAbsolutePath());
-
-        long StartingTime = System.currentTimeMillis();
 
         try {
-            ARD.decodeArguments(args);
-            ARD.printConfiguration("Program Configuration from Arguments:");
-            if (ARD.areSettingsEnabled()) SettingsManager.initSettings();
-            logger.postInit();
-            // Redirects entire output to a console!
-            if (!ARD.isLoggerActive()) logger.exit();
-
             System.out.println("---------------------------------------------------------------------");
             System.out.println("     " + NAME + " " + VERSION);
             System.out.println("     Created by: Kanzaji");
             System.out.println("---------------------------------------------------------------------");
+
+            ARD.decodeArguments(args);
+            ARD.printConfiguration("Program Configuration from Arguments:");
+
+            if (ARD.areSettingsEnabled()) SettingsManager.initSettings();
+
+            logger.postInit();
+
+            // Redirects entire output to a console!
+            if (!ARD.isLoggerActive()) logger.exit();
 
             if (Updater.checkUpdates()) {
 
@@ -97,22 +100,21 @@ public final class CatDownloader {
             }
 
             if (!manifestFile.toFile().exists()) {
-                System.out.println("Manifest file not found!");
-                logger.error("Manifest file not found!");
                 String msg = null;
+
                 if (ARD.isPackMode()) {
                     if (Files.exists(Path.of(workingDirectory.toAbsolutePath().toString(), "minecraftinstance.json"))) {
-                        msg = "It appears `minecraftinstance.json` exists in the current working directory, did you mean to run the app in \"Instance\" mode?";
+                        msg = "Couldn't find required Manifest file, however it appears `minecraftinstance.json` exists in the current working directory." +
+                                "Did you mean to run the app in \"Instance\" mode?";
                     }
+                } else if (Files.exists(Path.of(workingDirectory.toAbsolutePath().toString(), "manifest.json"))) {
+                    msg = "Couldn't find required Manifest file, however it appears `manifest.json` exists in the current working directory." +
+                            "Did you mean to run the app in \"Pack\" mode?";
                 } else {
-                    if (Files.exists(Path.of(workingDirectory.toAbsolutePath().toString(), "manifest.json"))) {
-                        msg = "It appears `manifest.json` exists in the current working directory, did you mean to run the app in \"Pack\" mode?";
-                    }
+                    msg = "Couldn't find Manifest file in the working directory!";
                 }
-                if (msg != null) {
-                    System.out.println(msg);
-                    logger.error(msg);
-                }
+
+                logger.print(msg, 2);
                 System.exit(1);
             }
 
@@ -129,8 +131,7 @@ public final class CatDownloader {
             logger.log("Data fetched. Found " + ManifestData.files.length + " Mods, on version " + ManifestData.minecraft.version + " " + ManifestData.minecraft.modLoaders[0].id);
 
             if (ManifestData.name == null) {
-                System.out.println("Manifest file doesn't have an instance name!");
-                logger.warn("The name of the instance is missing!");
+                logger.print("The name of the instance is missing!", 1);
             } else {
                 System.out.println("Installing modpack " +
                     ManifestData.name +
@@ -146,9 +147,11 @@ public final class CatDownloader {
                 logger.log("Instance name: " + ManifestData.name);
             }
 
+            logger.log("Minecraft version: " + ManifestData.minecraft.version);
+
             if (ManifestData.minecraft.modLoaders[0].id == null) {
                 System.out.println("For Minecraft " + ManifestData.minecraft.version + " Vanilla");
-                logger.warn("This instance seems to be vanilla? No mod loader found!");
+                logger.warn("No mod loader found! Is this vanilla?");
             } else {
                 System.out.println("For Minecraft " + ManifestData.minecraft.version + " using " + ManifestData.minecraft.modLoaders[0].id);
                 logger.log("Mod Loader: " + ManifestData.minecraft.modLoaders[0].id);
@@ -158,8 +161,7 @@ public final class CatDownloader {
 
             Path ModsFolder = Path.of(workingDirectory.toAbsolutePath().toString(), "mods");
             if(ModsFolder.toFile().exists() && !ModsFolder.toFile().isDirectory()) {
-                System.out.println("Folder \"mods\" exists, but it is a file!");
-                logger.error("Folder \"mods\" exists, but it is a file!");
+                logger.print("Folder \"mods\" exists, but it is a file!", 2);
                 System.exit(1);
             }
 
@@ -172,16 +174,14 @@ public final class CatDownloader {
             }
 
             if (ManifestData.files == null || ManifestData.files.length == 0) {
-                System.out.println("Manifest file doesn't have any mods in it. Is this vanilla?");
-                logger.error("Manifest files does not have any mods in it. Is this intentional?");
+                logger.print("Manifest files does not have any mods in it! No job for me :D",2);
                 System.exit(0);
             }
 
             System.out.println("Found " + ManifestData.files.length + " mods in Manifest file!");
 
             if (ARD.isPackMode()) {
-                logger.log("Getting data for ids specified in the Manifest file...");
-                System.out.println("Gathering Data about mods... This may take a while.");
+                logger.print("Gathering Data about mods... This may take a while.");
                 ExecutorService Executor, FailExecutor;
                 if (ARD.isExperimental()) {
                     logger.warn("Experimental mode for CurseForge support turned on! This may cause unexpected behaviour and issues with data gathering process.");
@@ -210,8 +210,7 @@ public final class CatDownloader {
 
                 Executor.shutdown();
                 if (!Executor.awaitTermination(1, TimeUnit.DAYS)) {
-                    logger.error("Data gathering takes over a day! This for sure isn't right???");
-                    System.out.println("Data gathering interrupted due to taking over a day! This for sure isn't right???");
+                    logger.print("Data gathering takes over a day! This for sure isn't right???",3);
                     throw new RuntimeException("Data gathering is taking over a day! Something is horribly wrong.");
                 }
 
@@ -222,13 +221,11 @@ public final class CatDownloader {
 
                 FailExecutor.shutdown();
                 if (!FailExecutor.awaitTermination(1, TimeUnit.DAYS)) {
-                    logger.error("Data gathering takes over a day! This for sure isn't right???");
-                    System.out.println("Data gathering interrupted due to taking over a day! This for sure isn't right???");
+                    logger.print("Data gathering takes over a day! This for sure isn't right???",3);
                     throw new RuntimeException("Data gathering is taking over a day! Something is horribly wrong.");
                 }
 
-                logger.log("Finished gathering data!");
-                System.out.println("Finished gathering data!");
+                logger.print("Finished gathering data!");
             }
 
             // This shouldn't be a singleton, however it is good enough for now.
@@ -236,8 +233,7 @@ public final class CatDownloader {
             fm.passData(ModsFolder, ManifestData, ARD.getThreads());
             fm.runSync();
 
-            System.out.println(" (Entire process took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s)");
-            logger.log("Sync took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s");
+            logger.print("Entire Process took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s");
             logger.log("Cat-Downloader Legacy is created and maintained by Kanzaji! Find the source code and issue tracker here:");
             logger.log("https://github.com/Kanzaji/Cat-Downloader-Legacy");
             System.exit(0);
