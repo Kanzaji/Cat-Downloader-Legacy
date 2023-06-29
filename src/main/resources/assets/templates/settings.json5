@@ -62,11 +62,11 @@
   // Argument representation: -HashVerification:
   "isHashVerificationActive": true,
 
-  // modBlacklist -> A list of file names that Cat-Downloader should ignore while Removing / Verifying / Downloading mods!
+  // modBlackList -> A list of file names that Cat-Downloader should ignore while Removing / Verifying / Downloading mods!
   // Beware! This does not support regex, if the mod in here is going to get updated you will end up with duplicated mods in your instance!
   // Accepts: Comma separated array of Strings (Example: ["super_mod.jar","another_super_mod.jar"])
   // Argument representation: None (Settings Exclusive!)
-  "modBlacklist": []
+  "modBlackList": []
 }
 
 // For more configuration options check out my GitHub at "https://github.com/Kanzaji/Cat-Downloader-Legacy"!

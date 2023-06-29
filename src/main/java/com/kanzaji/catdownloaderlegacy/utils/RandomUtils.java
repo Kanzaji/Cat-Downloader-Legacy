@@ -22,66 +22,25 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.jsons;
+package com.kanzaji.catdownloaderlegacy.utils;
 
-import java.util.Iterator;
-import java.util.LinkedList;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-/**
- * Object used to represent JSON Structure of configuration file.
- * @see com.kanzaji.catdownloaderlegacy.utils.SettingsManager
- */
-public class Settings {
+public class RandomUtils {
+    private static final Gson gson = new GsonBuilder().setPrettyPrinting().setLenient().create();
     /**
-     * This static contains all Setting Keys from the Settings File.
+     * Used to check if provided String is JSON Object.
+     * @param JSONObject {@link String} with JSON Object.
+     * @return {@link Boolean} {@code true} if String is JSON Object, {@code false} otherwise.
      */
-    public static String[] SettingsKeys = {
-            "mode",
-            "workingDirectory",
-            "logDirectory",
-            "threadCount",
-            "downloadAttempts",
-            "logStockpileSize",
-            "isLoggerActive",
-            "shouldStockpileLogs",
-            "shouldCompressLogFiles",
-            "isUpdaterActive",
-            "isFileSizeVerificationActive",
-            "isHashVerificationActive",
-            "modBlackList"
-    };
-
-    public String mode;
-    public String workingDirectory;
-    public String logDirectory;
-    public int threadCount;
-    public int downloadAttempts;
-    public int logStockpileSize;
-    public boolean isLoggerActive;
-    public boolean shouldStockpileLogs;
-    public boolean shouldCompressLogFiles;
-    public boolean isUpdaterActive;
-    public boolean isFileSizeVerificationActive;
-    public boolean isHashVerificationActive;
-    public BlackList<String> modBlackList;
-    public boolean experimental;
-
-    public static class BlackList<E> extends LinkedList<E> {
-        @Override
-        public String toString() {
-            Iterator<E> it = iterator();
-            if (! it.hasNext())
-                return "[]";
-
-            StringBuilder sb = new StringBuilder();
-            sb.append('[');
-            for (;;) {
-                E e = it.next();
-                sb.append(e == this ? "(this Collection)" : "\"" + e + "\"");
-                if (! it.hasNext())
-                    return sb.append(']').toString();
-                sb.append(',').append(' ');
-            }
+    public static boolean checkIfJsonObject(String JSONObject) {
+        try {
+            // Return value of gson#fromJson here is intended! I use this as a check if entire array is in a single line.
+            gson.fromJson(JSONObject, Object.class);
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 }

@@ -26,18 +26,21 @@ package com.kanzaji.catdownloaderlegacy.utils;
 
 import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.jsons.Settings;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
-import javax.sound.sampled.Line;
-import java.io.IOException;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.jetbrains.annotations.NotNull;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.*;
+import java.io.IOException;
+
+import static com.kanzaji.catdownloaderlegacy.utils.RandomUtils.checkIfJsonObject;
 
 /**
  * SettingsManager is a class used to manage, create, update and load Settings file for Cat-Downloader.
@@ -113,7 +116,7 @@ public class SettingsManager {
         logger.log("Parsing data from settings file...");
         try {
             Settings SettingsFileData = gson.fromJson(Files.readString(SettingsFile), Settings.class);
-            ModBlackList = (Objects.isNull(SettingsFileData.modBlacklist))? new Settings.BlackList<>(): SettingsFileData.modBlacklist;
+            ModBlackList = (Objects.isNull(SettingsFileData.modBlackList))? new Settings.BlackList<>(): SettingsFileData.modBlackList;
             logger.log("Parsing of Settings was successful!");
             return SettingsFileData;
         } catch (Exception e) {
@@ -199,15 +202,14 @@ public class SettingsManager {
         List<String> SettingsLines = Files.readAllLines(SettingsFile);
         Files.writeString(SettingsFile, "", StandardOpenOption.TRUNCATE_EXISTING);
         AtomicReference<List<String>> existingKeys = new AtomicReference<>();
-        existingKeys.set(new LinkedList<>());
-        for (String settingsKey : Settings.SettingsKeys) {
-            existingKeys.get().add(settingsKey);
-        }
+        existingKeys.set(new LinkedList<>(Arrays.asList(Settings.SettingsKeys)));
 
-        SettingsLines.forEach(Line -> {
-            for (String settingsKey : Settings.SettingsKeys) {
-                if (Line.contains("\"" + settingsKey + "\":") && existingKeys.get().contains(settingsKey)) {
-                    existingKeys.get().remove(settingsKey);
+        Iterator<String> it = SettingsLines.listIterator();
+
+        while (it.hasNext()) {
+            String Line = it.next();
+            if (existingKeys.get().size() > 0) for (String settingsKey : Settings.SettingsKeys) {
+                if (Line.contains("\"" + settingsKey + "\":") && existingKeys.get().removeIf(settingsKey::equals)) {
 
                     // While adding new Settings Keys, this requires implementing handler for that key.
                     Line = Line.substring(0,Line.indexOf(settingsKey)).replaceFirst("//","") + settingsKey + "\": " + switch (settingsKey) {
@@ -223,8 +225,8 @@ public class SettingsManager {
                         case "isUpdaterActive" -> SettingsData.isUpdaterActive;
                         case "isFileSizeVerificationActive" -> SettingsData.isFileSizeVerificationActive;
                         case "isHashVerificationActive" -> SettingsData.isHashVerificationActive;
-                        //TODO: Fix implementation of modBlackList saving, this gets screwed up when someone creates multi-line array (what is a valid syntax!)
-                        case "modBlacklist" -> (Objects.isNull(SettingsData.modBlacklist))? "[]": SettingsData.modBlacklist.toString();
+                        // Special Handling cases
+                        case "modBlackList" -> saveModBlackList(Line, SettingsData.modBlackList, it);
                         default -> throw new IllegalArgumentException("Illegal key in the SettingsFile!");
                     } + ",";
 
@@ -240,7 +242,7 @@ public class SettingsManager {
                 logger.logStackTrace("Exception occurred while writing to a Settings file!", e);
                 throw new RuntimeException("Failed to save Settings!");
             }
-        });
+        }
 
         if (existingKeys.get().size() > 0) {
             logger.warn("Found missing entries in the Settings file! Adding missing entries...");
@@ -278,7 +280,7 @@ public class SettingsManager {
         ARDConfig.downloadAttempts = ARD.getDownloadAttempts();
         ARDConfig.isHashVerificationActive = ARD.isHashVerActive();
         ARDConfig.isFileSizeVerificationActive = ARD.isFileSizeVerActive();
-        ARDConfig.modBlacklist = new Settings.BlackList<>();
+        ARDConfig.modBlackList = new Settings.BlackList<>();
         logger.log("Generation of Settings from ARD finished!");
         return ARDConfig;
     }
@@ -291,5 +293,45 @@ public class SettingsManager {
         Settings ARDSettings = generateSettingsFromARD();
         loadSettings(ARDSettings);
         saveSettings(ARDSettings);
+    }
+
+    /**
+     * Used to create a String required to save ModBlackList into the settings file!
+     * @param Line {@link String} current line in the settings file.
+     * @param blackList {@link com.kanzaji.catdownloaderlegacy.jsons.Settings.BlackList}<{@link String}> with blacklist entries.
+     * @param iterator {@link Iterator}<{@link String}> with iterator over Settings file.
+     * @return {@link String} with formatted ModBlackList ready to write to Settings File.
+     */
+    private static @NotNull String saveModBlackList(String Line, Settings.BlackList<String> blackList, Iterator<String> iterator) {
+        if(checkIfJsonObject("{\n" + Line + "\n}")) return (Objects.isNull(blackList)) ? "[]" : blackList.toString();
+
+        StringBuilder modBlackListString = new StringBuilder();
+        LinkedList<String> blackListEntries = new LinkedList<>(blackList);
+
+        if (blackListEntries.size() > 0) {
+            if (blackListEntries.removeIf(Line::contains)) {
+                modBlackListString
+                .append(Line.substring(
+                    Line.indexOf("\"modBlackList\":") + "\"modBlackList\":".length()
+                )).append("\n");
+            } else {
+                modBlackListString.append("[\n");
+            }
+            while (iterator.hasNext()) {
+                String blackListLine = iterator.next();
+                blackListEntries.removeIf(blackListLine::contains);
+                modBlackListString.append(blackListLine);
+                if (blackListLine.contains("]") && checkIfJsonObject("{\"t\":\n" + modBlackListString + "\n}")) break;
+                modBlackListString.append("\n");
+            }
+        } else {
+            //TODO: Fix empty multi line array handling
+            while (iterator.hasNext()) {
+                if (iterator.next().contains("]") && checkIfJsonObject("{\"t\":\n" + modBlackListString + "\n}")) break;
+            }
+            modBlackListString.append("[]");
+        }
+        if (blackListEntries.size() > 0) blackListEntries.forEach(modBlackListString::append);
+        return modBlackListString.toString().strip();
     }
 }

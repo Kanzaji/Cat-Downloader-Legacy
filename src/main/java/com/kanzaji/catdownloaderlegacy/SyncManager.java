@@ -294,28 +294,25 @@ public class SyncManager {
         if (SettingsManager.ModBlackList.size() > 0) {
 
             System.out.println("Ignored mods found in the config file! (" + SettingsManager.ModBlackList.size() + " " + ((SettingsManager.ModBlackList.size() == 1)? "file":"files") + ")");
+
             logger.log("Mods contained in the blacklist:");
             SettingsManager.ModBlackList.forEach((mod) -> logger.log("- " + mod));
 
             if (IgnoredVerification.size() > 0) {
-                logger.warn(IgnoredVerification.size() + " " + ((IgnoredVerification.size() == 1)? "mod was":"mods were") + " not verified!");
-                System.out.println("> " + IgnoredVerification.size() + " " + ((IgnoredVerification.size() == 1)? "mod was":"mods were") + " not verified!");
+                logger.print("> " + IgnoredVerification.size() + " " + ((IgnoredVerification.size() == 1)? "mod was":"mods were") + " not verified!",1);
                 IgnoredVerification.forEach((mod) -> logger.warn("- " + mod));
             } else {
-                logger.log("All mods have been verified.");
-                System.out.println("> All mods have been verified.");
+                logger.print("> All mods have been verified.");
             }
 
             if (IgnoredRemoval.size() > 0) {
-                logger.warn(IgnoredRemoval.size() + " " + ((IgnoredRemoval.size() == 1)? "mod was":"mods were") + " not removed!");
-                System.out.println("> " + IgnoredVerification.size() + " " + ((IgnoredRemoval.size() == 1)? "mod was":"mods were") + " not removed!");
+                logger.print("> " + IgnoredRemoval.size() + " " + ((IgnoredRemoval.size() == 1)? "mod was":"mods were") + " not removed!", 1);
                 IgnoredRemoval.forEach((mod) -> logger.warn("- " + mod));
             } else {
-                logger.log("All mods designated to removal were removed!");
-                System.out.println("> All mods designated to removal were removed!");
+                logger.print("> All mods designated to removal were removed.");
             }
 
-            System.out.println("\nFor more details, check your configuration file or the log at:\n\"" + logger.getLogPath() + "\"");
+            System.out.println("\nFor more details, check your configuration file or the log at:\n\"" + logger.getLogPath() + "\"\n\"" + Path.of(ArgumentDecoder.getInstance().getSettingsPath()).toAbsolutePath() + "\\Cat-Downloader-Legacy Settings.json5\"");
             System.out.println("---------------------------------------------------------------------");
         }
 
@@ -333,8 +330,7 @@ public class SyncManager {
         int errors = FailedRemovals.size() + FailedDownloads.size() + FailedVerifications.size() + NullMods;
 
         if (errors > 0) {
-            logger.error("Errors were found while doing synchronisation of the profile!");
-            System.out.println("Errors were found while doing synchronisation of the profile!");
+            logger.print("Errors were found while doing synchronisation of the profile!",2);
 
             if (FailedVerifications.size() > 0) {
                 logger.error("Failed Verifications: " + FailedVerifications.size());

@@ -178,7 +178,7 @@ public final class CatDownloader {
                 System.exit(0);
             }
 
-            System.out.println("Found " + ManifestData.files.length + " mods in Manifest file!");
+            System.out.println("Found " + ManifestData.files.length + " " + ((ManifestData.files.length == 1)? "mod":"mods") +" in Manifest file!");
 
             if (ARD.isPackMode()) {
                 logger.print("Gathering Data about mods... This may take a while.");
