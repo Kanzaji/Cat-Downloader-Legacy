@@ -325,11 +325,12 @@ public class SettingsManager {
                 modBlackListString.append("\n");
             }
         } else {
-            //TODO: Fix empty multi line array handling
+            modBlackListString.append("[\n");
             while (iterator.hasNext()) {
-                if (iterator.next().contains("]") && checkIfJsonObject("{\"t\":\n" + modBlackListString + "\n}")) break;
+                modBlackListString.append(iterator.next());
+                if (modBlackListString.toString().contains("]") && checkIfJsonObject("{\"t\":\n" + modBlackListString + "\n}")) break;
+                modBlackListString.append("\n");
             }
-            modBlackListString.append("[]");
         }
         if (blackListEntries.size() > 0) blackListEntries.forEach(modBlackListString::append);
         return modBlackListString.toString().strip();
