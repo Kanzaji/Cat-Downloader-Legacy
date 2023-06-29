@@ -59,7 +59,6 @@ public class SettingsManager {
      * @see ArgumentDecoder
      */
     public static void initSettings() throws IOException {
-
         logger.log("Settings initialization started.");
 
         if (Files.exists(SettingsFile)) {
@@ -82,9 +81,7 @@ public class SettingsManager {
                     throw new IllegalArgumentException("Settings contain illegal values! \n Check the settings file at " + SettingsFile.toAbsolutePath());
                 }
             }
-
         } else {
-
             logger.log("No settings file found!");
 
             if (ARD.shouldDefaultSettings()) {
@@ -101,10 +98,11 @@ public class SettingsManager {
                 System.out.println("---------------------------------------------------------------------");
                 System.exit(0);
             } else {
+                logger.log("Generating Settings from arguments...");
                 saveSettingsFromARD();
+                logger.log("Settings from ARD generated!");
             }
         }
-
         logger.log("Initialization of Settings finished.");
     }
 
