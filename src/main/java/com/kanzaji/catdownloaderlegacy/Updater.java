@@ -54,22 +54,24 @@ public class Updater {
     private static final String GithubAPIUrl = "https://api.github.com/repos/" + REPOSITORY.replaceFirst("https://github.com/", "");
     private static final Gson gson = new Gson();
     private static final LoggerCustom logger = new LoggerCustom("Updater");
-    private static boolean isUpdated = false;
+    public static boolean actionSelected = false;
+    public static boolean shouldUpdate = false;
 
     /**
-     * This method calls GitHub repository and returns {@code true}, if newer version of the app is available, additionally setting up GUI for user choice.
-     * @return Boolean depending on the result of update check.
+     * This method is used to Check for Updates, and if required, update the app!<br><br>
+     * It calls GitHub API for gathering required information about the latest release, and if required, sets up the GUI.
+     * @throws java.net.MalformedURLException when GithubAPIUrl is not correct.
      */
-    public static boolean checkUpdates() throws IOException {
+    public static void checkForUpdates() throws IOException {
         // TODO: Finish Updater!
         if (!ArgumentDecoder.getInstance().isUpdaterActive()) {
             logger.warn("Updater is disabled! Checking for updates is not possible.");
-            return false;
+            return;
         }
 
         if (VERSION.endsWith("DEVELOP")) {
             logger.warn("Running in DEVELOP version (" + VERSION + ") of the app! Disabling Updater for this session.");
-            return false;
+            return;
         }
 
         logger.log("Checking for app updates...");
@@ -81,35 +83,46 @@ public class Updater {
 
         try (BufferedReader in = new BufferedReader(new InputStreamReader(response.getInputStream(), StandardCharsets.UTF_8))) {
             UpdaterData.releaseData responseData = gson.fromJson(in, UpdaterData.releaseData.class);
-            if (Objects.isNull(responseData)) {
-                throw new NullPointerException("Null data returned from the API!");
-            } else {
+            if (!Objects.isNull(responseData)) {
                 if (Objects.isNull(responseData.tag_name) || Objects.isNull(responseData.html_url) || Objects.isNull(responseData.published_at) || Objects.isNull(responseData.assets)) {
                     throw new NullPointerException("Null data in required fields returned from the API!\n" + responseData);
                 }
+
                 if (compareVersions(VERSION, responseData.tag_name)) {
                     logger.log("App is updated! Running version " + VERSION + " when latest version is " + responseData.tag_name);
-                    return false;
                 } else {
-                    logger.warn("New version of the app found! Getting GUI ready for asking a user to update.");
+                    logger.warn("New version of the app found! Getting GUI ready for informing the user about the update...");
                     logger.warn("Current version: " + VERSION);
                     logger.warn("Latest version: " + responseData.tag_name);
-                    UpdaterGUI.startGUI();
+
+                    UpdaterGUI.startUpdateGUI();
                     UpdaterGUI.setUpdateVersion(VERSION, responseData.tag_name);
                     UpdaterGUI.setChangelogText(responseData.body.replaceAll("###", " - ").replaceAll("\\*\\*", ""));
                     UpdaterGUI.setupButtons();
-                    return true;
+
+                    while (!actionSelected) {
+                        // Should be reworked into wait() notify() in the launcher version.
+                        Thread.sleep(1000);
+                    }
+
+                    if (shouldUpdate) installUpdate();
+                    logger.warn("Update has been declined! Going back to the execution of the app.");
                 }
+            } else {
+                throw new NullPointerException("Null data returned from the API!");
             }
+        } catch (Exception e) {
+            logger.logStackTrace("Exception thrown while trying to fetch update data!", e);
         }
     }
 
-    /**
-     * Used to check if Update is finished. If Updater is disabled, returns always true.
-     * @return {@link Boolean} with the status of the update. True when finished or Updater is disabled.
-     */
-    public static boolean isUpdated() {
-        return !ArgumentDecoder.getInstance().isUpdaterActive() || isUpdated;
+    @Contract(" -> fail")
+    public static void installUpdate() {
+        System.exit(10);
+    }
+
+    public static void disableUpdates() {
+        Updater.actionSelected = true;
     }
 
     /**
