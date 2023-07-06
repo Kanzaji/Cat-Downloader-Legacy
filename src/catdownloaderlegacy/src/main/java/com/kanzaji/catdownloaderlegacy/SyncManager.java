@@ -28,6 +28,7 @@ import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
 import com.kanzaji.catdownloaderlegacy.utils.DownloadUtils;
 import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+import org.jetbrains.annotations.Contract;
 
 import static com.kanzaji.catdownloaderlegacy.utils.FileVerUtils.verifyFile;
 
@@ -68,6 +69,7 @@ public class SyncManager {
      * Used to get a reference to an instance of the SyncManager.
      * @return Reference to an instance of the SyncManager.
      */
+    @Contract(pure = true)
     public static SyncManager getInstance() {
         return InstanceHolder.instance;
     }
@@ -144,7 +146,7 @@ public class SyncManager {
                         logger.log("Verifying " + FileName + " after download...");
                         if (!verifyFile(ModFile, mod.fileSize, mod.downloadUrl)) {
                             logger.warn("Mod " + FileName + " appears to have not downloaded correctly! Re-downloading...");
-                            if(DownloadUtils.reDownload(ModFile, mod.downloadUrl, FileName, mod.fileSize)) {
+                            if(DownloadUtils.reDownload(ModFile, mod.fileSize, mod.downloadUrl, FileName)) {
                                 logger.log("Re-download of " + FileName + " was successful!");
                                 DownloadSuccess += 1;
                             } else {
@@ -171,7 +173,7 @@ public class SyncManager {
                             DownloadQueueL.add(() -> {
                                 logger.log("Re-downloading " + FileName + " ...");
                                 try {
-                                    if(DownloadUtils.reDownload(ModFile, mod.downloadUrl, FileName, mod.fileSize)) {
+                                    if(DownloadUtils.reDownload(ModFile, mod.fileSize, mod.downloadUrl, FileName)) {
                                         logger.log("Re-download of " + FileName + " was successful!");
                                         DownloadSuccess += 1;
                                     } else {

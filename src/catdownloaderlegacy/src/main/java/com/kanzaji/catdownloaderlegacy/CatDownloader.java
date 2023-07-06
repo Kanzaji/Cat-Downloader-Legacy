@@ -60,6 +60,7 @@ public final class CatDownloader {
     //TODO: Add a bit more documentation.
     // What I mean is add docs to the classes (because some of them have it and some don't) and add links etc to all docs that are currently live.
     // Trust me future Kanz, IT WILL BE WORTH IT.
+    //TODO: Simplify Main Method
     public static void main(String[] args) {
         long StartingTime = System.currentTimeMillis();
         ARGUMENTS = args;

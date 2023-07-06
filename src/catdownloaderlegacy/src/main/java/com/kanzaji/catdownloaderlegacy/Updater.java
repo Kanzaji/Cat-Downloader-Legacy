@@ -177,21 +177,7 @@ public class Updater {
             Files.copy(APPPATH, Path.of(appPathString, APPPATH.getFileName().toString() + ".old"), StandardCopyOption.REPLACE_EXISTING);
 
             Files.deleteIfExists(updatedAppPath);
-            DownloadUtils.download(updatedAppPath, releaseData.assets[0].browser_download_url);
-
-            logger.log("Verifying downloaded jar...");
-            if (!FileVerUtils.verifyFile(updatedAppPath, releaseData.assets[0].size, releaseData.assets[0].browser_download_url)) {
-                logger.error("Verification of the jar failed! Trying to re-download the app...");
-                if(DownloadUtils.reDownload(updatedAppPath, releaseData.assets[0].browser_download_url, null, releaseData.assets[0].size)) {
-                    logger.log("Re-download of " + updatedAppPath.getFileName() + " was successful!");
-                } else {
-                    logger.critical("Re-download of " + updatedAppPath.getFileName() + " after " + ArgumentDecoder.getInstance().getDownloadAttempts() + " attempts failed!");
-                    abortUpdate("Failed to download update file! Do you want to exit the app?");
-                    return;
-                }
-            } else {
-                logger.log("Verification of the jar was successful.");
-            }
+            DownloadUtils.downloadAndVerify(updatedAppPath, releaseData.assets[0].browser_download_url, releaseData.assets[0].size);
 
             logger.log("Unpacking CDL-Updater sub-app from the archive...");
             Path cdlPath = Path.of(FileUtils.getFolderAsString(updatedAppPath), "CDLUpdater.jar");
