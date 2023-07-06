@@ -6,11 +6,13 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="CDL-Updater" />
         <module name="Cat-Downloader-Legacy" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="CatDownloader" target="17" />
+      <module name="cdlupdater" target="17" />
     </bytecodeTargetLevel>
   </component>
 </project>
