@@ -71,7 +71,7 @@ public final class CatDownloader {
             APPPATH = Path.of(CatDownloader.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath().replaceFirst("/", ""));
             logger.log("App Path: " + APPPATH.toAbsolutePath());
             JAVAPATH = Path.of(ProcessHandle.current().info().command().orElseThrow());
-            logger.log("Java Path:" + JAVAPATH.toAbsolutePath());
+            logger.log("Java Path: " + JAVAPATH.toAbsolutePath());
         } catch (Exception e) {
             logger.logStackTrace("Failed to get App or Java directory!", e);
         }
