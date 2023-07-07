@@ -3,10 +3,10 @@
 ARGUMENTS_SETUP=
 ARGUMENTS_LAUNCH=
 
-VERSION="1.1"
+VERSION="2.0.0"
 echo "#!/bin/sh" > .git/hooks/post-merge
-echo "java -jar Cat-Downloader-Legacy-${version}.jar ${arguments_launch}" >> .git/hooks/post-merge
+echo "java -jar Cat-Downloader-Legacy-${VERSION}.jar ${ARGUMENTS_LAUNCH}" >> .git/hooks/post-merge
 
 echo Git Hooks have been set up! Running Cat Downloader...
 
-java -jar Cat-Downloader-Legacy-${version}.jar ${arguments_setup}
+java -jar Cat-Downloader-Legacy-${VERSION}.jar ${ARGUMENTS_SETUP}
