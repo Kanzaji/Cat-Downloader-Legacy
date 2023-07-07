@@ -1,11 +1,14 @@
 # [Cat-Downloader Legacy](https://kanzaji.github.io/Cat-Downloader-Legacy/)
 Cat-Downloader Legacy is an app that is meant to allow for easy synchronization of minecraft mods between modpack developers, with use of, for example, Git hooks.
 
-It supports CurseForge mods, and is compatible both with CurseForge Launcher `minecraftinstance.json` format and CurseForge site `manifest.json` format.
+It supports CurseForge `minecraftinstance.json` format, and has **Experimental** support for CurseForge site format `manifest.json`. *Modrinth support is Work in Progress!*
 
-It also features file verification with Checksum (SHA-256) and size check!
+It also features file verification with Checksum (SHA-256), File Size Check and automatic updates for the app!
+
+**Website for easier navigation about configuration and troubleshooting is WIP**
 
 ## Configuration
+(*Outdated, use documentation in the Settings file generated for now before website is ready 😅* Alternatively, go [here](https://github.com/Kanzaji/Cat-Downloader-Legacy/blob/develop/src/catdownloaderlegacy/src/main/resources/assets/templates/settings.json5))<br>
 Cat-Downloader Legacy can be configured in two ways, to customize the behaviour of the app.<br>
 You can configure it either by the Configuration file, or with the Arguments.
 
@@ -65,9 +68,9 @@ This project is under a MIT License, what you can find in the LICENSE file of th
 ## FAQ
 - **Why Legacy in the name?<br>**
   [Cat-Downloader](https://github.com/Kanzaji/Cat-Downloader) is actually a different project of mine that is meant to be full Minecraft Launcher! It is, however, in very early stages of the development, so for now it has more or less the same functionality as this app (Okay at the point of writing this ReadMe, it has way less features).
-- **Why don't just, use CurseForge way of updating mods?**<br>
-  CurseForge is known for screwing up downloads for some reason, not updating when you want to and other weird shenanigans. Cat-Downloader-Legacy allows for easy and automatic synchronization of the mods between modpack developers, additionally giving access for the same functionality for non-CurseForge launchers!
+- **Why don't just, use CurseForge way of updating mods for modpack developers?**<br>
+  CurseForge launcher MinecraftInstance is created for a specified user on specified computer. It doesn't always work when you import it from github repository and it doesn't completely work on non-CurseForge launcher. That is why InstanceSync was used for modpack developements. Due to InstanceSync lacking file verification and being archived by Vazkii, Cat-Downloader-Legacy was created.
 
 ## Contributions
 
-For Contribution Guide-Lines and other stuff, check out `Contributing` branch!
+For Contribution Guide-Lines and other stuff, check out `Contributing` branch! (This is also, WIP and will be on the website 😅)

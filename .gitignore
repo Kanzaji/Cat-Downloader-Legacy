@@ -25,3 +25,9 @@ hs_err_pid*
 # Custom stuff
 target
 TestingArea
+Important Logs
+src/catdownloaderlegacy/java/com/kanzaji/catdownloaderlegacy/TestMain.java
+
+.idea/copyright/Mit_License.xml
+.idea/copyright/profiles_settings.xml
+src/catdownloaderlegacy/src/main/java/com/kanzaji/catdownloaderlegacy/TestMain.java
