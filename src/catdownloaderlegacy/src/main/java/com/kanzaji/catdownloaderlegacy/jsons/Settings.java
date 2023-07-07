@@ -28,7 +28,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 /**
- * Object used to represent JSON Structure of configuration file.
+ * Class used to represent JSON Structure of configuration file.
  * @see com.kanzaji.catdownloaderlegacy.utils.SettingsManager
  */
 public class Settings {

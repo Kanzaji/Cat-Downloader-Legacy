@@ -28,6 +28,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
 
+/**
+ * This class holds utility methods related to date.
+ * @see DateUtils#getCurrentDate()
+ * @see DateUtils#getCurrentTime()
+ */
 public class DateUtils {
     /**
      * Used to get a {@link String} with current Date.

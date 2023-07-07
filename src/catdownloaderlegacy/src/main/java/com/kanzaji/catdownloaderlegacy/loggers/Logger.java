@@ -27,19 +27,23 @@ package com.kanzaji.catdownloaderlegacy.loggers;
 import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.utils.DateUtils;
 import com.kanzaji.catdownloaderlegacy.utils.FileUtils;
+
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
-import java.util.Comparator;
 import java.util.Date;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
+/**
+ * This class is the main instance of the Logger Service, it handles creation, stockpiling and logging to log files.
+ * @apiNote This class is a Singleton, use {@link Logger#getInstance()} for reference of this class.
+ * @see LoggerCustom
+ */
 public class Logger implements ILogger {
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
     private static final class InstanceHolder {private static final Logger instance = new Logger();}

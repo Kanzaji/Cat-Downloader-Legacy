@@ -39,7 +39,7 @@ import java.util.Objects;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * {@link FileUtils} holds Utility methods for interacting with Files! <br>
+ * This class holds utility methods related to interacting with files.
  * @see FileUtils#getInternalFile(String)
  * @see FileUtils#compressToGz(Path)
  * @see FileUtils#getFileName(Path)

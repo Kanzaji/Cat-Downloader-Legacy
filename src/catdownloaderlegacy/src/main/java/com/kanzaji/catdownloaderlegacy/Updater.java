@@ -37,8 +37,6 @@ import org.jetbrains.annotations.NotNull;
 import com.google.gson.Gson;
 
 import javax.net.ssl.HttpsURLConnection;
-import javax.swing.*;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -47,11 +45,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import javax.swing.*;
 
 
 /**
@@ -199,21 +197,6 @@ public class Updater {
                 JAVAPATH.toAbsolutePath() +
                 "\""
             );
-            System.out.println(
-                "\"" +
-                JAVAPATH.toAbsolutePath() +
-                "\" -jar \"" +
-                cdlPath.toAbsolutePath() +
-                "\" -oldApp:\"" +
-                APPPATH.toAbsolutePath() +
-                "\" -newApp:\"" +
-                updatedAppPath.toAbsolutePath() +
-                "\" -logPath:\"" +
-                logger.getLogPath()
-                +"\" -java:\"" +
-                JAVAPATH.toAbsolutePath() +
-                "\""
-            );
             System.exit(10);
         } catch (Exception e) {
             logger.logStackTrace("Exception thrown while updating the app!", e);
@@ -322,7 +305,7 @@ public class Updater {
      * @return Boolean {@code true} when current version is the same or higher than latest and when it contains "develop" at the end, otherwise {@code false}.
      * @throws NumberFormatException when version with non-Number character is passed!
      */
-    public static boolean compareVersions(String currentVersion, String latestVersion) throws NumberFormatException  {
+    public static boolean compareVersions(@NotNull String currentVersion, String latestVersion) throws NumberFormatException  {
         return compareVersions(currentVersion, latestVersion, "\\.");
     }
 
@@ -335,7 +318,7 @@ public class Updater {
      * @return Boolean {@code true} when current version is the same or higher than latest and when it contains "develop" at the end, otherwise {@code false}.
      * @throws NumberFormatException when version with non-Number character is passed!
      */
-    public static boolean compareVersions(String currentVersion, String latestVersion, String separator) throws NumberFormatException {
+    public static boolean compareVersions(@NotNull String currentVersion, String latestVersion, String separator) throws NumberFormatException {
         if (currentVersion.toLowerCase().endsWith("develop")) return true;
 
         List<String> currentVersionMap = new LinkedList<>(Arrays.stream(currentVersion.split(separator)).toList());
@@ -368,7 +351,9 @@ public class Updater {
      * This class holds all data structures for the {@link Updater}.
      */
     private static class UpdaterData {
-        // Why I added a toString() methods here? I have no idea, I was just experimenting with them.
+        /**
+         * This class is data structure for the data returned by GitHub API.
+         */
         private static class releaseData {
             @Contract(pure = true)
             @Override
@@ -388,6 +373,9 @@ public class Updater {
             public String published_at;
             public Assets[] assets;
 
+            /**
+             * This class is data structure for the assets fields in {@link releaseData}.
+             */
             private static class Assets {
                 @Contract(pure = true)
                 @Override

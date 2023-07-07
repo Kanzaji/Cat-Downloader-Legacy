@@ -37,7 +37,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 /**
- * This class holds all File Verification methods.
+ * This class holds utility methods related to verification of the files.
+ * @see FileVerUtils#verifyFile(Path, Number, String)
  */
 public class FileVerUtils {
     private static final LoggerCustom logger = new LoggerCustom("File Verification Utilities");

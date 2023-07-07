@@ -26,13 +26,25 @@ package com.kanzaji.catdownloaderlegacy.utils;
 
 import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
 import com.kanzaji.catdownloaderlegacy.jsons.MinecraftInstance;
-
-import com.google.gson.Gson;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
+import org.jetbrains.annotations.NotNull;
+
+import com.google.gson.Gson;
+
+/**
+ * This class holds methods related to decoding CurseForge MinecraftInstance file to Manifest-compatible file.
+ */
 public class MIInterpreter {
     private static final LoggerCustom logger = new LoggerCustom("CF MI Interpreter");
-    public static Manifest decode(MinecraftInstance MinecraftInstanceFile) throws UnsupportedOperationException {
+
+    /**
+     * Used to decode {@link MinecraftInstance} object into {@link Manifest} object.
+     * @param MinecraftInstanceFile MinecraftInstance object to decode.
+     * @return Manifest object with decoded information from passed MinecraftInstance.
+     * @throws RuntimeException when Translation fails.
+     */
+    public static @NotNull Manifest decode(MinecraftInstance MinecraftInstanceFile) throws RuntimeException {
         Gson gson = new Gson();
         Manifest manifest = new Manifest();
         logger.log("Translating MinecraftInstance into Manifest compatible object...");
@@ -54,7 +66,7 @@ public class MIInterpreter {
             }
         } catch (Exception e) {
             logger.logStackTrace("Interpretation of MinecraftInstance.json failed!", e);
-            throw new UnsupportedOperationException();
+            throw new RuntimeException("Exception thrown while translating MinecraftInstance object!");
         }
         logger.log("Translation successful");
         return manifest;

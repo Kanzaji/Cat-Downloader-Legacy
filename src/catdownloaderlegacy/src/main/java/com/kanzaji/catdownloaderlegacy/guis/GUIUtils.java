@@ -25,12 +25,16 @@
 package com.kanzaji.catdownloaderlegacy.guis;
 
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * This class holds utility methods related to GUI.
+ */
 public class GUIUtils {
     private static final LoggerCustom logger = new LoggerCustom("GUI Utilities");
 

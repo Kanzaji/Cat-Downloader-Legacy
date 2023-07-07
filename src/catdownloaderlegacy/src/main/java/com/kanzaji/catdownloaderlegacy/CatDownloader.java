@@ -39,6 +39,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
 
+/**
+ * Main class holding Global variables for the app and containing the main method.
+ * @see CatDownloader#main(String[])
+ */
 public final class CatDownloader {
     // Launch fresh instances of required utilities.
     private static final LoggerCustom logger = new LoggerCustom("Main");
@@ -56,11 +60,13 @@ public final class CatDownloader {
     public static Path manifestFile;
     private static Manifest ManifestData = new Manifest();
     public static List<Runnable> dataGatheringFails = new LinkedList<>();
-
-    //TODO: Add a bit more documentation.
-    // What I mean is add docs to the classes (because some of them have it and some don't) and add links etc to all docs that are currently live.
-    // Trust me future Kanz, IT WILL BE WORTH IT.
+    
     //TODO: Simplify Main Method
+
+    /**
+     * Main method of the app.
+     * @param args String[] arguments for the app.
+     */
     public static void main(String[] args) {
         long StartingTime = System.currentTimeMillis();
         ARGUMENTS = args;
@@ -237,10 +243,7 @@ public final class CatDownloader {
                 logger.print("Finished gathering data!");
             }
 
-            // This shouldn't be a singleton, however it is good enough for now.
-            SyncManager fm = SyncManager.getInstance();
-            fm.passData(ModsFolder, ManifestData, ARD.getThreads());
-            fm.runSync();
+            new SyncManager(ModsFolder, ManifestData, ARD.getThreads()).runSync();
 
             logger.print("Entire Process took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s");
             RandomUtils.closeTheApp(0);

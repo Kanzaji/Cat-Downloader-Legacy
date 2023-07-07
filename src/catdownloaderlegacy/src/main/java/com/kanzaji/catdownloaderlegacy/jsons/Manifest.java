@@ -24,28 +24,27 @@
 
 package com.kanzaji.catdownloaderlegacy.jsons;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.kanzaji.catdownloaderlegacy.SyncManager;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import com.kanzaji.catdownloaderlegacy.Updater;
+
 import org.jetbrains.annotations.ApiStatus;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
- * Used to hold information and methods related to {@link Manifest} and manifest.json file.
+ * Class used to represent data structure for Manifest.json file.
  * @see ModFile
  */
 public class Manifest {
+    public static LinkedList<String> DataGatheringWarnings = new LinkedList<>();
     public String version;
     public String name;
     public String author;
@@ -72,8 +71,10 @@ public class Manifest {
          * Used to gather required data for this object.
          * @param minecraftData {@link minecraft} object from the main Manifest Object.
          * @return {@link ModFile} with data acquired in Data Gathering.
+         * @Deprecated This method is meant for a rework in separate class, because of that it is marked as deprecated and should be replaced with updated version whenever possible.
          */
         @ApiStatus.Experimental
+        @Deprecated(since = "2.0", forRemoval = true)
         public ModFile getData(minecraft minecraftData) {
             ModFile ModFileData = new ModFile();
             LoggerCustom logger = new LoggerCustom("Manifest");
@@ -134,7 +135,7 @@ public class Manifest {
 
                                 if (warning != null) {
                                     logger.warn(warning);
-                                    SyncManager.getInstance().DataGatheringWarnings.add(warning);
+                                    DataGatheringWarnings.add(warning);
                                 }
                             }
 
@@ -188,7 +189,7 @@ public class Manifest {
 
                         if (error403 || error202) {
                             logger.error("Attempt of parsing data after Response code 403 for project id: " + projectID + " failed!");
-                            SyncManager.getInstance().DataGatheringWarnings.add(
+                            DataGatheringWarnings.add(
                                     "403 (Access denied) Error occurred while trying to request data for project " + projectID + "! Mod has to be downloaded manually at this moment." +
                                     "\n     > Site with CurseForge link: https://cfwidget.com/" + projectID + "?&version=" + fileID +
                                     "\n     > Please report it on my github (Link at the end of the log file) if this still happens after waiting few minutes!"

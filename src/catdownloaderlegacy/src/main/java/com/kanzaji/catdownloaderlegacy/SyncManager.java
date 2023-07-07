@@ -28,8 +28,6 @@ import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
 import com.kanzaji.catdownloaderlegacy.utils.DownloadUtils;
 import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
-import org.jetbrains.annotations.Contract;
-
 import static com.kanzaji.catdownloaderlegacy.utils.FileVerUtils.verifyFile;
 
 import java.io.IOException;
@@ -43,10 +41,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+/**
+ * SyncManager is a class used to manage synchronization of the mods.
+ * @see SyncManager#runSync()
+ * @see SyncManager#passData(Path, Manifest, int)
+ */
 public class SyncManager {
     private static final LoggerCustom logger = new LoggerCustom("Sync Manager");
-    private static final class InstanceHolder {private static final SyncManager instance = new SyncManager();}
-    private SyncManager() {}
     private ExecutorService downloadExecutor;
     private ExecutorService verificationExecutor;
     private Path ModFolderPath;
@@ -66,12 +67,24 @@ public class SyncManager {
     public final List<String> DataGatheringWarnings = new LinkedList<>();
 
     /**
-     * Used to get a reference to an instance of the SyncManager.
-     * @return Reference to an instance of the SyncManager.
+     * Constructor of SyncManager.
+     * @see SyncManager#passData(Path, Manifest, int)
+     * @see SyncManager#runSync()
      */
-    @Contract(pure = true)
-    public static SyncManager getInstance() {
-        return InstanceHolder.instance;
+    public SyncManager() {}
+
+    /**
+     * Constructor of SyncManager with {@link SyncManager#passData(Path, Manifest, int)} integrated.
+     * @param modFolderPath Path to mods folder.
+     * @param manifest Manifest Data
+     * @param nThreadsCount Amount of Threads for downloader to use.
+     * @see SyncManager#runSync()
+     */
+    public SyncManager(Path modFolderPath, Manifest manifest, int nThreadsCount) {
+        this.ModFolderPath = modFolderPath;
+        this.ManifestData = manifest;
+        this.downloadExecutor = Executors.newFixedThreadPool(nThreadsCount);
+        this.verificationExecutor = Executors.newFixedThreadPool(nThreadsCount);
     }
 
     /**
@@ -87,6 +100,7 @@ public class SyncManager {
         this.verificationExecutor = Executors.newFixedThreadPool(nThreadsCount);
     }
 
+    //TODO: Simplify runSync (Separate huge blocks of code into separate methods / classes).
     /**
      * Used to start process of Syncing a Profile. It uses a data passed by FileManager#passData to a FileManager instance.
      * @throws NullPointerException when Path to Mod Folder, Manifest Data or Executor is null.

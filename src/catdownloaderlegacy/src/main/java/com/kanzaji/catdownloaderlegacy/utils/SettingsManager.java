@@ -27,13 +27,15 @@ package com.kanzaji.catdownloaderlegacy.utils;
 import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.jsons.Settings;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+import static com.kanzaji.catdownloaderlegacy.utils.RandomUtils.checkIfJsonObject;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,7 +45,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.*;
 import java.io.IOException;
 
-import static com.kanzaji.catdownloaderlegacy.utils.RandomUtils.checkIfJsonObject;
 
 /**
  * SettingsManager is a class used to manage, create, update and load Settings file for Cat-Downloader.

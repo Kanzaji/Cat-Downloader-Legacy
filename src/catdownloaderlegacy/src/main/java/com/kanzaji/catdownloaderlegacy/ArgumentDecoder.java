@@ -26,6 +26,7 @@ package com.kanzaji.catdownloaderlegacy;
 
 import com.kanzaji.catdownloaderlegacy.jsons.Settings;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.io.FileNotFoundException;

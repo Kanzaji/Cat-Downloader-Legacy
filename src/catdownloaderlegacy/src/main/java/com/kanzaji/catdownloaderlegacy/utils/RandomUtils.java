@@ -24,10 +24,16 @@
 
 package com.kanzaji.catdownloaderlegacy.utils;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+/**
+ * This class holds random utility methods that aren't worth their own class.
+ * @see RandomUtils#checkIfJsonObject(String) 
+ * @see RandomUtils#closeTheApp(int)
+ */
 public class RandomUtils {
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().setLenient().create();
     private static final LoggerCustom logger = new LoggerCustom("Random Utilities");

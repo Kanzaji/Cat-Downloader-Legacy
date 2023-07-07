@@ -24,10 +24,10 @@
 
 package com.kanzaji.catdownloaderlegacy.utils;
 
-import static com.kanzaji.catdownloaderlegacy.utils.FileVerUtils.verifyFile;
-
 import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+import static com.kanzaji.catdownloaderlegacy.utils.FileVerUtils.verifyFile;
+
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -41,6 +41,12 @@ import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
 
+/**
+ * This class holds utility methods related to downloading files.
+ * @see DownloadUtils#download(Path, String, String) 
+ * @see DownloadUtils#reDownload(Path, Number, String, String) 
+ * @see DownloadUtils#downloadAndVerify(Path, String, int, String) 
+ */
 public class DownloadUtils {
     private static final LoggerCustom logger = new LoggerCustom("Download Utilities");
 
@@ -49,7 +55,7 @@ public class DownloadUtils {
      * @param File Path for the download.
      * @param DownloadUrl URL to a file.
      * @param FileName Name of the file.
-     * @apiNote This method does not verify downloaded files. For that purpose, use {@link FileVerUtils#verifyFile(Path, Number, String)}
+     * @apiNote This method does not verify downloaded files. For that purpose, use {@link DownloadUtils#downloadAndVerify(Path, String, int, String)}
      */
     public static void download(Path File, final String DownloadUrl, @Nullable String FileName) {
         try {
@@ -92,7 +98,7 @@ public class DownloadUtils {
      * Used to download a file from a URL.
      * @param File Path for the download.
      * @param DownloadUrl URL to a file.
-     * @apiNote This method does not verify downloaded files. For that purpose, use {@link FileVerUtils#verifyFile(Path, Number, String)}
+     * @apiNote This method does not verify downloaded files. For that purpose, use {@link DownloadUtils#downloadAndVerify(Path, String, int)}
      */
     public static void download(Path File, final String DownloadUrl) {
         download(File, DownloadUrl, null);

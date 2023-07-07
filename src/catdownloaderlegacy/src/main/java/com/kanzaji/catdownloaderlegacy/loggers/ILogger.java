@@ -25,8 +25,12 @@
 package com.kanzaji.catdownloaderlegacy.loggers;
 
 import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 
+/**
+ * This interface is used to create logger services. Functions for different log levels are already implemented.
+ */
 interface ILogger {
     /**
      * Used to initialize Logger. Creates new log file and overrides old one if present.

@@ -24,6 +24,10 @@
 
 package com.kanzaji.catdownloaderlegacy.jsons;
 
+/**
+ * Class used to represent Data Structure for MinecraftInstance.json file.
+ * @see com.kanzaji.catdownloaderlegacy.utils.MIInterpreter
+ */
 public class MinecraftInstance {
 
     public baseModLoader baseModLoader;
