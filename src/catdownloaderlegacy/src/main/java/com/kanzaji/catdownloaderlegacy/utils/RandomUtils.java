@@ -45,7 +45,8 @@ public class RandomUtils {
      */
     public static boolean checkIfJsonObject(String JSONObject) {
         try {
-            // Return value of gson#fromJson here is intended! I use this as a check if entire array is in a single line.
+            // Ignoring return value of gson#fromJson here is intended!.
+            // When String isn't an JsonObject, it will throw an exception.
             gson.fromJson(JSONObject, Object.class);
             return true;
         } catch (Exception e) {

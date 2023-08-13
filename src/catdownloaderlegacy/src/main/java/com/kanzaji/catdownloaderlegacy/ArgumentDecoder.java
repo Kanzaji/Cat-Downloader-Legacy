@@ -55,6 +55,7 @@ public class ArgumentDecoder {
     private boolean Settings = true;
     private boolean DefaultSettingsFromTemplate = true;
     private boolean Experimental = false;
+    private boolean BypassNetworkCheck = false;
 
     /**
      * Used to get a reference to {@link ArgumentDecoder} instance.
@@ -104,6 +105,7 @@ public class ArgumentDecoder {
                 case "settings" -> this.Settings = getBooleanValue(value);
                 case "defaultsettings" -> this.DefaultSettingsFromTemplate = getBooleanValue(value);
                 case "experimental" -> this.Experimental = getBooleanValue(value);
+                case "bypassnetworkcheck" -> this.BypassNetworkCheck = getBooleanValue(value);
 
                 // Custom
                 case "mode" -> {
@@ -203,6 +205,7 @@ public class ArgumentDecoder {
         logger.log("> Working directory: " + this.WorkingDirectory);
         logger.log("- Full Path: " + Path.of(this.WorkingDirectory).toAbsolutePath());
         logger.log("> Program Mode: " + this.Mode);
+        logger.log("> Network Check Bypass: " + this.BypassNetworkCheck);
         logger.log("> Updater enabled: " + this.UpdaterActive);
         logger.log("> Settings enabled: " + this.Settings);
         logger.log("> Default Settings from the template: " + this.DefaultSettingsFromTemplate);
@@ -225,7 +228,7 @@ public class ArgumentDecoder {
      * Used to load data to ARD from Settings Manager.
      * @param SettingsData {@link Settings} object with data to load.
      */
-    public void loadFromSettings(Settings SettingsData, boolean Print) {
+    public void loadFromSettings(@NotNull Settings SettingsData, boolean Print) {
         this.Mode = SettingsData.mode;
         this.UpdaterActive = SettingsData.isUpdaterActive;
         this.WorkingDirectory = SettingsData.workingDirectory;
@@ -261,4 +264,5 @@ public class ArgumentDecoder {
     public boolean isFileSizeVerActive() {return this.FileSizeVerification;}
     public boolean isHashVerActive() {return this.HashVerification;}
     public boolean isExperimental() {return this.Experimental;}
+    public boolean isBypassNetworkCheckActive() {return this.BypassNetworkCheck;}
 }

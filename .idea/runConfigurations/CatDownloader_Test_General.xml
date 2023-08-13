@@ -4,7 +4,7 @@
     <log_file alias="Logs" path="$PROJECT_DIR$/TestingArea/Cat-Downloader.log" show_all="true" />
     <option name="MAIN_CLASS_NAME" value="com.kanzaji.catdownloaderlegacy.CatDownloader" />
     <module name="Cat-Downloader-Legacy" />
-    <option name="PROGRAM_PARAMETERS" value="-Settings:false -LogsPath:Logs" />
+    <option name="PROGRAM_PARAMETERS" value="-Settings:false -LogsPath:Logs -WorkingDirectory:Empty" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/TestingArea" />
     <method v="2">
       <option name="Make" enabled="true" />

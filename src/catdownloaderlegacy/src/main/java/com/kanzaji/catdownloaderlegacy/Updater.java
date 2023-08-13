@@ -175,7 +175,7 @@ public class Updater {
             Files.copy(APPPATH, Path.of(appPathString, APPPATH.getFileName().toString() + ".old"), StandardCopyOption.REPLACE_EXISTING);
 
             Files.deleteIfExists(updatedAppPath);
-            DownloadUtils.downloadAndVerify(updatedAppPath, releaseData.assets[0].browser_download_url, releaseData.assets[0].size);
+            NetworkingUtils.downloadAndVerify(updatedAppPath, releaseData.assets[0].browser_download_url, releaseData.assets[0].size);
 
             logger.log("Unpacking CDL-Updater sub-app from the archive...");
             Path cdlPath = Path.of(FileUtils.getFolderAsString(updatedAppPath), "CDLUpdater.jar");

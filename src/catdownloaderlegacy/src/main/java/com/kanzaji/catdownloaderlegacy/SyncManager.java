@@ -25,7 +25,7 @@
 package com.kanzaji.catdownloaderlegacy;
 
 import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
-import com.kanzaji.catdownloaderlegacy.utils.DownloadUtils;
+import com.kanzaji.catdownloaderlegacy.utils.NetworkingUtils;
 import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import static com.kanzaji.catdownloaderlegacy.utils.FileVerUtils.verifyFile;
@@ -155,12 +155,12 @@ public class SyncManager {
             if (Files.notExists(ModFile, LinkOption.NOFOLLOW_LINKS)) {
                 logger.log(FileName + " not found! Added to the download queue.");
                 DownloadQueueL.add(() -> {
-                    DownloadUtils.download(ModFile, mod.downloadUrl, FileName);
+                    NetworkingUtils.download(ModFile, mod.downloadUrl, FileName);
                     try {
                         logger.log("Verifying " + FileName + " after download...");
                         if (!verifyFile(ModFile, mod.fileSize, mod.downloadUrl)) {
                             logger.warn("Mod " + FileName + " appears to have not downloaded correctly! Re-downloading...");
-                            if(DownloadUtils.reDownload(ModFile, mod.fileSize, mod.downloadUrl, FileName)) {
+                            if(NetworkingUtils.reDownload(ModFile, mod.fileSize, mod.downloadUrl, FileName)) {
                                 logger.log("Re-download of " + FileName + " was successful!");
                                 DownloadSuccess += 1;
                             } else {
@@ -187,7 +187,7 @@ public class SyncManager {
                             DownloadQueueL.add(() -> {
                                 logger.log("Re-downloading " + FileName + " ...");
                                 try {
-                                    if(DownloadUtils.reDownload(ModFile, mod.fileSize, mod.downloadUrl, FileName)) {
+                                    if(NetworkingUtils.reDownload(ModFile, mod.fileSize, mod.downloadUrl, FileName)) {
                                         logger.log("Re-download of " + FileName + " was successful!");
                                         DownloadSuccess += 1;
                                     } else {

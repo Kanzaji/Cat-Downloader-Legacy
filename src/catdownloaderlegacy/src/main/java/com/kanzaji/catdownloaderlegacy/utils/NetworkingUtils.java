@@ -42,20 +42,34 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
 
 /**
- * This class holds utility methods related to downloading files.
- * @see DownloadUtils#download(Path, String, String) 
- * @see DownloadUtils#reDownload(Path, Number, String, String) 
- * @see DownloadUtils#downloadAndVerify(Path, String, int, String) 
+ * This class holds utility methods related to Networking.
+ * @see NetworkingUtils#download(Path, String, String)
+ * @see NetworkingUtils#reDownload(Path, Number, String, String)
+ * @see NetworkingUtils#downloadAndVerify(Path, String, int, String)
  */
-public class DownloadUtils {
-    private static final LoggerCustom logger = new LoggerCustom("Download Utilities");
+public class NetworkingUtils {
+    private static final LoggerCustom logger = new LoggerCustom("Network Utilities");
+
+    /**
+     * This method is used to check the connection to the specified URL.
+     * @param url URL to check connection with.
+     * @return True if connection is successful, false otherwise.
+     */
+    public static boolean checkConnection(final String url) {
+        try {
+            new URL(url).openConnection().connect();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
     /**
      * Used to download a file from a URL.
      * @param File Path for the download.
      * @param DownloadUrl URL to a file.
      * @param FileName Name of the file.
-     * @apiNote This method does not verify downloaded files. For that purpose, use {@link DownloadUtils#downloadAndVerify(Path, String, int, String)}
+     * @apiNote This method does not verify downloaded files. For that purpose, use {@link NetworkingUtils#downloadAndVerify(Path, String, int, String)}
      */
     public static void download(Path File, final String DownloadUrl, @Nullable String FileName) {
         try {
@@ -98,7 +112,7 @@ public class DownloadUtils {
      * Used to download a file from a URL.
      * @param File Path for the download.
      * @param DownloadUrl URL to a file.
-     * @apiNote This method does not verify downloaded files. For that purpose, use {@link DownloadUtils#downloadAndVerify(Path, String, int)}
+     * @apiNote This method does not verify downloaded files. For that purpose, use {@link NetworkingUtils#downloadAndVerify(Path, String, int)}
      */
     public static void download(Path File, final String DownloadUrl) {
         download(File, DownloadUrl, null);
@@ -114,7 +128,9 @@ public class DownloadUtils {
      * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm.
      * @throws InterruptedException when Thread is interrupted.
      */
-    public static void downloadAndVerify(Path File, final String DownloadURL, final int FileSize, @Nullable String FileName) throws IOException, NoSuchAlgorithmException, InterruptedException {
+    public static void downloadAndVerify(Path File, final String DownloadURL, final int FileSize, @Nullable String FileName)
+        throws IOException, NoSuchAlgorithmException, InterruptedException
+    {
         download(File, DownloadURL, FileName);
 
         if (Objects.isNull(FileName)) {
@@ -124,7 +140,7 @@ public class DownloadUtils {
         logger.log("Verifying " + FileName + " after download...");
         if (!FileVerUtils.verifyFile(File, FileSize, DownloadURL)) {
             logger.error("Verification of the " + FileName + " failed! Trying to re-download the file...");
-            if(DownloadUtils.reDownload(File, FileSize, DownloadURL, FileName)) {
+            if(NetworkingUtils.reDownload(File, FileSize, DownloadURL, FileName)) {
                 logger.log("Re-download of " + FileName + " was successful!");
             } else {
                 logger.critical("Re-download of " + FileName + " after " + ArgumentDecoder.getInstance().getDownloadAttempts() + " attempts failed!");
@@ -159,14 +175,16 @@ public class DownloadUtils {
      * @throws InterruptedException when thread is interrupted.
      * @apiNote The amount of attempts for re-downloading a file is defined in the arguments (Default: 5)
      */
-    public static boolean reDownload(Path file, Number fileSize, String downloadUrl, @Nullable String fileName) throws IOException, NoSuchAlgorithmException, InterruptedException {
+    public static boolean reDownload(Path file, Number fileSize, String downloadUrl, @Nullable String fileName)
+        throws IOException, NoSuchAlgorithmException, InterruptedException
+    {
         if (Objects.isNull(fileName)) {
             fileName = file.getFileName().toString();
         }
 
         for (int i = 0; i < ArgumentDecoder.getInstance().getDownloadAttempts(); i++) {
             // Waiting a while in case server has some small issue and requires a bit of time, Each attempt increases the time to wait.
-            Thread.sleep(500L *i);
+            Thread.sleep(500L * i);
 
             if (Files.deleteIfExists(file)) {
                 logger.log("Deleted corrupted " + fileName + ". Re-download attempt: " + (i+1));

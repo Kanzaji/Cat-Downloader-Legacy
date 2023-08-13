@@ -32,12 +32,14 @@ import com.kanzaji.catdownloaderlegacy.utils.*;
 
 import com.google.gson.Gson;
 
+import java.io.IOException;
 import java.nio.file.*;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
+
 
 /**
  * Main class holding Global variables for the app and containing the main method.
@@ -46,10 +48,10 @@ import java.util.concurrent.*;
 public final class CatDownloader {
     // Launch fresh instances of required utilities.
     private static final LoggerCustom logger = new LoggerCustom("Main");
-    private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
+    static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
 
     // Global variables
-    public static final String VERSION = "2.0-DEVELOP";
+    public static final String VERSION = "2.0.1-DEVELOP";
     public static final String REPOSITORY = "https://github.com/Kanzaji/Cat-Downloader-Legacy";
     public static final String NAME = "Cat Downloader Legacy";
     public static Path JAVAPATH = null;
@@ -71,38 +73,9 @@ public final class CatDownloader {
         long StartingTime = System.currentTimeMillis();
         ARGUMENTS = args;
 
-        logger.init();
-        logger.log(NAME + " version: " + VERSION);
         try {
-            APPPATH = Path.of(CatDownloader.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath().replaceFirst("/", ""));
-            logger.log("App Path: " + APPPATH.toAbsolutePath());
-            JAVAPATH = Path.of(ProcessHandle.current().info().command().orElseThrow());
-            logger.log("Java Path: " + JAVAPATH.toAbsolutePath());
-        } catch (Exception e) {
-            logger.logStackTrace("Failed to get App or Java directory!", e);
-        }
-
-        try {
-            GUIUtils.setLookAndFeel();
-            // All arguments should be decoded in the ARD, however this one does stuff that has to be done before full ARD Initialization, so it is handled here.
-            if (Arrays.stream(ARGUMENTS).toList().contains("-PostUpdateRoutine")) Updater.updateCleanup();
-
-            System.out.println("---------------------------------------------------------------------");
-            System.out.println("     " + NAME + " " + VERSION);
-            System.out.println("     Created by: Kanzaji");
-            System.out.println("---------------------------------------------------------------------");
-
-            ARD.decodeArguments(ARGUMENTS);
-            ARD.printConfiguration("Program Configuration from Arguments:");
-
-            if (ARD.areSettingsEnabled()) SettingsManager.initSettings();
-
-            logger.postInit();
-
-            Updater.checkForUpdates();
-
-            // Redirects entire output to a console!
-            if (!ARD.isLoggerActive()) logger.exit();
+            Services.init();
+            Services.postInit();
 
             Path workingDirectory = Path.of(ARD.getWorkingDir());
             System.out.println("Running in " + workingDirectory.toAbsolutePath());
@@ -251,6 +224,60 @@ public final class CatDownloader {
             System.out.println("CatDownloader crashed! More details are in the log file at \"" + logger.getLogPath() + "\".");
             logger.logStackTrace("Exception thrown while executing main app code!", e);
             RandomUtils.closeTheApp(1);
+        }
+    }
+
+    private static class Services {
+        private static final LoggerCustom logger = new LoggerCustom("Main.Services");
+
+        /**
+         * This method is used to initialize requires services, utilities and global "utility" variables.
+         * @throws IOException when IO Exception occurs.
+         */
+        public static void init() throws IOException {
+            logger.init();
+            logger.log(NAME + " version: " + VERSION);
+            try {
+                APPPATH = Path.of(CatDownloader.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath().replaceFirst("/", ""));
+                logger.log("App Path: " + APPPATH.toAbsolutePath());
+                JAVAPATH = Path.of(ProcessHandle.current().info().command().orElseThrow());
+                logger.log("Java Path: " + JAVAPATH.toAbsolutePath());
+            } catch (Exception e) {
+                logger.logStackTrace("Failed to get App or Java directory!", e);
+            }
+
+            GUIUtils.setLookAndFeel();
+            // All arguments should be decoded in the ARD, however this method Overrides arguments, so it is required to run before ARD decoding.
+            if (Arrays.stream(ARGUMENTS).toList().contains("-PostUpdateRoutine")) Updater.updateCleanup();
+
+            System.out.println("---------------------------------------------------------------------");
+            System.out.println("     " + NAME + " " + VERSION);
+            System.out.println("     Created by: Kanzaji");
+            System.out.println("---------------------------------------------------------------------");
+
+            ARD.decodeArguments(ARGUMENTS);
+            ARD.printConfiguration("Program Configuration from Arguments:");
+
+            if (ARD.areSettingsEnabled()) SettingsManager.initSettings();
+        }
+
+        /**
+         * This method is used to launch all post-init methods of services.
+         * @throws IOException when IO Exception occurs.
+         */
+        public static void postInit() throws IOException {
+            logger.postInit();
+
+            if (!NetworkingUtils.checkConnection("https://github.com/") && !ARD.isBypassNetworkCheckActive()) {
+                System.out.println("It appears you are running this app without access to the internet. This app requires internet connection to function.");
+                System.out.println("If you have network connection, and the Check host is unavailable (github.com), run the app with -BypassNetworkCheck argument!");
+                RandomUtils.closeTheApp(1);
+            }
+
+            Updater.checkForUpdates();
+
+            // Redirects entire output of any Logger to a console!
+            if (!ARD.isLoggerActive()) logger.exit();
         }
     }
 }
