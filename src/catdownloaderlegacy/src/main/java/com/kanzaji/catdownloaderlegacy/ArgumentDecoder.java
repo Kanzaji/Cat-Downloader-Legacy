@@ -105,7 +105,7 @@ public class ArgumentDecoder {
                 case "settings" -> this.Settings = getBooleanValue(value);
                 case "defaultsettings" -> this.DefaultSettingsFromTemplate = getBooleanValue(value);
                 case "experimental" -> this.Experimental = getBooleanValue(value);
-                case "bypassnetworkcheck" -> this.BypassNetworkCheck = getBooleanValue(value);
+                case "bypassnetworkcheck" -> this.BypassNetworkCheck = true;
 
                 // Custom
                 case "mode" -> {
@@ -118,6 +118,7 @@ public class ArgumentDecoder {
                     }
                     this.Mode = value;
                 }
+
                 default -> {
                 }
             }

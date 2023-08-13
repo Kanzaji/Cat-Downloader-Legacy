@@ -269,7 +269,7 @@ public final class CatDownloader {
             logger.postInit();
 
             if (!NetworkingUtils.checkConnection("https://github.com/") && !ARD.isBypassNetworkCheckActive()) {
-                System.out.println("It appears you are running this app without access to the internet. This app requires internet connection to function.");
+                System.out.println("It appears you are running this app without access to the internet. This app requires internet connection to function properly.");
                 System.out.println("If you have network connection, and the Check host is unavailable (github.com), run the app with -BypassNetworkCheck argument!");
                 RandomUtils.closeTheApp(1);
             }
