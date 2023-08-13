@@ -37,6 +37,7 @@ import java.util.Date;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -312,6 +313,9 @@ public class Logger implements ILogger {
                     stackTrace.append("    at ").append(stackTraceElement).append("\n");
                 }
                 Files.writeString(this.LogFile, "[" + new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new Date()) + "] [" + Type + "] " + throwable + "\n" + stackTrace + "\n", StandardOpenOption.APPEND);
+                if (Objects.nonNull(throwable.getCause())) {
+                    this.logStackTrace("Caused By:", throwable.getCause());
+                }
             }
         } catch (NoSuchFileException e) {
             if (this.crashed) {
