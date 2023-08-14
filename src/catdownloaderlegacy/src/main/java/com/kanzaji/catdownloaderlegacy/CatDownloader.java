@@ -24,7 +24,9 @@
 
 package com.kanzaji.catdownloaderlegacy;
 
+import com.kanzaji.catdownloaderlegacy.data.CDLInstance;
 import com.kanzaji.catdownloaderlegacy.data.CFManifest;
+import com.kanzaji.catdownloaderlegacy.data.MRIndex;
 import com.kanzaji.catdownloaderlegacy.guis.GUIUtils;
 import com.kanzaji.catdownloaderlegacy.data.CFMinecraftInstance;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
@@ -34,11 +36,8 @@ import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.*;
+import java.util.*;
+import java.util.stream.Stream;
 
 
 /**
@@ -48,19 +47,51 @@ import java.util.concurrent.*;
 public final class CatDownloader {
     // Launch fresh instances of required utilities.
     private static final LoggerCustom logger = new LoggerCustom("Main");
+    private static final Gson gson = new Gson();
     static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
 
     // Global variables
     public static final String VERSION = "2.0.1-DEVELOP";
     public static final String REPOSITORY = "https://github.com/Kanzaji/Cat-Downloader-Legacy";
     public static final String NAME = "Cat Downloader Legacy";
+    /**
+     * Path to the java environment running the app.
+     */
     public static Path JAVAPATH = null;
+    /**
+     * Path to the .jar containing the app.
+     */
     public static Path APPPATH = null;
+    /**
+     * Path to the working directory.
+     */
+    public static Path WORKPATH = null;
+    /**
+     * Arguments passed to the app.
+     */
     public static String[] ARGUMENTS = null;
 
     // Locally used variables
+    /**
+     * Path to the manifest file used by the app.
+     */
     public static Path manifestFile;
-    private static CFManifest CFManifestData = new CFManifest();
+    /**
+     * Used to hold data for the SyncManager and manifest parsing
+     * @deprecated This field is deprecated and should be replaced with {@link CatDownloader#CDLInstanceData}.
+     */
+    @Deprecated(since = "2.0.1", forRemoval = true)
+    private static final CFManifest CFManifestData = new CFManifest();
+    /**
+     * Used to hold data for the SyncManager and manifest parsing.
+     */
+    private static final CDLInstance CDLInstanceData = new CDLInstance();
+
+    /**
+     * Used to hold data gathering fails from the manifest data gathering.
+     * @deprecated This field is deprecated due to deprecation of {@link com.kanzaji.catdownloaderlegacy.data.CFManifest.ModFile#getData(CFManifest.minecraft)}.
+     */
+    @Deprecated(since = "2.0.1", forRemoval = true)
     public static List<Runnable> dataGatheringFails = new LinkedList<>();
     
     //TODO: Simplify Main Method
@@ -77,154 +108,191 @@ public final class CatDownloader {
             Services.init();
             Services.postInit();
 
-            Path workingDirectory = Path.of(ARD.getWorkingDir());
-            System.out.println("Running in " + workingDirectory.toAbsolutePath());
+            determineAppMode();
 
-            if (ARD.isPackMode()) {
-                System.out.println("CurseForge site format support is experimental! Use at your own responsibility.");
-                manifestFile = Path.of(workingDirectory.toAbsolutePath().toString(), "manifest.json");
-            } else {
-                manifestFile = Path.of(workingDirectory.toAbsolutePath().toString(), "minecraftinstance.json");
-            }
-
-            if (!manifestFile.toFile().exists()) {
-                String msg = null;
-
-                if (ARD.isPackMode()) {
-                    if (Files.exists(Path.of(workingDirectory.toAbsolutePath().toString(), "minecraftinstance.json"))) {
-                        msg = "Couldn't find required Manifest file, however it appears `minecraftinstance.json` exists in the current working directory." +
-                                "Did you mean to run the app in \"Instance\" mode?";
-                    }
-                } else if (Files.exists(Path.of(workingDirectory.toAbsolutePath().toString(), "manifest.json"))) {
-                    msg = "Couldn't find required Manifest file, however it appears `manifest.json` exists in the current working directory." +
-                            "Did you mean to run the app in \"Pack\" mode?";
-                } else {
-                    msg = "Couldn't find Manifest file in the working directory!";
-                }
-
-                logger.print(msg, 2);
-                RandomUtils.closeTheApp(1);
-            }
-
-            Gson gson = new Gson();
-            logger.log("Reading data from Manifest file...");
-            if (ARD.isPackMode()) {
-                CFManifestData = gson.fromJson(Files.readString(manifestFile), CFManifest.class);
-            } else {
-                // Translating from MinecraftInstance format to Manifest format.
-                CFMinecraftInstance MI = gson.fromJson(Files.readString(manifestFile), CFMinecraftInstance.class);
-                CFManifestData = MIInterpreter.decode(MI);
-            }
-
-            logger.log("Data fetched. Found " + CFManifestData.files.length + " Mods, on version " + CFManifestData.minecraft.version + " " + CFManifestData.minecraft.modLoaders[0].id);
-
-            if (CFManifestData.name == null) {
-                logger.print("The name of the instance is missing!", 1);
-            } else {
-                System.out.println("Installing modpack " +
-                    CFManifestData.name +
-                    ((CFManifestData.name.endsWith(" "))? "": " ") +
-                    CFManifestData.version +
-                    ((
-                        Objects.equals(CFManifestData.author, "") ||
-                        Objects.equals(CFManifestData.author, " ") ||
-                        Objects.equals(CFManifestData.author, null)
-                    )? "": " created by " + CFManifestData.author)
-                );
-
-                logger.log("Instance name: " + CFManifestData.name);
-            }
-
-            logger.log("Minecraft version: " + CFManifestData.minecraft.version);
-
-            if (CFManifestData.minecraft.modLoaders[0].id == null) {
-                System.out.println("For Minecraft " + CFManifestData.minecraft.version + " Vanilla");
-                logger.warn("No mod loader found! Is this vanilla?");
-            } else {
-                System.out.println("For Minecraft " + CFManifestData.minecraft.version + " using " + CFManifestData.minecraft.modLoaders[0].id);
-                logger.log("Mod Loader: " + CFManifestData.minecraft.modLoaders[0].id);
-            }
-
+            verifyAndPrepareWorkspace();
             System.out.println("---------------------------------------------------------------------");
 
-            Path ModsFolder = Path.of(workingDirectory.toAbsolutePath().toString(), "mods");
-            if(ModsFolder.toFile().exists() && !ModsFolder.toFile().isDirectory()) {
-                logger.print("Folder \"mods\" exists, but it is a file!", 2);
-                RandomUtils.closeTheApp(1);
-            }
+            fetchAndVerifyManifestFile();
 
-            if(!ModsFolder.toFile().exists()) {
-                logger.log("Folder \"mods\" is missing. Creating...");
-                Files.createDirectory(ModsFolder);
-                logger.log("Created \"mods\" folder in working directory. Path: " + workingDirectory.toAbsolutePath() + "\\mods");
-            } else {
-                logger.log("Found \"mods\" folder in working directory. Path: " + workingDirectory.toAbsolutePath() + "\\mods");
-            }
-
-            if (CFManifestData.files == null || CFManifestData.files.length == 0) {
-                logger.print("Manifest files does not have any mods in it! No job for me :D",2);
-                RandomUtils.closeTheApp(0);
-            }
-
-            System.out.println("Found " + CFManifestData.files.length + " " + ((CFManifestData.files.length == 1)? "mod":"mods") +" in Manifest file!");
-
-            if (ARD.isPackMode()) {
-                logger.print("Gathering Data about mods... This may take a while.");
-                ExecutorService Executor, FailExecutor;
-                if (ARD.isExperimental()) {
-                    logger.warn("Experimental mode for CurseForge support turned on! This may cause unexpected behaviour and issues with data gathering process.");
-                    logger.warn("Use at your own risk! Try to not over-use it.");
-                    Executor = Executors.newFixedThreadPool(ARD.getThreads());
-                    FailExecutor = Executors.newFixedThreadPool(ARD.getThreads()/4);
-                } else {
-                    // If without Experimental there are issues with Data Gathering process, this is to blame.
-                    Executor = Executors.newFixedThreadPool(2);
-                    FailExecutor = Executors.newFixedThreadPool(1);
-                }
-
-                int Index = 0;
-                for (CFManifest.ModFile mod : CFManifestData.files) {
-                    int finalIndex = Index;
-                    Executor.submit(() -> {
-                        CFManifestData.files[finalIndex] = mod.getData(CFManifestData.minecraft);
-                        if (CFManifestData.files[finalIndex] != null && (CFManifestData.files[finalIndex].error202 || CFManifestData.files[finalIndex].error403)) {
-                            mod.error403 = CFManifestData.files[finalIndex].error403;
-                            mod.error202 = CFManifestData.files[finalIndex].error202;
-                            dataGatheringFails.add(() -> CFManifestData.files[finalIndex] = mod.getData(CFManifestData.minecraft));
-                        }
-                    });
-                    Index += 1;
-                }
-
-                Executor.shutdown();
-                if (!Executor.awaitTermination(1, TimeUnit.DAYS)) {
-                    logger.print("Data gathering takes over a day! This for sure isn't right???",3);
-                    throw new RuntimeException("Data gathering is taking over a day! Something is horribly wrong.");
-                }
-
-                if (dataGatheringFails.size() > 0) {
-                    logger.warn("Data gathering errors present! Trying to re-run unsuccessful data requests. Errors present: " + dataGatheringFails.size());
-                    dataGatheringFails.forEach(FailExecutor::submit);
-                }
-
-                FailExecutor.shutdown();
-                if (!FailExecutor.awaitTermination(1, TimeUnit.DAYS)) {
-                    logger.print("Data gathering takes over a day! This for sure isn't right???",3);
-                    throw new RuntimeException("Data gathering is taking over a day! Something is horribly wrong.");
-                }
-
-                logger.print("Finished gathering data!");
-            }
-
-            new SyncManager(ModsFolder, CFManifestData, ARD.getThreads()).runSync();
+            //TODO: Rework SyncManager to use CDLInstance instead of CFManifestData. I think I wouldn't forget about this as this currently crashes the app. but still.
+            new SyncManager(Path.of(WORKPATH.toAbsolutePath().toString(), "mods"), CFManifestData, ARD.getThreads()).runSync();
 
             logger.print("Entire Process took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s");
             RandomUtils.closeTheApp(0);
         } catch (Exception | Error e) {
+            System.out.println("---------------------------------------------------------------------");
             System.out.println("CatDownloader crashed! More details are in the log file at \"" + logger.getLogPath() + "\".");
             logger.logStackTrace("Exception thrown while executing main app code!", e);
             RandomUtils.closeTheApp(1);
         }
+    }
+
+    /**
+     * Used to determine what mode the app should run in. Handles automatic mode detection.
+     * @throws RuntimeException when unsupported mode is returned from the ARD.
+     */
+    private static void determineAppMode() {
+        if (ARD.isAutomaticModeDetectionActive()) {
+            logger.log("Trying to automatically determine required mode for the app...");
+            Map<String, String> supportedFiles = new HashMap<>();
+            // "file" , "mode"
+            // #r at the beginning -> regex searching. Requires special handling in the decoding phase for each mode.
+            supportedFiles.put("modrinth.index.json", "modrinth");
+            supportedFiles.put("minecraftinstance.json", "cf-instance");
+            supportedFiles.put("manifest.json", "cf-pack");
+            supportedFiles.put("#r.mrpack", "modrinth");
+            try (Stream<Path> WorkPathDir = Files.list(WORKPATH)) {
+                WorkPathDir.forEach((File) -> {
+                    if (Files.isDirectory(File)) return;
+                    String fileName = File.getFileName().toString();
+                    supportedFiles.forEach((supportedFile, mode) -> {
+                        if (!ARD.isAutomaticModeDetectionActive()) return;
+                        if (supportedFile.startsWith("#r")?
+                                fileName.contains(supportedFile.substring(2)):
+                                fileName.equals(supportedFile)
+                        ) {
+                            logger.log("Found compatible manifest file in the working directory!");
+                            logger.log("Manifest file => " + File.toAbsolutePath());
+                            logger.log("App will be running in \"" + mode + "\" mode.");
+                            manifestFile = File;
+                            ARD.setCurrentMode(mode);
+                        }
+                    });
+                });
+            } catch (Exception e) {
+                logger.logStackTrace("Failed to automatically determine the mode with an exception. Defaulting to CF Instance mode.", e);
+                manifestFile = Path.of(WORKPATH.toAbsolutePath().toString(), "minecraftinstance.json");
+                ARD.setCurrentMode("cf-instance");
+            }
+
+            if (ARD.isAutomaticModeDetectionActive() || Files.notExists(manifestFile)) {
+                logger.print("Couldn't find any compatible manifest file in the working directory.", 1);
+                RandomUtils.closeTheApp(0);
+            }
+
+        } else {
+            switch (ARD.getCurrentMode()) {
+                case "modrinth" -> manifestFile = Path.of(WORKPATH.toAbsolutePath().toString(), "modrinth.index.json");
+                case "cf-instance" -> manifestFile = Path.of(WORKPATH.toAbsolutePath().toString(), "minecraftinstance.json");
+                case "cf-pack" -> {
+                    System.out.println("CurseForge site format support is experimental! Use at your own responsibility.");
+                    manifestFile = Path.of(WORKPATH.toAbsolutePath().toString(), "manifest.json");
+                }
+                default -> throw new RuntimeException("Unknown mode passed mode validation step! This shouldn't happen. Mode -> " + ARD.getCurrentMode());
+            }
+
+             if (Files.notExists(manifestFile)) {
+                logger.print("Couldn't find the manifest file for a chosen mode in the working directory!", 1);
+                RandomUtils.closeTheApp(0);
+            }
+        }
+        System.out.println("App is running in \"" + ARD.getCurrentMode() + "\" mode.");
+    }
+
+    /**
+     * Used to prepare working directory for the operation of the app.
+     * <h2>Order of operations</h2>
+     * <ul>
+     *     <li>Checks if Mods file does not exists</li>
+     *     <li>Checks if Mods folder Exists, if not, creates one.</li>
+     *     <li>Checks if the app mode is Modrinth, and if the Manifest file is .mrpack file.</li>
+     *     <li>If above step is true, repeats first two steps for CDLTemp directory, and unzips the .mrpack file.</li>
+     *     <li>Changes manifest file to point to the Temp directory</li>
+     * </ul>
+     * @throws IOException when IO Exception occurs.
+     */
+    private static void verifyAndPrepareWorkspace() throws IOException {
+        Path ModsFolder = Path.of(WORKPATH.toAbsolutePath().toString(), "mods");
+
+        if(Files.exists(ModsFolder) && !Files.isDirectory(ModsFolder)) {
+            System.out.println("---------------------------------------------------------------------");
+            logger.print("Folder \"mods\" exists, but it is a file!", 3);
+            RandomUtils.closeTheApp(1);
+        }
+
+        if(Files.notExists(ModsFolder)) {
+            logger.warn("Folder \"mods\" is missing. Creating...");
+            Files.createDirectory(ModsFolder);
+            logger.log("Created \"mods\" folder in working directory. Path: " + ModsFolder.toAbsolutePath());
+        } else {
+            logger.log("Found \"mods\" folder in working directory. Path: " + ModsFolder.toAbsolutePath());
+        }
+
+        if (ARD.isModrinthMode() && manifestFile.getFileName().toString().endsWith(".mrpack")) {
+            logger.log("Manifest file is a Modrinth zip file! Uncompressing...");
+            Path CDLTemp = Path.of(WORKPATH.toString(), "CDLTemp");
+            FileUtils.delete(CDLTemp);
+            FileUtils.unzip(manifestFile, CDLTemp);
+            manifestFile = Path.of(CDLTemp.toAbsolutePath().toString(), "modrinth.index.json");
+        }
+    }
+
+    /**
+     * This method is responsible for fetching and verifying the Manifest file.
+     * @throws IOException when IO Exception occurs.
+     */
+    private static void fetchAndVerifyManifestFile() throws IOException {
+        logger.log("Fetching data from the manifest file and translating it to CDLInstance Format...");
+        try {
+            switch (ARD.getCurrentMode()) {
+                case "modrinth" -> CDLInstanceData.importModrinthPack(gson.fromJson(Files.readString(manifestFile), MRIndex.class));
+                case "cf-instance" -> CDLInstanceData.importCFInstance(gson.fromJson(Files.readString(manifestFile), CFMinecraftInstance.class));
+                case "cf-pack" -> CDLInstanceData.importCFPack(gson.fromJson(Files.readString(manifestFile), CFManifest.class));
+                default -> throw new RuntimeException("Unknown mode passed mode validation step! This shouldn't happen. Mode -> " + ARD.getCurrentMode());
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to parse data from the manifest.");
+            logger.logStackTrace("Failed to parse or interpret Manifest File.", e);
+            RandomUtils.closeTheApp(1);
+        }
+
+        logger.log("Data fetched successfully.");
+        logger.print("Installing modpack " +
+            CDLInstanceData.modpackData.name +
+            ((CDLInstanceData.modpackData.name.endsWith(" "))? "": " ") +
+            ((
+                Objects.equals(CDLInstanceData.modpackData.version, "") ||
+                Objects.equals(CDLInstanceData.modpackData.version, " ") ||
+                Objects.equals(CDLInstanceData.modpackData.version, null)
+            )? "": CDLInstanceData.modpackData.version + " ") +
+            ((
+                Objects.equals(CDLInstanceData.modpackData.author, "") ||
+                Objects.equals(CDLInstanceData.modpackData.author, " ") ||
+                Objects.equals(CDLInstanceData.modpackData.author, null)
+            )? "": "created by " + CDLInstanceData.modpackData.author)
+        );
+
+        if (!(
+                Objects.equals(CDLInstanceData.modpackData.summary, "") ||
+                Objects.equals(CDLInstanceData.modpackData.summary, " ") ||
+                Objects.equals(CDLInstanceData.modpackData.summary, null)
+        )) {
+            System.out.println("\"" + CDLInstanceData.modpackData.summary + "\"");
+        }
+
+        if (Objects.equals(CDLInstanceData.modLoaderData.modLoader, "unknown")) {
+            logger.print("Using Minecraft " + CDLInstanceData.minecraftData.version + " with possibly unknown mod loader.");
+        } else {
+            logger.print(
+                "Using mod loader " +
+                Character.toUpperCase(CDLInstanceData.modLoaderData.modLoader.charAt(0)) +
+                CDLInstanceData.modLoaderData.modLoader.substring(1) +
+                " " +
+                CDLInstanceData.modLoaderData.version +
+                " for Minecraft " +
+                CDLInstanceData.minecraftData.version
+            );
+        }
+        logger.log("Mods found in the manifest file: " + CDLInstanceData.files.length + ((CDLInstanceData.files.length == 1)? " mod": " mods."));
+        logger.log("Instance name: " + CDLInstanceData.instanceName);
+
+        if (CDLInstanceData.files.length < 1) {
+            System.out.println("---------------------------------------------------------------------");
+            logger.print("It appears that this instance doesn't have any mods!");
+            RandomUtils.closeTheApp(0);
+        }
+
     }
 
     private static class Services {
@@ -240,10 +308,14 @@ public final class CatDownloader {
             try {
                 APPPATH = Path.of(CatDownloader.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath().replaceFirst("/", ""));
                 logger.log("App Path: " + APPPATH.toAbsolutePath());
+            } catch (Exception e) {
+                logger.logStackTrace("Failed to get App directory!", e);
+            }
+            try {
                 JAVAPATH = Path.of(ProcessHandle.current().info().command().orElseThrow());
                 logger.log("Java Path: " + JAVAPATH.toAbsolutePath());
             } catch (Exception e) {
-                logger.logStackTrace("Failed to get App or Java directory!", e);
+                logger.logStackTrace("Failed to get Java directory!", e);
             }
 
             GUIUtils.setLookAndFeel();
@@ -259,6 +331,9 @@ public final class CatDownloader {
             ARD.printConfiguration("Program Configuration from Arguments:");
 
             if (ARD.areSettingsEnabled()) SettingsManager.initSettings();
+
+            WORKPATH = Path.of(ARD.getWorkingDir());
+            System.out.println("Running in " + WORKPATH.toAbsolutePath());
         }
 
         /**
@@ -271,7 +346,7 @@ public final class CatDownloader {
             if (!NetworkingUtils.checkConnection("https://github.com/") && !ARD.isBypassNetworkCheckActive()) {
                 System.out.println("It appears you are running this app without access to the internet. This app requires internet connection to function properly.");
                 System.out.println("If you have network connection, and the Check host is unavailable (github.com), run the app with -BypassNetworkCheck argument!");
-                RandomUtils.closeTheApp(1);
+                RandomUtils.closeTheApp(2);
             }
 
             Updater.checkForUpdates();

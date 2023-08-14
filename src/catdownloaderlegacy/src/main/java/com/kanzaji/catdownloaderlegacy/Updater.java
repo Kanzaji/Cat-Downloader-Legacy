@@ -133,7 +133,7 @@ public class Updater {
      */
     @Contract("_ -> fail")
     public static void installUpdate(UpdaterData.releaseData releaseData){
-        String appPathString = FileUtils.getFolderAsString(APPPATH);
+        String appPathString = FileUtils.getParentFolderAsString(APPPATH);
         String updatedAppName = APPPATH.getFileName().toString();
         Path cdlArgumentsFile = Path.of(appPathString, "CDL-Arguments.json");
         Path updatedAppPath;
@@ -178,7 +178,7 @@ public class Updater {
             NetworkingUtils.downloadAndVerify(updatedAppPath, releaseData.assets[0].browser_download_url, releaseData.assets[0].size);
 
             logger.log("Unpacking CDL-Updater sub-app from the archive...");
-            Path cdlPath = Path.of(FileUtils.getFolderAsString(updatedAppPath), "CDLUpdater.jar");
+            Path cdlPath = Path.of(FileUtils.getParentFolderAsString(updatedAppPath), "CDLUpdater.jar");
             Files.copy(FileUtils.getInternalAsset("CDL-Updater-1.0.jar"), cdlPath, StandardCopyOption.REPLACE_EXISTING);
 
             logger.log("CDL-Updater.jar unpacked. Handing execution to CDLUpdater.jar, closing main app for update process...");
@@ -214,7 +214,7 @@ public class Updater {
      * @throws IOException when IO Operation fails.
      */
     public static void updateCleanup() throws IOException {
-        String appPathString = FileUtils.getFolderAsString(APPPATH);
+        String appPathString = FileUtils.getParentFolderAsString(APPPATH);
         logger.log("Post-Update cleanup started. Update log will get deleted if stockpiling of the logs is disabled!");
 
         if (Files.deleteIfExists(Path.of(appPathString, "CDLUpdater.jar"))) {

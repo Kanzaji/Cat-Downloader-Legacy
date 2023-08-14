@@ -163,7 +163,7 @@ public class SettingsManager {
      * Used to parse Settings data from Settings file.
      * @return {@link Settings} contained in Settings file.
      */
-    private static @Nullable Settings parseSettings() {
+    private static @NotNull Settings parseSettings() {
         logger.log("Parsing data from settings file...");
         try {
             Settings SettingsFileData = gson.fromJson(Files.readString(SettingsFile), Settings.class);
@@ -174,8 +174,9 @@ public class SettingsManager {
             System.out.println("Settings file seems to be corrupted! Make sure you have all values as correct data type!");
             logger.logStackTrace("Failed parsing settings file!", e);
             RandomUtils.closeTheApp(1);
+            // Only here due to IDE complaining.
+            return new Settings();
         }
-        return null;
     }
 
     /**
@@ -187,9 +188,9 @@ public class SettingsManager {
         logger.log("Validating settings...");
         List<String> errors = new LinkedList<>();
         if (Objects.isNull(SettingsData.mode)) {
-            errors.add("Mode is null! Available modes are: Pack // Instance");
+            errors.add("Mode is null! Available modes are: CF-Pack // CF-Instance // Modrinth // Automatic");
         } else if (!ArgumentDecoder.validateMode(SettingsData.mode.toLowerCase(Locale.ROOT))) {
-            errors.add("Mode: " + SettingsData.mode + " is not correct! Available modes are: Pack // Instance");
+            errors.add("Mode: " + SettingsData.mode + " is not correct! Available modes are: CF-Pack // CF-Instance // Modrinth // Automatic");
         }
         if (Objects.isNull(SettingsData.workingDirectory)) {
             errors.add("Working Directory is null!");
@@ -322,7 +323,7 @@ public class SettingsManager {
     private static @NotNull Settings generateSettingsFromARD() {
         logger.log("Generating settings file based out of argument values...");
         Settings ARDConfig = new Settings();
-        ARDConfig.mode = ARD.getMode();
+        ARDConfig.mode = ARD.getCurrentMode();
         ARDConfig.workingDirectory = ARD.getWorkingDir();
         ARDConfig.logDirectory = ARD.getLogPath();
         ARDConfig.isLoggerActive = ARD.isLoggerActive();

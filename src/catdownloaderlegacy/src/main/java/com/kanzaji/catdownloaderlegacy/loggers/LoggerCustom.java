@@ -35,6 +35,11 @@ import java.util.Objects;
 public class LoggerCustom implements ILogger {
     private final Logger logger = Logger.getInstance();
     private String name = "default";
+
+    /**
+     * Constructor for the Custom Logger.
+     * @param name A name of the logger that will be printed in the logged messages.
+     */
     public LoggerCustom(String name) {
         if (Objects.nonNull(name)) this.name = name;
     }

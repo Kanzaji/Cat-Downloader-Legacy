@@ -27,6 +27,7 @@ package com.kanzaji.catdownloaderlegacy.data;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+import com.kanzaji.catdownloaderlegacy.temp.OldDataGathering;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -50,6 +51,7 @@ public class CDLInstance {
      * @return Itself, for easier use after importing.
      * @throws UnexpectedException when Exception occurs in the translating code.
      * @apiNote This method DOES NOT return Hashes used for verification of the downloads. Filling up missing hashes is required to do at the download process.
+     * @see OldDataGathering#startDataGathering() Click this for the old solution of data gathering.
      */
     @ApiStatus.Experimental
     public CDLInstance importCFPack(@NotNull CFManifest CFPackData) throws UnexpectedException  {
@@ -176,14 +178,18 @@ public class CDLInstance {
             throw new UnknownFormatConversionException("MRIndex specified is in newer than supported version! Please report that to the github repository.");
         }
 
+        if (!Objects.equals(MRIndexData.game, "minecraft")) {
+            throw new UnknownFormatConversionException("MRIndex specified is for a different game!");
+        }
+
         try {
             this.instanceName = MRIndexData.name;
             this.minecraftData = new MinecraftData();
             this.minecraftData.version = MRIndexData.dependencies.minecraft;
             this.modpackData = new ModpackData();
             this.modpackData.version = MRIndexData.versionId;
-            this.modpackData.author  = null;
             this.modpackData.overrides  = "overrides";
+            this.modpackData.summary = MRIndexData.summary;
             this.modpackData.name  = MRIndexData.name;
             this.modLoaderData = new ModLoader();
 
@@ -208,6 +214,8 @@ public class CDLInstance {
             this.files = new ModFile[MRIndexData.files.length];
             for (int i = 0; i < MRIndexData.files.length; i++) {
                 MRIndex.MRModFile mod = MRIndexData.files[i];
+                //TODO: Create proper "Server / client" separation in the launcher version.
+                if (Objects.nonNull(mod.env) && Objects.equals(mod.env.client, "unsupported")) continue;
                 this.files[i] = new ModFile(
                     Path.of(mod.path).getFileName().toString(),
                     mod.downloads[0],
@@ -237,6 +245,7 @@ public class CDLInstance {
         public String author;
         public String overrides;
         public String name;
+        public String summary;
     }
     public static class MinecraftData {
         public String version;

@@ -34,9 +34,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.MissingResourceException;
-import java.util.Objects;
+import java.nio.file.StandardOpenOption;
+import java.util.*;
+import java.util.stream.Stream;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * This class holds utility methods related to interacting with files.
@@ -79,6 +82,48 @@ public class FileUtils {
     }
 
     /**
+     * This method is used to automatically delete a file or a folder.
+     * @param FileOrFolder Path to a file or a folder designated to deletion.
+     * @throws NullPointerException when the argument is null.
+     * @throws IOException when IO Exception occurs.
+     */
+    public static void delete(@NotNull Path FileOrFolder) throws IOException, NullPointerException {
+        Objects.requireNonNull(FileOrFolder);
+
+        if (Files.notExists(FileOrFolder)) {
+            logger.warn("Tried to delete already not existent file!");
+            logger.warn("Path: \"" + FileOrFolder.toAbsolutePath() + "\".");
+            return;
+        }
+
+        Map<Exception, String> exceptionList = new HashMap<>();
+        if (!Files.isDirectory(FileOrFolder)) {
+            Files.deleteIfExists(FileOrFolder);
+            logger.log("File \"" + FileOrFolder + "\" has been deleted.");
+            return;
+        }
+
+        try (Stream<Path> directoryListing = Files.list(FileOrFolder)) {
+            directoryListing.forEach((File) -> {
+                try {
+                    delete(File);
+                    Files.deleteIfExists(File);
+                } catch (IOException e) {
+                    exceptionList.put(e, File.toAbsolutePath().toString());
+                }
+            });
+        }
+
+        if (exceptionList.size() > 0) {
+            logger.critical("While deleting the folder \"" + FileOrFolder.toAbsolutePath() + "\" " + exceptionList.size() + " Exceptions have been thrown!");
+            exceptionList.forEach((e, file) -> logger.logStackTrace("Exception while deleting the file: \"" + file + "\"", e));
+            throw new IOException("IO Exception occurred while deleting the folder" + FileOrFolder.toAbsolutePath());
+        } else {
+            logger.log("Directory \"" + FileOrFolder + "\" has been deleted.");
+        }
+    }
+
+    /**
      * Used to rename specified file to a specified name. Adds numeric Suffix to the file name if a file with the same name exists.
      * @param File Not Null {@link Path} to a file to rename.
      * @param Name Not Null {@link String} with new name for a File.
@@ -86,7 +131,7 @@ public class FileUtils {
      * @throws IOException when IO Exception occurs.
      */
     public static @NotNull String rename(@NotNull Path File, @NotNull String Name) throws IOException {
-        if (Files.exists(Path.of(getFolderAsString(File), Name))) {
+        if (Files.exists(Path.of(getParentFolderAsString(File), Name))) {
             logger.warn("Found existing file with name: \"" + Name + "\"! Adding numeric suffix to the file name...");
             String newName;
             String fileExtension = null;
@@ -99,11 +144,11 @@ public class FileUtils {
             }
 
             long suffix = 1;
-            while (Files.exists(Path.of(getFolderAsString(File),newName + " (" + suffix + ")" + ((fileExtension != null)? fileExtension:"")))) {
+            while (Files.exists(Path.of(getParentFolderAsString(File),newName + " (" + suffix + ")" + ((fileExtension != null)? fileExtension:"")))) {
                 suffix++;
             }
 
-            Path newFile = Path.of(getFolderAsString(File),newName + " (" + suffix + ")" + ((fileExtension != null)? fileExtension:""));
+            Path newFile = Path.of(getParentFolderAsString(File),newName + " (" + suffix + ")" + ((fileExtension != null)? fileExtension:""));
             Files.move(File, newFile);
 
             logger.warn("New file name: \"" + newFile.getFileName() + "\"");
@@ -111,10 +156,59 @@ public class FileUtils {
 
             return newFile.getFileName().toString();
         } else {
-            Files.move(File, Path.of(getFolderAsString(File),Name));
+            Files.move(File, Path.of(getParentFolderAsString(File),Name));
             logger.log("Renamed file \"" + File.toAbsolutePath().getFileName() + "\" to \"" + Name + "\".");
             return Name;
         }
+    }
+
+    /**
+     * This method is used to unzip an ZIP archive. Other types are not supported.
+     * @param zipFilePath Path to the zip file.
+     * @param destinationPath Path to the destination. (@Nullable)
+     * @throws IOException when IO Exception occurs.
+     */
+    public static void unzip(Path zipFilePath, @Nullable Path destinationPath) throws IOException {
+        Objects.requireNonNull(zipFilePath);
+
+        logger.log("Unzipping of the archive \"" + zipFilePath.toAbsolutePath() + "\" has been requested.");
+
+        if (Objects.isNull(destinationPath)) {
+            String zipFileName = zipFilePath.getFileName().toString();
+            destinationPath = Path.of(getParentFolderAsString(zipFilePath),zipFileName.substring(0, zipFileName.lastIndexOf(".")-1));
+        }
+
+        if (!Files.exists(destinationPath)) {
+            Files.createDirectory(destinationPath);
+        } else if (!Files.isDirectory(destinationPath)) {
+            throw new IllegalStateException("Destination for the zip archive \"" + zipFilePath.toAbsolutePath() + "\" is a file!");
+        }
+
+        logger.log("Destination: \"" + destinationPath.toAbsolutePath() + "\"");
+
+        long dirs = 0;
+        long files = 0;
+        try (ZipFile zipFile = new ZipFile(zipFilePath.toFile())) {
+            logger.log("Archive contains " + zipFile.stream().toList().size() + " entries.");
+            Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
+            while (zipEntries.hasMoreElements()) {
+                ZipEntry zipEntry = zipEntries.nextElement();
+                Path dirOrFile = Path.of(destinationPath.toString(), zipEntry.getName());
+                if (zipEntry.isDirectory()) {
+                    Files.createDirectory(dirOrFile);
+                    logger.log("Directory \"" + dirOrFile + "\" has been created.");
+                    dirs++;
+                } else {
+                    Files.copy(zipFile.getInputStream(zipEntry), dirOrFile);
+                    logger.log("File \"" + dirOrFile + "\" has been created.");
+                    files++;
+                }
+            }
+        }
+
+        logger.log("Archive \"" + zipFilePath.toAbsolutePath() + "\" has been successfully uncompressed.");
+        logger.log(files + " files have been created.");
+        logger.log(dirs + " directories have been created");
     }
 
     /**
@@ -139,9 +233,9 @@ public class FileUtils {
         Path gzFile;
         if (FileName != null) {
             logger.log("Custom file name for archive specified! Archive will be saved under name: \"" + FileName + ".gz\"");
-            gzFile = Path.of(getFolderAsString(File),FileName + ".gz");
+            gzFile = Path.of(getParentFolderAsString(File),FileName + ".gz");
         } else {
-            gzFile = Path.of(getFolderAsString(File), File.getFileName() + ".gz");
+            gzFile = Path.of(getParentFolderAsString(File), File.getFileName() + ".gz");
         }
 
         boolean gzFileExists = Files.exists(gzFile);
@@ -163,10 +257,10 @@ public class FileUtils {
                     gzNewFileName = gzNewFileName.substring(0, gzNewFileName.lastIndexOf("."));
                 }
                 long suffix = 1;
-                while (Files.exists(Path.of(getFolderAsString(File), gzNewFileName + " (" + suffix + ")" + extension + ".gz"))) {
+                while (Files.exists(Path.of(getParentFolderAsString(File), gzNewFileName + " (" + suffix + ")" + extension + ".gz"))) {
                     suffix++;
                 }
-                gzFile = Path.of(getFolderAsString(File), gzNewFileName + " (" + suffix + ")" + extension + ".gz");
+                gzFile = Path.of(getParentFolderAsString(File), gzNewFileName + " (" + suffix + ")" + extension + ".gz");
                 logger.warn("New file name: " + gzFile.getFileName());
             }
         }
@@ -241,14 +335,14 @@ public class FileUtils {
      * @param File Not Null {@link Path} to get a parent of.
      * @return Not Null {@link Path} with the parent of the directory, or File if there is no Parent.
      */
-    public static @NotNull Path getFolder(@NotNull Path File) {return (Objects.isNull(File.toAbsolutePath().getParent())? File: File.toAbsolutePath().getParent());}
+    public static @NotNull Path getParentFolder(@NotNull Path File) {return (Objects.isNull(File.toAbsolutePath().getParent())? File: File.toAbsolutePath().getParent());}
 
     /**
      * Used to get parent folder for specified {@link Path} as a String.
      * @param File Not Null {@link Path} to get a parent of.
      * @return Not Null {@link String} with the parent of the directory, or File if there is no Parent.
      */
-    public static @NotNull String getFolderAsString(@NotNull Path File) {return getFolder(File).toString();}
+    public static @NotNull String getParentFolderAsString(@NotNull Path File) {return getParentFolder(File).toString();}
 
     /**
      * Used to get a name of the file.

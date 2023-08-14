@@ -1,9 +1,9 @@
 {
   // Cat-Downloader Legacy Configuration file!
 
-  // Mode -> Determines the mode of the app. Available modes are: "Instance" / "Pack"
+  // Mode -> Determines the mode of the app. Available modes are: "CF-Instance" / "CF-Pack" / "Modrinth" / "Automatic" (Experimental)
   // Argument representation: -Mode:
-  "mode": "instance",
+  "mode": "cf-instance",
 
   // WorkingDirectory -> Determines working directory of the app, so where mods are getting downloaded and log file is getting generated.
   // Empty string will result in working directory being set to place of execution of the app!

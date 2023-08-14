@@ -34,6 +34,9 @@ public class MRIndex {
     public String game;
     public String versionId;
     public String name;
+    /**
+     * Optional field.
+     */
     public String summary;
     public MRDependencies dependencies;
     public MRModFile[] files;
@@ -43,17 +46,28 @@ public class MRIndex {
         public String path;
         public String[] downloads;
         public CDLInstance.ModFile.Hashes hashes;
+        public env env;
+        /**
+         * Optional field.
+         */
+        public static class env {
+            public static String[] acceptedValues = {
+                "required","optional","unsupported"
+            };
+            public String client;
+            public String server;
+        }
     }
     public static class MRDependencies {
-        //TODO: Verify this will.. work?
         public String minecraft;
         @SerializedName("fabric-loader")
         public String fabric;
-        @SerializedName("forge-loader")
-        public String forge;
         @SerializedName("quilt-loader")
         public String quilt;
-        @SerializedName("neo-forge-loader")
+        @SerializedName("forge")
+        public String forge;
+        // TODO: Future proofing!
+        @SerializedName("neo-forge")
         public String neoforge;
     }
 }

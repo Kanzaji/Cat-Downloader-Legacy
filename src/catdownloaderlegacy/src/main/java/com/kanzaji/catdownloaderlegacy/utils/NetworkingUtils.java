@@ -76,7 +76,7 @@ public class NetworkingUtils {
             if (Objects.isNull(FileName)) {
                 FileName = File.getFileName().toString();
             } else {
-                File = Path.of(FileUtils.getFolderAsString(File), FileName);
+                File = Path.of(FileUtils.getParentFolderAsString(File), FileName);
             }
 
             if (Files.exists(File)) {
