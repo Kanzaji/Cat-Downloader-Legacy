@@ -24,9 +24,9 @@
 
 package com.kanzaji.catdownloaderlegacy;
 
+import com.kanzaji.catdownloaderlegacy.data.CFManifest;
 import com.kanzaji.catdownloaderlegacy.guis.GUIUtils;
-import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
-import com.kanzaji.catdownloaderlegacy.jsons.MinecraftInstance;
+import com.kanzaji.catdownloaderlegacy.data.CFMinecraftInstance;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import com.kanzaji.catdownloaderlegacy.utils.*;
 
@@ -60,7 +60,7 @@ public final class CatDownloader {
 
     // Locally used variables
     public static Path manifestFile;
-    private static Manifest ManifestData = new Manifest();
+    private static CFManifest CFManifestData = new CFManifest();
     public static List<Runnable> dataGatheringFails = new LinkedList<>();
     
     //TODO: Simplify Main Method
@@ -109,40 +109,40 @@ public final class CatDownloader {
             Gson gson = new Gson();
             logger.log("Reading data from Manifest file...");
             if (ARD.isPackMode()) {
-                ManifestData = gson.fromJson(Files.readString(manifestFile),Manifest.class);
+                CFManifestData = gson.fromJson(Files.readString(manifestFile), CFManifest.class);
             } else {
                 // Translating from MinecraftInstance format to Manifest format.
-                MinecraftInstance MI = gson.fromJson(Files.readString(manifestFile),MinecraftInstance.class);
-                ManifestData = MIInterpreter.decode(MI);
+                CFMinecraftInstance MI = gson.fromJson(Files.readString(manifestFile), CFMinecraftInstance.class);
+                CFManifestData = MIInterpreter.decode(MI);
             }
 
-            logger.log("Data fetched. Found " + ManifestData.files.length + " Mods, on version " + ManifestData.minecraft.version + " " + ManifestData.minecraft.modLoaders[0].id);
+            logger.log("Data fetched. Found " + CFManifestData.files.length + " Mods, on version " + CFManifestData.minecraft.version + " " + CFManifestData.minecraft.modLoaders[0].id);
 
-            if (ManifestData.name == null) {
+            if (CFManifestData.name == null) {
                 logger.print("The name of the instance is missing!", 1);
             } else {
                 System.out.println("Installing modpack " +
-                    ManifestData.name +
-                    ((ManifestData.name.endsWith(" "))? "": " ") +
-                    ManifestData.version +
+                    CFManifestData.name +
+                    ((CFManifestData.name.endsWith(" "))? "": " ") +
+                    CFManifestData.version +
                     ((
-                        Objects.equals(ManifestData.author, "") ||
-                        Objects.equals(ManifestData.author, " ") ||
-                        Objects.equals(ManifestData.author, null)
-                    )? "": " created by " + ManifestData.author)
+                        Objects.equals(CFManifestData.author, "") ||
+                        Objects.equals(CFManifestData.author, " ") ||
+                        Objects.equals(CFManifestData.author, null)
+                    )? "": " created by " + CFManifestData.author)
                 );
 
-                logger.log("Instance name: " + ManifestData.name);
+                logger.log("Instance name: " + CFManifestData.name);
             }
 
-            logger.log("Minecraft version: " + ManifestData.minecraft.version);
+            logger.log("Minecraft version: " + CFManifestData.minecraft.version);
 
-            if (ManifestData.minecraft.modLoaders[0].id == null) {
-                System.out.println("For Minecraft " + ManifestData.minecraft.version + " Vanilla");
+            if (CFManifestData.minecraft.modLoaders[0].id == null) {
+                System.out.println("For Minecraft " + CFManifestData.minecraft.version + " Vanilla");
                 logger.warn("No mod loader found! Is this vanilla?");
             } else {
-                System.out.println("For Minecraft " + ManifestData.minecraft.version + " using " + ManifestData.minecraft.modLoaders[0].id);
-                logger.log("Mod Loader: " + ManifestData.minecraft.modLoaders[0].id);
+                System.out.println("For Minecraft " + CFManifestData.minecraft.version + " using " + CFManifestData.minecraft.modLoaders[0].id);
+                logger.log("Mod Loader: " + CFManifestData.minecraft.modLoaders[0].id);
             }
 
             System.out.println("---------------------------------------------------------------------");
@@ -161,12 +161,12 @@ public final class CatDownloader {
                 logger.log("Found \"mods\" folder in working directory. Path: " + workingDirectory.toAbsolutePath() + "\\mods");
             }
 
-            if (ManifestData.files == null || ManifestData.files.length == 0) {
+            if (CFManifestData.files == null || CFManifestData.files.length == 0) {
                 logger.print("Manifest files does not have any mods in it! No job for me :D",2);
                 RandomUtils.closeTheApp(0);
             }
 
-            System.out.println("Found " + ManifestData.files.length + " " + ((ManifestData.files.length == 1)? "mod":"mods") +" in Manifest file!");
+            System.out.println("Found " + CFManifestData.files.length + " " + ((CFManifestData.files.length == 1)? "mod":"mods") +" in Manifest file!");
 
             if (ARD.isPackMode()) {
                 logger.print("Gathering Data about mods... This may take a while.");
@@ -183,14 +183,14 @@ public final class CatDownloader {
                 }
 
                 int Index = 0;
-                for (Manifest.ModFile mod : ManifestData.files) {
+                for (CFManifest.ModFile mod : CFManifestData.files) {
                     int finalIndex = Index;
                     Executor.submit(() -> {
-                        ManifestData.files[finalIndex] = mod.getData(ManifestData.minecraft);
-                        if (ManifestData.files[finalIndex] != null && (ManifestData.files[finalIndex].error202 || ManifestData.files[finalIndex].error403)) {
-                            mod.error403 = ManifestData.files[finalIndex].error403;
-                            mod.error202 = ManifestData.files[finalIndex].error202;
-                            dataGatheringFails.add(() -> ManifestData.files[finalIndex] = mod.getData(ManifestData.minecraft));
+                        CFManifestData.files[finalIndex] = mod.getData(CFManifestData.minecraft);
+                        if (CFManifestData.files[finalIndex] != null && (CFManifestData.files[finalIndex].error202 || CFManifestData.files[finalIndex].error403)) {
+                            mod.error403 = CFManifestData.files[finalIndex].error403;
+                            mod.error202 = CFManifestData.files[finalIndex].error202;
+                            dataGatheringFails.add(() -> CFManifestData.files[finalIndex] = mod.getData(CFManifestData.minecraft));
                         }
                     });
                     Index += 1;
@@ -216,7 +216,7 @@ public final class CatDownloader {
                 logger.print("Finished gathering data!");
             }
 
-            new SyncManager(ModsFolder, ManifestData, ARD.getThreads()).runSync();
+            new SyncManager(ModsFolder, CFManifestData, ARD.getThreads()).runSync();
 
             logger.print("Entire Process took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s");
             RandomUtils.closeTheApp(0);

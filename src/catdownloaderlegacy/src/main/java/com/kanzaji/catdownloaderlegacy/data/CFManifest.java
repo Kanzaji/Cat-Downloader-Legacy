@@ -22,7 +22,7 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.jsons;
+package com.kanzaji.catdownloaderlegacy.data;
 
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import com.kanzaji.catdownloaderlegacy.Updater;
@@ -43,17 +43,18 @@ import java.util.*;
  * Class used to represent data structure for Manifest.json file.
  * @see ModFile
  */
-public class Manifest {
+public class CFManifest {
     public static LinkedList<String> DataGatheringWarnings = new LinkedList<>();
-    public String version;
-    public String name;
     public String author;
-    public ModFile[] files;
+    public String name;
+    public String version;
+    public String overrides;
     public minecraft minecraft;
+    public ModFile[] files;
 
     /**
      * Used to hold information and methods related to a single {@link ModFile} object.
-     * @see ModFile#getData(Manifest.minecraft)
+     * @see ModFile#getData(CFManifest.minecraft)
      */
     public static class ModFile {
         public boolean error403 = false;

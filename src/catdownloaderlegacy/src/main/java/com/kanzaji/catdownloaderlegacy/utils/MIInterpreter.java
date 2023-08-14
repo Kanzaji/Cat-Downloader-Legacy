@@ -24,8 +24,8 @@
 
 package com.kanzaji.catdownloaderlegacy.utils;
 
-import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
-import com.kanzaji.catdownloaderlegacy.jsons.MinecraftInstance;
+import com.kanzaji.catdownloaderlegacy.data.CFManifest;
+import com.kanzaji.catdownloaderlegacy.data.CFMinecraftInstance;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
 import org.jetbrains.annotations.NotNull;
@@ -39,29 +39,31 @@ public class MIInterpreter {
     private static final LoggerCustom logger = new LoggerCustom("CF MI Interpreter");
 
     /**
-     * Used to decode {@link MinecraftInstance} object into {@link Manifest} object.
-     * @param MinecraftInstanceFile MinecraftInstance object to decode.
+     * Used to decode {@link CFMinecraftInstance} object into {@link CFManifest} object.
+     * @param CFMinecraftInstanceFile MinecraftInstance object to decode.
      * @return Manifest object with decoded information from passed MinecraftInstance.
      * @throws RuntimeException when Translation fails.
+     * @deprecated This method is deprecated, as CDLinstance will be used in the future. Translation to the Manifest format from MI format is not useful anymore.
      */
-    public static @NotNull Manifest decode(MinecraftInstance MinecraftInstanceFile) throws RuntimeException {
+    @Deprecated(since = "2.0.1", forRemoval = true)
+    public static @NotNull CFManifest decode(CFMinecraftInstance CFMinecraftInstanceFile) throws RuntimeException {
         Gson gson = new Gson();
-        Manifest manifest = new Manifest();
+        CFManifest CFManifest = new CFManifest();
         logger.log("Translating MinecraftInstance into Manifest compatible object...");
         try {
-            manifest.version = "";
-            manifest.name = MinecraftInstanceFile.name;
-            manifest.minecraft = gson.fromJson("{\"version\":\"" + MinecraftInstanceFile.baseModLoader.minecraftVersion + "\",\"modLoaders\": [{\"id\":\"" + MinecraftInstanceFile.baseModLoader.name + "\"}]}", Manifest.minecraft.class);
+            CFManifest.version = "";
+            CFManifest.name = CFMinecraftInstanceFile.name;
+            CFManifest.minecraft = gson.fromJson("{\"version\":\"" + CFMinecraftInstanceFile.baseModLoader.minecraftVersion + "\",\"modLoaders\": [{\"id\":\"" + CFMinecraftInstanceFile.baseModLoader.name + "\"}]}", CFManifest.minecraft.class);
             int index = 0;
-            manifest.files = new Manifest.ModFile[MinecraftInstanceFile.installedAddons.length];
-            for (MinecraftInstance.installedAddons File : MinecraftInstanceFile.installedAddons) {
-                Manifest.ModFile mf = new Manifest.ModFile();
+            CFManifest.files = new CFManifest.ModFile[CFMinecraftInstanceFile.installedAddons.length];
+            for (CFMinecraftInstance.installedAddons File : CFMinecraftInstanceFile.installedAddons) {
+                CFManifest.ModFile mf = new CFManifest.ModFile();
                 mf.projectID = File.addonID;
                 mf.fileID = File.installedFile.id;
                 mf.fileSize = File.installedFile.fileLength;
                 mf.downloadUrl = File.installedFile.downloadUrl;
                 mf.required = true;
-                manifest.files[index] = mf;
+                CFManifest.files[index] = mf;
                 index += 1;
             }
         } catch (Exception e) {
@@ -69,6 +71,6 @@ public class MIInterpreter {
             throw new RuntimeException("Exception thrown while translating MinecraftInstance object!");
         }
         logger.log("Translation successful");
-        return manifest;
+        return CFManifest;
     }
 }

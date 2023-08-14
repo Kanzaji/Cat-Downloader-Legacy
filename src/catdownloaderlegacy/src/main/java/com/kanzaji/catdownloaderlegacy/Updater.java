@@ -24,7 +24,7 @@
 
 package com.kanzaji.catdownloaderlegacy;
 
-import com.kanzaji.catdownloaderlegacy.jsons.Settings;
+import com.kanzaji.catdownloaderlegacy.data.Settings;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import com.kanzaji.catdownloaderlegacy.guis.UpdaterGUI;
 import com.kanzaji.catdownloaderlegacy.utils.*;

@@ -22,66 +22,37 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.jsons;
-
-import java.util.Iterator;
-import java.util.LinkedList;
+package com.kanzaji.catdownloaderlegacy.data;
 
 /**
- * Class used to represent JSON Structure of configuration file.
- * @see com.kanzaji.catdownloaderlegacy.utils.SettingsManager
+ * Class used to represent Data Structure for MinecraftInstance.json file.
+ * @see com.kanzaji.catdownloaderlegacy.utils.MIInterpreter
  */
-public class Settings {
-    /**
-     * This static contains all Setting Keys from the Settings File.
-     */
-    public static String[] SettingsKeys = {
-            "mode",
-            "workingDirectory",
-            "logDirectory",
-            "threadCount",
-            "downloadAttempts",
-            "logStockpileSize",
-            "isLoggerActive",
-            "shouldStockpileLogs",
-            "shouldCompressLogFiles",
-            "isUpdaterActive",
-            "isFileSizeVerificationActive",
-            "isHashVerificationActive",
-            "modBlackList"
-    };
+public class CFMinecraftInstance {
 
-    public String mode;
-    public String workingDirectory;
-    public String logDirectory;
-    public int threadCount;
-    public int downloadAttempts;
-    public int logStockpileSize;
-    public boolean isLoggerActive;
-    public boolean shouldStockpileLogs;
-    public boolean shouldCompressLogFiles;
-    public boolean isUpdaterActive;
-    public boolean isFileSizeVerificationActive;
-    public boolean isHashVerificationActive;
-    public BlackList<String> modBlackList;
-    public boolean experimental;
+    public baseModLoader baseModLoader;
+    public String name;
+    public CFManifest manifest;
+    public installedAddons[] installedAddons;
 
-    public static class BlackList<E> extends LinkedList<E> {
-        @Override
-        public String toString() {
-            Iterator<E> it = iterator();
-            if (! it.hasNext())
-                return "[]";
-
-            StringBuilder sb = new StringBuilder();
-            sb.append('[');
-            for (;;) {
-                E e = it.next();
-                sb.append(e == this ? "(this Collection)" : "\"" + e + "\"");
-                if (! it.hasNext())
-                    return sb.append(']').toString();
-                sb.append(',').append(' ');
-            }
-        }
+    public static class installedAddons {
+        public Number addonID;
+        public AddonFile installedFile;
+    }
+    public static class AddonFile {
+        public Number id;
+        public Number fileLength;
+        public String downloadUrl;
+        public String fileName;
+    }
+    public static class baseModLoader {
+        public String name;
+        public String minecraftVersion;
+        public String forgeVersion;
+        //TODO: Verify CF Uses those names for different modLoaders.
+        public String fabricVersion;
+        public String quiltVersion;
+        // TODO: Change this to anything that CF will use for "NeoForge" thing.
+        public String neoForgeVersion;
     }
 }

@@ -24,7 +24,7 @@
 
 package com.kanzaji.catdownloaderlegacy;
 
-import com.kanzaji.catdownloaderlegacy.jsons.Manifest;
+import com.kanzaji.catdownloaderlegacy.data.CFManifest;
 import com.kanzaji.catdownloaderlegacy.utils.NetworkingUtils;
 import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
@@ -44,14 +44,14 @@ import java.util.stream.Stream;
 /**
  * SyncManager is a class used to manage synchronization of the mods.
  * @see SyncManager#runSync()
- * @see SyncManager#passData(Path, Manifest, int)
+ * @see SyncManager#passData(Path, CFManifest, int)
  */
 public class SyncManager {
     private static final LoggerCustom logger = new LoggerCustom("Sync Manager");
     private ExecutorService downloadExecutor;
     private ExecutorService verificationExecutor;
     private Path ModFolderPath;
-    private Manifest ManifestData;
+    private CFManifest CFManifestData;
     private int RemovedCount = 0;
     private int DownloadSuccess = 0;
     private int ReDownloadQueue = 0;
@@ -68,21 +68,21 @@ public class SyncManager {
 
     /**
      * Constructor of SyncManager.
-     * @see SyncManager#passData(Path, Manifest, int)
+     * @see SyncManager#passData(Path, CFManifest, int)
      * @see SyncManager#runSync()
      */
     public SyncManager() {}
 
     /**
-     * Constructor of SyncManager with {@link SyncManager#passData(Path, Manifest, int)} integrated.
+     * Constructor of SyncManager with {@link SyncManager#passData(Path, CFManifest, int)} integrated.
      * @param modFolderPath Path to mods folder.
-     * @param manifest Manifest Data
+     * @param CFManifest Manifest Data
      * @param nThreadsCount Amount of Threads for downloader to use.
      * @see SyncManager#runSync()
      */
-    public SyncManager(Path modFolderPath, Manifest manifest, int nThreadsCount) {
+    public SyncManager(Path modFolderPath, CFManifest CFManifest, int nThreadsCount) {
         this.ModFolderPath = modFolderPath;
-        this.ManifestData = manifest;
+        this.CFManifestData = CFManifest;
         this.downloadExecutor = Executors.newFixedThreadPool(nThreadsCount);
         this.verificationExecutor = Executors.newFixedThreadPool(nThreadsCount);
     }
@@ -90,12 +90,12 @@ public class SyncManager {
     /**
      * Used to pass required Data to FileManager instance.
      * @param modFolderPath Path to mods folder.
-     * @param manifest Manifest Data
+     * @param CFManifest Manifest Data
      * @param nThreadsCount Amount of Threads for downloader to use.
      */
-    public void passData(Path modFolderPath, Manifest manifest, int nThreadsCount) {
+    public void passData(Path modFolderPath, CFManifest CFManifest, int nThreadsCount) {
         this.ModFolderPath = modFolderPath;
-        this.ManifestData = manifest;
+        this.CFManifestData = CFManifest;
         this.downloadExecutor = Executors.newFixedThreadPool(nThreadsCount);
         this.verificationExecutor = Executors.newFixedThreadPool(nThreadsCount);
     }
@@ -109,11 +109,11 @@ public class SyncManager {
      * @throws RuntimeException when downloading process takes over a day.
      */
     public void runSync() throws NullPointerException, IOException, InterruptedException, RuntimeException {
-        if (ModFolderPath == null || ManifestData == null || downloadExecutor == null || verificationExecutor == null) {
+        if (ModFolderPath == null || CFManifestData == null || downloadExecutor == null || verificationExecutor == null) {
             if (ModFolderPath == null) {
                 throw new NullPointerException("ModFolderPath is null!");
             }
-            if (ManifestData == null) {
+            if (CFManifestData == null) {
                 throw new NullPointerException("ManifestData is null!");
             }
             throw new NullPointerException("Executor is null! passData seems to have failed?");
@@ -125,7 +125,7 @@ public class SyncManager {
         System.out.println("Looking for already installed mods...");
         logger.log("Checking for already existing files, and getting download queue ready...");
 
-        for (Manifest.ModFile mod: ManifestData.files) {
+        for (CFManifest.ModFile mod: CFManifestData.files) {
             if (mod == null || mod.downloadUrl == null || mod.fileSize == null) {
                 if (mod != null) {
                     if (mod.error403) {
@@ -227,8 +227,8 @@ public class SyncManager {
 
         if (VerificationQueueL.size() > 0) logger.print("Verification of existing files finished!");
 
-        logger.log("Required data received for " + ModFileNames.size() + " out of " + ManifestData.files.length + ((ManifestData.files.length == 1)? " mod.": " mods"));
-        if (ArgumentDecoder.getInstance().isPackMode()) System.out.println("> Data received for " + ModFileNames.size() + " out of " + ManifestData.files.length + ((ManifestData.files.length == 1)? " mod.": " mods."));
+        logger.log("Required data received for " + ModFileNames.size() + " out of " + CFManifestData.files.length + ((CFManifestData.files.length == 1)? " mod.": " mods"));
+        if (ArgumentDecoder.getInstance().isPackMode()) System.out.println("> Data received for " + ModFileNames.size() + " out of " + CFManifestData.files.length + ((CFManifestData.files.length == 1)? " mod.": " mods."));
 
         if (DownloadQueueL.size() > 0) {
             logger.log("Mods designated to download: " + DownloadQueueL.size());
