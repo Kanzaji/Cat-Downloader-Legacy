@@ -312,9 +312,15 @@ class Logger implements ILogger {
                 for (StackTraceElement stackTraceElement : stackTraceList) {
                     stackTrace.append("    at ").append(stackTraceElement).append("\n");
                 }
-                Files.writeString(this.LogFile, "[" + new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new Date()) + "] [" + Type + "] " + throwable + "\n" + stackTrace + "\n", StandardOpenOption.APPEND);
+
+                Files.writeString(this.LogFile, "[" + new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new Date()) + "] [" + Type + "] " + throwable + "\n" + stackTrace, StandardOpenOption.APPEND);
+
                 if (Objects.nonNull(throwable.getCause())) {
                     this.logStackTrace("Caused By:", throwable.getCause());
+                }
+
+                for (Throwable throwable1 : throwable.getSuppressed()) {
+                    this.logStackTrace("Suppressed Exception!", throwable1);
                 }
             }
         } catch (NoSuchFileException e) {

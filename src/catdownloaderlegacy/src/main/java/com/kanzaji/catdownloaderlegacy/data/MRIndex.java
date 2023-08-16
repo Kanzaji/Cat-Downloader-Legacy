@@ -24,6 +24,8 @@
 
 package com.kanzaji.catdownloaderlegacy.data;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 
 /**
@@ -42,6 +44,11 @@ public class MRIndex {
     public MRModFile[] files;
 
     public static class MRModFile {
+        private static Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        @Override
+        public String toString() {
+            return gson.toJson(this);
+        }
         public Number fileSize;
         public String path;
         public String[] downloads;

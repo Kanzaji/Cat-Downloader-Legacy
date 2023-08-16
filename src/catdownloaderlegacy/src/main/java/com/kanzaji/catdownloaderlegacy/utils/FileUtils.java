@@ -96,7 +96,7 @@ public class FileUtils {
             return;
         }
 
-        Map<Exception, String> exceptionList = new HashMap<>();
+        HashSet<Exception> exceptionsHashSet = new HashSet<>();
         if (!Files.isDirectory(FileOrFolder)) {
             Files.deleteIfExists(FileOrFolder);
             logger.log("File \"" + FileOrFolder + "\" has been deleted.");
@@ -109,15 +109,16 @@ public class FileUtils {
                     delete(File);
                     Files.deleteIfExists(File);
                 } catch (IOException e) {
-                    exceptionList.put(e, File.toAbsolutePath().toString());
+                    IOException e2 = new IOException(File.toAbsolutePath().toString(), e);
+                    exceptionsHashSet.add(e2);
                 }
             });
         }
 
-        if (exceptionList.size() > 0) {
-            logger.critical("While deleting the folder \"" + FileOrFolder.toAbsolutePath() + "\" " + exceptionList.size() + " Exceptions have been thrown!");
-            exceptionList.forEach((e, file) -> logger.logStackTrace("Exception while deleting the file: \"" + file + "\"", e));
-            throw new IOException("IO Exception occurred while deleting the folder" + FileOrFolder.toAbsolutePath());
+        if (exceptionsHashSet.size() > 0) {
+            IOException ioe = new IOException("IO Exception occurred while deleting the folder" + FileOrFolder.toAbsolutePath());
+            exceptionsHashSet.forEach(ioe::addSuppressed);
+            throw ioe;
         } else {
             logger.log("Directory \"" + FileOrFolder + "\" has been deleted.");
         }
@@ -166,9 +167,10 @@ public class FileUtils {
      * This method is used to unzip an ZIP archive. Other types are not supported.
      * @param zipFilePath Path to the zip file.
      * @param destinationPath Path to the destination. (@Nullable)
+     * @param shouldDeleteZipFile Determines if uncompressed zip file should be deleted.
      * @throws IOException when IO Exception occurs.
      */
-    public static void unzip(Path zipFilePath, @Nullable Path destinationPath) throws IOException {
+    public static void unzip(Path zipFilePath, @Nullable Path destinationPath, boolean shouldDeleteZipFile) throws IOException {
         Objects.requireNonNull(zipFilePath);
 
         logger.log("Unzipping of the archive \"" + zipFilePath.toAbsolutePath() + "\" has been requested.");
@@ -209,6 +211,7 @@ public class FileUtils {
         logger.log("Archive \"" + zipFilePath.toAbsolutePath() + "\" has been successfully uncompressed.");
         logger.log(files + " files have been created.");
         logger.log(dirs + " directories have been created");
+        if (shouldDeleteZipFile) delete(zipFilePath);
     }
 
     /**
@@ -246,7 +249,7 @@ public class FileUtils {
             logger.warn("Found already compressed file with the same name!");
             if (Override) {
                 logger.warn("Deleting compressed file...");
-                Files.delete(gzFile);
+                delete(gzFile);
                 logger.warn("Compressed file \"" + gzFile.toAbsolutePath() + "\" has been deleted!");
             } else {
                 logger.warn("Adding numeric suffix to the file name...");
@@ -271,7 +274,7 @@ public class FileUtils {
             Files.copy(File, gzOutput);
             if (DeleteOriginal) {
                 logger.log("Compression done! Deleting original file...");
-                Files.delete(File);
+                delete(File);
                 logger.log("File \"" + File.toAbsolutePath().getFileName() + "\" has been deleted.");
             } else {
                 logger.log("Compression done!");
@@ -350,4 +353,26 @@ public class FileUtils {
      * @return Not Null {@link String} with the name of the file.
      */
     public static @NotNull String getFileName(@NotNull Path File) {return File.getFileName().toString();}
+
+    /**
+     * This method is used to unzip an ZIP archive. Other types are not supported.
+     * @param zipFilePath Path to the zip file.
+     * @param shouldDeleteZipFile Determines if uncompressed zip file should be deleted.
+     * @throws IOException when IO Exception occurs.
+     */
+    public static void unzip(Path zipFilePath, boolean shouldDeleteZipFile) throws IOException {unzip(zipFilePath, null, shouldDeleteZipFile);}
+
+    /**
+     * This method is used to unzip an ZIP archive. Other types are not supported.
+     * @param zipFilePath Path to the zip file.
+     * @param destinationPath Path to the destination. (@Nullable)
+     * @throws IOException when IO Exception occurs.
+     */
+    public static void unzip(Path zipFilePath, @Nullable Path destinationPath) throws IOException {unzip(zipFilePath, destinationPath, false);}
+    /**
+     * This method is used to unzip an ZIP archive. Other types are not supported. The resulting files and directories will be created in the folder with the same name as the zip file, in the same directory.
+     * @param zipFilePath Path to the zip file.
+     * @throws IOException when IO Exception occurs.
+     */
+    public static void unzip(Path zipFilePath) throws IOException {unzip(zipFilePath, null, false);}
 }

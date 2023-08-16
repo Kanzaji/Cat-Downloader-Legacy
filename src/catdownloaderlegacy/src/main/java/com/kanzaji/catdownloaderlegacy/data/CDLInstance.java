@@ -24,17 +24,25 @@
 
 package com.kanzaji.catdownloaderlegacy.data;
 
+import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+import com.kanzaji.catdownloaderlegacy.utils.FileVerUtils;
+
+import static com.kanzaji.catdownloaderlegacy.CatDownloader.WORKPATH;
+import static com.kanzaji.catdownloaderlegacy.guis.MRSecurityCheckGUI.modrinthSecurityCheckFail;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
-import com.kanzaji.catdownloaderlegacy.temp.OldDataGathering;
+
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.rmi.UnexpectedException;
 import java.util.Objects;
 import java.util.UnknownFormatConversionException;
+import java.util.concurrent.Callable;
+
 
 /**
  * This class holds data for CDLPack format, and additional methods for transforming other formats (CurseForge Instance / Pack, Modrinth mrpack) to this format.
@@ -46,12 +54,142 @@ public class CDLInstance {
     public static final String formatVersion = "1.0";
 
     /**
+     * This method is used to get verificationTask for the file under specified index.
+     * @param modFile Index to the modFile in the Files Array.
+     * @return Callable to execute with verification routine for specified file.
+     * <h3>Returns:</h3>
+     * <ul>
+     * <li><b>1</b> if file not found.</li>
+     * <li><b>-1</b> if corrupted.</li>
+     * <li><b>0</b> if file was verified successfully.</li>
+     * </ul>
+     */
+    public Callable<Integer[]> getVerificationTask(int modFile) {
+        ModFile mod = this.files[modFile];
+        if (Objects.isNull(mod.path)) {
+            mod.path = "mods/" + mod.fileName;
+        }
+        return new Callable<>() {
+
+            /**
+             * Computes a result, or throws an exception if unable to do so.
+             *
+             * @return computed result
+             * @throws Exception if unable to compute a result
+             */
+            @Override
+            public Integer[] call() throws Exception {
+                Path modPath = Path.of(WORKPATH.toString(), mod.path);
+                if (Files.notExists(modPath)) {
+                    return new Integer[]{modFile, 1};
+                }
+
+                boolean corrupted;
+                if (Objects.isNull(mod.hashes) || !mod.hashes.isPopulated()) {
+                    corrupted = !FileVerUtils.verifyFile(modPath, mod.fileLength, mod.downloadURL);
+                } else if (Objects.nonNull(mod.hashes.sha512)) {
+                    corrupted = !FileVerUtils.verifyFile(modPath, mod.fileLength, mod.hashes.sha512, "SHA-512");
+                } else if (Objects.nonNull(mod.hashes.sha256)) {
+                    corrupted = !FileVerUtils.verifyFile(modPath, mod.fileLength, mod.hashes.sha256, "SHA-256");
+                } else {
+                    corrupted = !FileVerUtils.verifyFile(modPath, mod.fileLength, mod.hashes.sha1, "SHA-1");
+                }
+
+                if (corrupted) return new Integer[]{modFile, -1};
+
+                return new Integer[]{modFile, 0};
+            }
+        };
+    }
+
+    /**
+     * This method is used to fill up data in CDLInstance object with information from passed MRIndex Object.
+     * @param MRIndexData MRIndex to import data from.
+     * @return Itself, for easier use after importing.
+     * @throws UnknownFormatConversionException when MRIndex passed is in un-supported version.
+     * @throws UnexpectedException when Exception occurs in the translating code.
+     */
+    public CDLInstance importModrinthPack(@NotNull MRIndex MRIndexData) throws UnknownFormatConversionException, UnexpectedException {
+        logger.log("Translating Modrinth Index into CDLInstance format...");
+
+        Objects.requireNonNull(MRIndexData);
+        if (MRIndexData.formatVersion.intValue() != 1) {
+            throw new UnknownFormatConversionException("MRIndex specified is in newer than supported version! Please report that to the github repository.");
+        }
+
+        if (!Objects.equals(MRIndexData.game, "minecraft")) {
+            throw new UnknownFormatConversionException("MRIndex specified is for a different game!");
+        }
+
+        try {
+            this.instanceName = MRIndexData.name;
+            this.minecraftData = new MinecraftData();
+            this.minecraftData.version = MRIndexData.dependencies.minecraft;
+            this.modpackData = new ModpackData();
+            this.modpackData.version = MRIndexData.versionId;
+            this.modpackData.overrides  = "overrides";
+            this.modpackData.summary = MRIndexData.summary;
+            this.modpackData.name  = MRIndexData.name;
+            this.modLoaderData = new ModLoader();
+
+            if (Objects.nonNull(MRIndexData.dependencies.fabric)) {
+                this.modLoaderData.version = MRIndexData.dependencies.fabric;
+                this.modLoaderData.modLoader = "fabric";
+            } else if (Objects.nonNull(MRIndexData.dependencies.forge)) {
+                this.modLoaderData.version = MRIndexData.dependencies.forge;
+                this.modLoaderData.modLoader = "forge";
+            } else if (Objects.nonNull(MRIndexData.dependencies.quilt)) {
+                this.modLoaderData.version = MRIndexData.dependencies.quilt;
+                this.modLoaderData.modLoader = "quilt";
+            } else if (Objects.nonNull(MRIndexData.dependencies.neoforge)) {
+                // TODO: Future proof! Yes this is only here so I know where to change stuff.
+                this.modLoaderData.version = MRIndexData.dependencies.neoforge;
+                this.modLoaderData.modLoader = "neo-forge";
+            } else {
+                this.modLoaderData.version = null;
+                this.modLoaderData.modLoader = "unknown";
+            }
+
+            this.files = new ModFile[MRIndexData.files.length];
+            for (int i = 0; i < MRIndexData.files.length; i++) {
+                MRIndex.MRModFile mod = MRIndexData.files[i];
+                //TODO: Create proper "Server / client" separation in the launcher version.
+
+                if (Objects.nonNull(mod.env) && Objects.equals(mod.env.client, "unsupported")) {
+                    logger.log("Found server-side only mod! Skipping " + mod.path + " in the interpretation process...");
+                    continue;
+                }
+
+                if (
+                    mod.path.contains("..") ||
+                    mod.path.startsWith("\\") ||
+                    mod.path.startsWith("/") ||
+                    mod.path.matches("[A-Z]:[/\\\\].*")
+                ) modrinthSecurityCheckFail(mod, MRIndexData);
+
+                this.files[i] = new ModFile(
+                        Path.of(mod.path).getFileName().toString(),
+                        mod.downloads[0],
+                        mod.fileSize.intValue(),
+                        mod.hashes,
+                        mod.path
+                );
+            }
+        } catch (Exception e) {
+            logger.logStackTrace("Interpretation of Modrinth Index failed!", e);
+            logger.critical(gson.toJson(MRIndexData, MRIndex.class));
+            throw new UnexpectedException("Exception thrown while translating Modrinth Index object!");
+        }
+        logger.log("Translation successful.");
+        return this;
+    }
+
+    /**
      * This method is used to fill up data in CDLInstance Object with information from passed CFManifest object.
      * @param CFPackData CFManifest to import data from.
      * @return Itself, for easier use after importing.
      * @throws UnexpectedException when Exception occurs in the translating code.
      * @apiNote This method DOES NOT return Hashes used for verification of the downloads. Filling up missing hashes is required to do at the download process.
-     * @see OldDataGathering#startDataGathering() Click this for the old solution of data gathering.
      */
     @ApiStatus.Experimental
     public CDLInstance importCFPack(@NotNull CFManifest CFPackData) throws UnexpectedException  {
@@ -163,76 +301,6 @@ public class CDLInstance {
         return this;
     }
 
-    /**
-     * This method is used to fill up data in CDLInstance object with information from passed MRIndex Object.
-     * @param MRIndexData MRIndex to import data from.
-     * @return Itself, for easier use after importing.
-     * @throws UnknownFormatConversionException when MRIndex passed is in un-supported version.
-     * @throws UnexpectedException when Exception occurs in the translating code.
-     */
-    public CDLInstance importModrinthPack(@NotNull MRIndex MRIndexData) throws UnknownFormatConversionException, UnexpectedException {
-        logger.log("Translating Modrinth Index into CDLInstance format...");
-
-        Objects.requireNonNull(MRIndexData);
-        if (MRIndexData.formatVersion.intValue() != 1) {
-            throw new UnknownFormatConversionException("MRIndex specified is in newer than supported version! Please report that to the github repository.");
-        }
-
-        if (!Objects.equals(MRIndexData.game, "minecraft")) {
-            throw new UnknownFormatConversionException("MRIndex specified is for a different game!");
-        }
-
-        try {
-            this.instanceName = MRIndexData.name;
-            this.minecraftData = new MinecraftData();
-            this.minecraftData.version = MRIndexData.dependencies.minecraft;
-            this.modpackData = new ModpackData();
-            this.modpackData.version = MRIndexData.versionId;
-            this.modpackData.overrides  = "overrides";
-            this.modpackData.summary = MRIndexData.summary;
-            this.modpackData.name  = MRIndexData.name;
-            this.modLoaderData = new ModLoader();
-
-            if (Objects.nonNull(MRIndexData.dependencies.fabric)) {
-                this.modLoaderData.version = MRIndexData.dependencies.fabric;
-                this.modLoaderData.modLoader = "fabric";
-            } else if (Objects.nonNull(MRIndexData.dependencies.forge)) {
-                this.modLoaderData.version = MRIndexData.dependencies.forge;
-                this.modLoaderData.modLoader = "forge";
-            } else if (Objects.nonNull(MRIndexData.dependencies.quilt)) {
-                this.modLoaderData.version = MRIndexData.dependencies.quilt;
-                this.modLoaderData.modLoader = "quilt";
-            } else if (Objects.nonNull(MRIndexData.dependencies.neoforge)) {
-                // TODO: Future proof! Yes this is only here so I know where to change stuff.
-                this.modLoaderData.version = MRIndexData.dependencies.neoforge;
-                this.modLoaderData.modLoader = "neo-forge";
-            } else {
-                this.modLoaderData.version = null;
-                this.modLoaderData.modLoader = "unknown";
-            }
-
-            this.files = new ModFile[MRIndexData.files.length];
-            for (int i = 0; i < MRIndexData.files.length; i++) {
-                MRIndex.MRModFile mod = MRIndexData.files[i];
-                //TODO: Create proper "Server / client" separation in the launcher version.
-                if (Objects.nonNull(mod.env) && Objects.equals(mod.env.client, "unsupported")) continue;
-                this.files[i] = new ModFile(
-                    Path.of(mod.path).getFileName().toString(),
-                    mod.downloads[0],
-                    mod.fileSize.intValue(),
-                    mod.hashes,
-                    mod.path
-                );
-            }
-        } catch (Exception e) {
-            logger.logStackTrace("Interpretation of Modrinth Index failed!", e);
-            logger.critical(gson.toJson(MRIndexData, MRIndex.class));
-            throw new UnexpectedException("Exception thrown while translating Modrinth Index object!");
-        }
-        logger.log("Translation successful.");
-        return this;
-    }
-
     // Data Fields
     public String instanceName;
     public ModpackData modpackData;
@@ -266,6 +334,26 @@ public class CDLInstance {
             public String sha1;
             public String sha256;
             public String sha512;
+
+            /**
+             * This method is used to check if any of the hashes are populated.
+             * @return true if any of the hashes are populated, otherwise false.
+             */
+            public boolean isPopulated() {
+                return Objects.nonNull(sha1) ||
+                        Objects.nonNull(sha256) ||
+                        Objects.nonNull(sha512);
+            }
+
+            @Override
+            public String toString() {
+                return gson.toJson(this);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return gson.toJson(this);
         }
         public ModFile() {}
         public ModFile(String fileName, String downloadURL,int fileLength) {

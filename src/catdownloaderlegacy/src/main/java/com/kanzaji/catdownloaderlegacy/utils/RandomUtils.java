@@ -29,6 +29,13 @@ import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 /**
  * This class holds random utility methods that aren't worth their own class.
  * @see RandomUtils#checkIfJsonObject(String) 
@@ -63,5 +70,40 @@ public class RandomUtils {
             logger.log("https://github.com/Kanzaji/Cat-Downloader-Legacy");
         }
         System.exit(exitCode);
+    }
+
+    /**
+     * This method is used to choose between two Strings, depending on if the int value is 1. Appends the value to the start of the String if requested.
+     * @param Value Value to check if is 1.
+     * @param String1 String to return when value is 1.
+     * @param String2 String to return when value is not 1.
+     * @param AppendValue if true, Value is appended at the beginning of the Strings.
+     * @return {@code String1} when Value is 1, Otherwise {@code String2};
+     */
+    public static String intGrammar(int Value, String String1, String String2, boolean AppendValue) {
+        if (AppendValue) {
+            String1 = Value + String1;
+            String2 = Value + String2;
+        }
+        return (Objects.equals(Value, 1))? String1: String2;
+    }
+
+    /**
+     * This method is used to shut down and wait specified amount of time for passed ExecutorService.
+     * @param executor ExecutorService to shut down.
+     * @param time Amount of time to wait for the Executor.
+     * @param timeUnit TimeUnit to use with specified time.
+     * @param msg Message to log at the Critical level.
+     * @throws InterruptedException if executor is interrupted while waiting.
+     * @throws TimeoutException when specified Timeout passes.
+     */
+    public static void waitForExecutor(@NotNull ExecutorService executor, int time, TimeUnit timeUnit, String msg)
+    throws InterruptedException, TimeoutException {
+        Objects.requireNonNull(executor);
+        executor.shutdown();
+        if (!executor.awaitTermination(time, timeUnit)) {
+            logger.critical(msg);
+            throw new TimeoutException(msg);
+        }
     }
 }
