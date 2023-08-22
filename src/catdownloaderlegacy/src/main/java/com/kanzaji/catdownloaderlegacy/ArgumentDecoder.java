@@ -27,11 +27,13 @@ package com.kanzaji.catdownloaderlegacy;
 import com.kanzaji.catdownloaderlegacy.data.Settings;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
+import com.kanzaji.catdownloaderlegacy.utils.FileUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.rmi.UnexpectedException;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
@@ -77,7 +79,7 @@ public class ArgumentDecoder {
      * Decodes all arguments passed to the program, and saves necessary data in the instance of the ArgumentDecoder.
      * @param arguments String[] with arguments passed to the program.
      */
-    public void decodeArguments(String @NotNull [] arguments) throws IllegalArgumentException, FileNotFoundException {
+    public void decodeArguments(String @NotNull [] arguments) throws IllegalArgumentException, FileNotFoundException, UnexpectedException {
         logger.log("Running with arguments:");
         for (String fullArgument : arguments) {
             logger.log(fullArgument);
@@ -95,7 +97,7 @@ public class ArgumentDecoder {
                 // Path Arguments
                 case "workingdirectory" -> this.WorkingDirectory = validatePath(value, "-WorkingDirectory");
                 case "settingspath" -> this.SettingsPath = validatePath(value, "-SettingsPath");
-                case "logspath" -> this.LogPath = validatePath(value, "-LogsPath");
+                case "logspath" -> this.LogPath = validatePath(value, "-LogsPath", true);
 
                 // Int Arguments
                 case "threadcount" -> this.ThreadCount = getIntValue(value, "-ThreadCount", 1, 128);
@@ -185,14 +187,29 @@ public class ArgumentDecoder {
      * @return {@link String} with provided Path, if it exists.
      * @throws FileNotFoundException when provided Path doesn't exist.
      */
-    private String validatePath(String path, String Argument) throws FileNotFoundException {
+    private String validatePath(String path, String Argument, boolean override) throws FileNotFoundException, UnexpectedException {
         Path ArgumentPath = Path.of(path);
         if (!Files.exists(ArgumentPath)) {
+            if (override) {
+                FileUtils.createRequiredPath(ArgumentPath);
+                return path;
+            }
             logger.error("Specified " + Argument + " does not exists!");
             logger.error(ArgumentPath.toAbsolutePath().toString());
             throw new FileNotFoundException("Specified " + Argument + " does not exists!");
         }
         return path;
+    }
+
+    /**
+     * Used to validate if provided Path exists.
+     * @param path {@link String} with Path to validate.
+     * @param Argument {@link String} with Name of the argument to provide in Exception.
+     * @return {@link String} with provided Path, if it exists.
+     * @throws FileNotFoundException when provided Path doesn't exist.
+     */
+    private String validatePath(String path, String Argument) throws FileNotFoundException, UnexpectedException {
+        return validatePath(path, Argument, false);
     }
 
     /**

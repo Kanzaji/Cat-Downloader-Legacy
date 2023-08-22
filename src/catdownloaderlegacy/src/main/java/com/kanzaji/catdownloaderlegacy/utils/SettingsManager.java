@@ -327,6 +327,7 @@ public class SettingsManager {
         ARDConfig.workingDirectory = ARD.getWorkingDir();
         ARDConfig.logDirectory = ARD.getLogPath();
         ARDConfig.isLoggerActive = ARD.isLoggerActive();
+        ARDConfig.isUpdaterActive = ARD.isUpdaterActive();
         ARDConfig.shouldCompressLogFiles = ARD.shouldCompressLogs();
         ARDConfig.shouldStockpileLogs = ARD.shouldStockpileLogs();
         ARDConfig.logStockpileSize = ARD.getLogStockSize();
