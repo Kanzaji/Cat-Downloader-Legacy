@@ -106,4 +106,24 @@ public class RandomUtils {
             throw new TimeoutException(msg);
         }
     }
+
+    /**
+     * This method is used to remove common part from the Strings passed as arguments.
+     * @param StringToEdit String to remove common part from.
+     * @param StringToCompareAgainst String to compare against StringToEdit.
+     * @return Substring of StringToEdit with removed common part between the two.
+     * @apiNote This method returns common part from the beginning.
+     */
+    public static @NotNull String removeCommonPart(@NotNull String StringToEdit, @NotNull String StringToCompareAgainst) {
+        if (StringToEdit.equals(StringToCompareAgainst)) return "";
+        if (StringToEdit.startsWith(StringToCompareAgainst)) return StringToEdit.substring(StringToCompareAgainst.length());
+
+        char[] STE = StringToEdit.toCharArray();
+        char[] STC = StringToCompareAgainst.toCharArray();
+        int i;
+        for (i = 0; i < STE.length; i++) {
+            if (!Objects.equals(STE[i], STC[i])) break;
+        }
+        return StringToEdit.substring(i);
+    }
 }

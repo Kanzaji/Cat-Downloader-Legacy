@@ -35,6 +35,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -76,7 +77,11 @@ public class NetworkingUtils {
             if (Objects.isNull(FileName)) {
                 FileName = File.getFileName().toString();
             } else {
-                File = Path.of(FileUtils.getParentFolderAsString(File), FileName);
+                if (Files.isDirectory(File)){
+                    File = Path.of(File.toString(), FileName);
+                } else {
+                    File = Path.of(FileUtils.getParentFolderAsString(File), FileName);
+                }
             }
 
             if (Files.exists(File)) {
@@ -85,6 +90,7 @@ public class NetworkingUtils {
             }
 
             logger.log("Started downloading " + FileName + " ...");
+            if (Files.notExists(FileUtils.getParentFolder(File))) FileUtils.createRequiredPathToAFile(File);
 
             long StartTime = System.currentTimeMillis();
             URL DownloadURL = new URL(DownloadUrl);
@@ -104,7 +110,11 @@ public class NetworkingUtils {
             float ElapsedTime = (float) (System.currentTimeMillis() - StartTime) / 1000F;
             logger.log("Finished downloading " + FileName + " (Took " + ElapsedTime + "s)");
         } catch(Exception e) {
-            logger.logStackTrace("Failed to download " + FileName, e);
+            if (Objects.equals(e.getClass(), UnknownHostException.class)) {
+                logger.critical("Couldn't find specified host (" + e.getMessage() + ") for the download of \"" + File + "\"!");
+            } else {
+                logger.logStackTrace("Failed to download \"" + File + "\" with an exception!", e);
+            }
         }
     }
 
@@ -128,9 +138,12 @@ public class NetworkingUtils {
      * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm.
      * @throws InterruptedException when Thread is interrupted.
      */
-    public static void downloadAndVerify(Path File, final String DownloadURL, final int FileSize, @Nullable String FileName)
+    public static boolean downloadAndVerify(Path File, final String DownloadURL, final int FileSize, @Nullable String FileName, String Hash, String Algorithm)
         throws IOException, NoSuchAlgorithmException, InterruptedException
     {
+        Objects.requireNonNull(File);
+        Objects.requireNonNull(DownloadURL);
+
         download(File, DownloadURL, FileName);
 
         if (Objects.isNull(FileName)) {
@@ -138,16 +151,37 @@ public class NetworkingUtils {
         }
 
         logger.log("Verifying " + FileName + " after download...");
-        if (!FileVerUtils.verifyFile(File, FileSize, DownloadURL)) {
+        if ((Objects.isNull(Hash) || Objects.isNull(Algorithm))?
+                !FileVerUtils.verifyFile(File, FileSize, DownloadURL):
+                !FileVerUtils.verifyFile(File, FileSize, Hash, Algorithm)
+        ) {
             logger.error("Verification of the " + FileName + " failed! Trying to re-download the file...");
-            if(NetworkingUtils.reDownload(File, FileSize, DownloadURL, FileName)) {
+            if(NetworkingUtils.reDownload(File, FileSize, DownloadURL, FileName, Hash, Algorithm)) {
                 logger.log("Re-download of " + FileName + " was successful!");
             } else {
                 logger.critical("Re-download of " + FileName + " after " + ArgumentDecoder.getInstance().getDownloadAttempts() + " attempts failed!");
+                return false;
             }
         } else {
-            logger.log("Verification of the jar was successful.");
+            logger.log("Verification of the file \"" + FileName + "\" was successful.");
         }
+        return true;
+    }
+
+    /**
+     * Used to automatically download, verify, and if verification fails, re-download specified file.
+     * @param File Destination of the downloaded file.
+     * @param DownloadURL String with URL to the file.
+     * @param FileSize Expected FileSize.
+     * @param FileName @Nullable String with the name for the downloaded file.
+     * @throws IOException when IO Operation fails.
+     * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm.
+     * @throws InterruptedException when Thread is interrupted.
+     */
+    public static boolean downloadAndVerify(Path File, final String DownloadURL, final int FileSize, @Nullable String FileName)
+            throws IOException, NoSuchAlgorithmException, InterruptedException
+    {
+        return downloadAndVerify(File, DownloadURL, FileSize, FileName, null, null);
     }
 
     /**
@@ -159,8 +193,50 @@ public class NetworkingUtils {
      * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm.
      * @throws InterruptedException when Thread is interrupted.
      */
-    public static void downloadAndVerify(Path File, final String DownloadURL, final int FileSize) throws IOException, NoSuchAlgorithmException, InterruptedException {
-        downloadAndVerify(File, DownloadURL, FileSize, null);
+    public static boolean downloadAndVerify(Path File, final String DownloadURL, final int FileSize) throws IOException, NoSuchAlgorithmException, InterruptedException {
+        return downloadAndVerify(File, DownloadURL, FileSize, null, null, null);
+    }
+
+    /**
+     * Used to automatically delete, re-download and verify a file. Each attempt waits 500ms x attempt before requesting data from the server.
+     * @param file Path to a file to re-download.
+     * @param downloadUrl DownloadURl of a file.
+     * @param fileName A name of the file.
+     * @param fileSize Expected length of the file.
+     * @param Hash Hash for the file verification. If null, Hash will be calculated from the DownloadURL
+     * @param Algorithm Algorithm for the specified Hash value.
+     * @return Boolean with the result of re-download.
+     * @throws IOException when IO operation fails.
+     * @throws NoSuchAlgorithmException when Hash Verification complains about algorithm.
+     * @throws InterruptedException when thread is interrupted.
+     * @apiNote The amount of attempts for re-downloading a file is defined in the arguments (Default: 5)
+     */
+    public static boolean reDownload(Path file, Number fileSize, String downloadUrl, @Nullable String fileName, @Nullable String Hash, @Nullable String Algorithm)
+        throws IOException, NoSuchAlgorithmException, InterruptedException
+    {
+        boolean hashVerification = Objects.nonNull(Hash) && Objects.nonNull(Algorithm);
+        if (Objects.isNull(fileName)) fileName = file.getFileName().toString();
+
+        for (int i = 0; i < ArgumentDecoder.getInstance().getDownloadAttempts(); i++) {
+            // Waiting a while in case server has some small issue and requires a bit of time, Each attempt increases the time to wait.
+            Thread.sleep(2500L * i);
+
+            if (Files.deleteIfExists(file)) {
+                logger.log("Deleted corrupted " + fileName + ". Re-download attempt: " + (i+1));
+            }
+
+            download(file, downloadUrl, fileName);
+            if (hashVerification) {
+                if (verifyFile(file, fileSize, Hash, Algorithm)) {
+                    return true;
+                }
+            } else {
+                if (verifyFile(file, fileSize, downloadUrl)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -175,26 +251,8 @@ public class NetworkingUtils {
      * @throws InterruptedException when thread is interrupted.
      * @apiNote The amount of attempts for re-downloading a file is defined in the arguments (Default: 5)
      */
-    public static boolean reDownload(Path file, Number fileSize, String downloadUrl, @Nullable String fileName)
-        throws IOException, NoSuchAlgorithmException, InterruptedException
-    {
-        if (Objects.isNull(fileName)) {
-            fileName = file.getFileName().toString();
-        }
-
-        for (int i = 0; i < ArgumentDecoder.getInstance().getDownloadAttempts(); i++) {
-            // Waiting a while in case server has some small issue and requires a bit of time, Each attempt increases the time to wait.
-            Thread.sleep(500L * i);
-
-            if (Files.deleteIfExists(file)) {
-                logger.log("Deleted corrupted " + fileName + ". Re-download attempt: " + (i+1));
-            }
-            download(file, downloadUrl, fileName);
-            if (verifyFile(file, fileSize, downloadUrl)) {
-                return true;
-            }
-        }
-        return false;
+    public static boolean reDownload(Path file, Number fileSize, String downloadUrl, @Nullable String fileName) throws IOException, NoSuchAlgorithmException, InterruptedException {
+        return reDownload(file, fileSize, downloadUrl, fileName, null, null);
     }
 
     /**

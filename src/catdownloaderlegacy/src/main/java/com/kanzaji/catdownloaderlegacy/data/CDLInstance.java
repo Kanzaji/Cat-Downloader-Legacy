@@ -24,15 +24,13 @@
 
 package com.kanzaji.catdownloaderlegacy.data;
 
-import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
-import com.kanzaji.catdownloaderlegacy.utils.FileVerUtils;
-
-import static com.kanzaji.catdownloaderlegacy.CatDownloader.WORKPATH;
-import static com.kanzaji.catdownloaderlegacy.guis.MRSecurityCheckGUI.modrinthSecurityCheckFail;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
+import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+import com.kanzaji.catdownloaderlegacy.utils.FileUtils;
+import com.kanzaji.catdownloaderlegacy.utils.FileVerUtils;
+import com.kanzaji.catdownloaderlegacy.utils.NetworkingUtils;
+import com.kanzaji.catdownloaderlegacy.utils.RandomUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,8 +38,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.rmi.UnexpectedException;
 import java.util.Objects;
+import java.util.Random;
 import java.util.UnknownFormatConversionException;
 import java.util.concurrent.Callable;
+
+import static com.kanzaji.catdownloaderlegacy.CatDownloader.WORKPATH;
+import static com.kanzaji.catdownloaderlegacy.guis.MRSecurityCheckGUI.modrinthSecurityCheckFail;
 
 
 /**
@@ -54,7 +56,7 @@ public class CDLInstance {
     public static final String formatVersion = "1.0";
 
     /**
-     * This method is used to get verificationTask for the file under specified index.
+     * This method is used to get Verification task for the file under specified index.
      * @param modFile Index to the modFile in the Files Array.
      * @return Callable to execute with verification routine for specified file.
      * <h3>Returns:</h3>
@@ -79,25 +81,81 @@ public class CDLInstance {
              */
             @Override
             public Integer[] call() throws Exception {
-                Path modPath = Path.of(WORKPATH.toString(), mod.path);
-                if (Files.notExists(modPath)) {
-                    return new Integer[]{modFile, 1};
+                try {
+                    Path modPath = Path.of(WORKPATH.toString(), mod.path);
+                    if (Files.notExists(modPath)) {
+                        return new Integer[]{modFile, 1};
+                    }
+
+                    boolean corrupted;
+                    if (Objects.isNull(mod.hashes) || !mod.hashes.isPopulated()) {
+                        corrupted = !FileVerUtils.verifyFile(modPath, mod.fileLength, mod.downloadURL);
+                    } else if (Objects.nonNull(mod.hashes.sha512)) {
+                        corrupted = !FileVerUtils.verifyFile(modPath, mod.fileLength, mod.hashes.sha512, "SHA-512");
+                    } else if (Objects.nonNull(mod.hashes.sha256)) {
+                        corrupted = !FileVerUtils.verifyFile(modPath, mod.fileLength, mod.hashes.sha256, "SHA-256");
+                    } else {
+                        corrupted = !FileVerUtils.verifyFile(modPath, mod.fileLength, mod.hashes.sha1, "SHA-1");
+                    }
+
+                    if (corrupted) return new Integer[]{modFile, -1};
+
+                    return new Integer[]{modFile, 0};
+                } catch (Exception e) {
+                    throw new UnexpectedException(String.valueOf(modFile), new UnexpectedException("Exception was thrown while verifying a file \"" + mod.path + "\"!", e));
                 }
+            }
+        };
+    }
 
-                boolean corrupted;
-                if (Objects.isNull(mod.hashes) || !mod.hashes.isPopulated()) {
-                    corrupted = !FileVerUtils.verifyFile(modPath, mod.fileLength, mod.downloadURL);
-                } else if (Objects.nonNull(mod.hashes.sha512)) {
-                    corrupted = !FileVerUtils.verifyFile(modPath, mod.fileLength, mod.hashes.sha512, "SHA-512");
-                } else if (Objects.nonNull(mod.hashes.sha256)) {
-                    corrupted = !FileVerUtils.verifyFile(modPath, mod.fileLength, mod.hashes.sha256, "SHA-256");
-                } else {
-                    corrupted = !FileVerUtils.verifyFile(modPath, mod.fileLength, mod.hashes.sha1, "SHA-1");
+    /**
+     * This method is used to get Download task for the file under specified index.
+     * @param modFile Index to the modFile in the Files Array.
+     * @return Callable to execute with download routine for specified file.
+     * <h3>Returns:</h3>
+     * <ul>
+     * <li><b>-1</b> if download process didn't succeed.</li>
+     * <li><b>0</b> if file was downloaded successfully. </li>
+     * </ul>
+     */
+    public Callable<Integer[]> getDownloadTask(int modFile) {
+        ModFile mod = this.files[modFile];
+        if (Objects.isNull(mod.path)) {
+            mod.path = "mods/" + mod.fileName;
+        }
+        return new Callable<>() {
+
+            /**
+             * Computes a result, or throws an exception if unable to do so.
+             *
+             * @return computed result
+             * @throws Exception if unable to compute a result
+             */
+            @Override
+            public Integer[] call() throws Exception {
+                try {
+                    Path modPath = Path.of(WORKPATH.toString(), mod.path);
+                    if (Files.exists(modPath)) {
+                        FileUtils.delete(modPath);
+                    }
+
+                    boolean successful;
+                    if (Objects.isNull(mod.hashes) || !mod.hashes.isPopulated()) {
+                        successful = NetworkingUtils.downloadAndVerify(modPath, mod.downloadURL, mod.fileLength, mod.fileName);
+                    } else if (Objects.nonNull(mod.hashes.sha512)) {
+                        successful = NetworkingUtils.downloadAndVerify(modPath, mod.downloadURL, mod.fileLength, mod.fileName, mod.hashes.sha512, "SHA-512");
+                    } else if (Objects.nonNull(mod.hashes.sha256)) {
+                        successful = NetworkingUtils.downloadAndVerify(modPath, mod.downloadURL, mod.fileLength, mod.fileName, mod.hashes.sha256, "SHA-256");
+                    } else {
+                        successful = NetworkingUtils.downloadAndVerify(modPath, mod.downloadURL, mod.fileLength, mod.fileName, mod.hashes.sha1, "SHA-1");
+                    }
+
+                    if (successful) return new Integer[]{modFile, 0};
+
+                    return new Integer[]{modFile, -1};
+                } catch (Exception e) {
+                    throw new UnexpectedException(String.valueOf(modFile), new UnexpectedException("Exception was thrown while downloading a file \"" + mod.path + "\"!", e));
                 }
-
-                if (corrupted) return new Integer[]{modFile, -1};
-
-                return new Integer[]{modFile, 0};
             }
         };
     }
@@ -194,6 +252,9 @@ public class CDLInstance {
     @ApiStatus.Experimental
     public CDLInstance importCFPack(@NotNull CFManifest CFPackData) throws UnexpectedException  {
         logger.log("Translating CF Manifest into CDLInstance format...");
+        logger.print("Warning! CF-Pack importing is still experimental! Use with caution.", 1);
+        logger.print("Gathering data about mods present in the modpack... (This will take a while)");
+
         Objects.requireNonNull(CFPackData);
         try {
             this.instanceName = CFPackData.name;
@@ -216,24 +277,23 @@ public class CDLInstance {
             );
 
             //TODO: Get more manifest files, to see the schema for fabric / quilt mod loaders.
+            // Fabric confirmed, Quilt is not possible due to literally no mod-packs for it on cf.
             this.modLoaderData.version = modLoaderName.substring(modLoaderName.indexOf("-")+1);
-/*
-            switch (this.modLoaderData.modLoader) {
-                case "forge" -> this.modLoaderData.version  = modLoaderName.substring(modLoaderName.indexOf("-"));
-                case "fabric" -> this.modLoaderData.version  =
-                case "quilt" -> this.modLoaderData.version  =
-                case "neo-forge" -> this.modLoaderData.version  =
-                default -> this.modLoaderData.version = null;
-            }
-*/
+
             this.files = new ModFile[CFPackData.files.length];
             for (int i = 0; i < CFPackData.files.length; i++) {
                 CFManifest.ModFile mod = CFPackData.files[i];
                 //TODO: Create own getData() method. Replace use of Deprecated method.
                 // Additionally make use of multithreading and experimental option.
+                // - Mods without data support
+                // - Mods without any data statistics
+                // - Required data present for x out of y for CF Pack
                 mod = mod.getData(CFPackData.minecraft);
+                if (Objects.isNull(mod) || Objects.isNull(mod.downloadUrl)) continue;
                 this.files[i] = new ModFile(mod.getFileName(), mod.downloadUrl, mod.fileSize.intValue());
             }
+            logger.print("Finished gathering data about mods, got required data for " + this.files.length + " out of " + RandomUtils.intGrammar(CFPackData.files.length, " mod.", " mods.", true));
+            System.out.println("---------------------------------------------------------------------");
         } catch (Exception e) {
             logger.logStackTrace("Interpretation of CF Manifest failed!", e);
             logger.critical(gson.toJson(CFPackData, CFManifest.class));

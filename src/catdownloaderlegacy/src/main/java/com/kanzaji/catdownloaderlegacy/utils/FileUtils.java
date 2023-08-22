@@ -29,12 +29,15 @@ import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.rmi.UnexpectedException;
 import java.util.*;
 import java.util.stream.Stream;
 import java.util.zip.GZIPOutputStream;
@@ -82,6 +85,85 @@ public class FileUtils {
     }
 
     /**
+     * This method creates all requires directories for the specified path to exists.
+     * @param path Path to create.
+     * @throws UnexpectedException when an Exception occurs.
+     * @apiNote Be aware, this method can't check if specified path is to a file or directory!
+     */
+    public static void createRequiredPath(@NotNull Path path) throws UnexpectedException {
+        Objects.requireNonNull(path);
+
+        String msgPath = path.toAbsolutePath().toString();
+        try {
+            if (Files.exists(path)) return;
+
+            List<Path> directoryPath = new LinkedList<>();
+            while (Files.notExists(path)) {
+                directoryPath.add(path);
+                path = getParentFolder(path);
+            }
+
+            for (int i = directoryPath.size() - 1; i >= 0; i--) {
+                Files.createDirectory(directoryPath.get(i));
+            }
+
+            logger.log("Path \"" + msgPath + "\" has been created!");
+        } catch (Exception e) {
+            throw new UnexpectedException("Exception caught while creating path \"" + msgPath + "\"", e);
+        }
+    }
+
+    /**
+     * This method is used to move a file or directory to a specified destination.
+     * @param FileOrFolder File or Folder to move.
+     * @param Destination Destination folder to move.
+     * @param override Boolean determining override rules for already existing files.
+     * @throws IOException when IO Exception occurs.
+     * @throws IllegalArgumentException when Destination is not a Directory.
+     */
+    public static void move(Path FileOrFolder, Path Destination, boolean override) throws IOException, IllegalArgumentException {
+        Objects.requireNonNull(FileOrFolder);
+        Objects.requireNonNull(Destination);
+
+        if (!Files.isDirectory(Destination.toAbsolutePath())) throw new IllegalArgumentException("Destination is not a directory! \"" + Destination + "\"");
+
+        Path finalPath = Path.of(Destination.toString(), FileOrFolder.getFileName().toString());
+
+        HashSet<Exception> exceptionsHashSet = new HashSet<>();
+        if (Files.isDirectory(FileOrFolder)) {
+            createRequiredPath(finalPath);
+            Stream<Path> dirListing = Files.list(FileOrFolder);
+
+            dirListing.forEach((File) -> {
+                try {
+                    move(File, finalPath, override);
+                } catch (IOException e) {
+                    exceptionsHashSet.add(new IOException(File.toAbsolutePath().toString(), e));
+                }
+            });
+            dirListing.close();
+
+        } else {
+            logger.log("Moving file \"" + FileOrFolder + "\" to the folder \"" + Destination + "\"");
+            if (override) {
+                Files.move(FileOrFolder, finalPath, StandardCopyOption.REPLACE_EXISTING);
+            } else {
+                if (Files.exists(finalPath)) {
+                    logger.warn("File \"" + finalPath + "\" already exists!");
+                } else {
+                    Files.move(FileOrFolder, finalPath);
+                }
+            }
+        }
+
+        if (exceptionsHashSet.size() > 0) {
+            IOException ioe = new IOException("IO Exception occurred while deleting the folder" + FileOrFolder.toAbsolutePath());
+            exceptionsHashSet.forEach(ioe::addSuppressed);
+            throw ioe;
+        }
+    }
+
+    /**
      * This method is used to automatically delete a file or a folder.
      * @param FileOrFolder Path to a file or a folder designated to deletion.
      * @throws NullPointerException when the argument is null.
@@ -96,24 +178,24 @@ public class FileUtils {
             return;
         }
 
-        HashSet<Exception> exceptionsHashSet = new HashSet<>();
         if (!Files.isDirectory(FileOrFolder)) {
             Files.deleteIfExists(FileOrFolder);
             logger.log("File \"" + FileOrFolder + "\" has been deleted.");
             return;
         }
 
+        HashSet<Exception> exceptionsHashSet = new HashSet<>();
         try (Stream<Path> directoryListing = Files.list(FileOrFolder)) {
             directoryListing.forEach((File) -> {
                 try {
                     delete(File);
-                    Files.deleteIfExists(File);
                 } catch (IOException e) {
-                    IOException e2 = new IOException(File.toAbsolutePath().toString(), e);
-                    exceptionsHashSet.add(e2);
+                    exceptionsHashSet.add(new IOException(File.toAbsolutePath().toString(), e));
                 }
             });
         }
+
+        Files.deleteIfExists(FileOrFolder);
 
         if (exceptionsHashSet.size() > 0) {
             IOException ioe = new IOException("IO Exception occurred while deleting the folder" + FileOrFolder.toAbsolutePath());
@@ -375,4 +457,21 @@ public class FileUtils {
      * @throws IOException when IO Exception occurs.
      */
     public static void unzip(Path zipFilePath) throws IOException {unzip(zipFilePath, null, false);}
+
+    /**
+     * This method is used to move a file or directory to a specified destination.
+     * @param FileOrFolder File or Folder to move.
+     * @param Destination Destination folder to move.
+     * @throws IOException when IO Exception occurs.
+     * @throws IllegalArgumentException when Destination is not a Directory.
+     */
+    public static void move(Path FileOrFolder, Path Destination) throws IOException, IllegalArgumentException { move(FileOrFolder, Destination, false); }
+
+    /**
+     * This method creates all requires directories for the specified path to exists.
+     * @param path Path to create.
+     * @throws UnexpectedException when an Exception occurs.
+     * @apiNote Be aware, this method is meant to be used with files, and will get a parent folder of specified Path.
+     */
+    public static void createRequiredPathToAFile(@NotNull Path path) throws UnexpectedException {createRequiredPath(path.getParent());}
 }

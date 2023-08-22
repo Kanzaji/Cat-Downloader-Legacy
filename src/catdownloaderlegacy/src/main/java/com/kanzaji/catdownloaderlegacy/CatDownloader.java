@@ -77,30 +77,15 @@ public final class CatDownloader {
      */
     public static Path manifestFile;
     /**
-     * Used to hold data for the SyncManager and manifest parsing
-     * @deprecated This field is deprecated and should be replaced with {@link CatDownloader#CDLInstanceData}.
-     */
-    @Deprecated(since = "2.0.1", forRemoval = true)
-    private static final CFManifest CFManifestData = new CFManifest();
-    /**
      * Used to hold data for the SyncManager and manifest parsing.
      */
     private static final CDLInstance CDLInstanceData = new CDLInstance();
 
     /**
-     * Used to hold data gathering fails from the manifest data gathering.
-     * @deprecated This field is deprecated due to deprecation of {@link com.kanzaji.catdownloaderlegacy.data.CFManifest.ModFile#getData(CFManifest.minecraft)}.
-     */
-    @Deprecated(since = "2.0.1", forRemoval = true)
-    public static List<Runnable> dataGatheringFails = new LinkedList<>();
-    
-    //TODO: Simplify Main Method
-
-    /**
      * Main method of the app.
      * @param args String[] arguments for the app.
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         long StartingTime = System.currentTimeMillis();
         ARGUMENTS = args;
 
@@ -115,8 +100,7 @@ public final class CatDownloader {
 
             fetchAndVerifyManifestFile();
 
-            //TODO: Rework SyncManager to use CDLInstance instead of CFManifestData. I think I wouldn't forget about this as this currently crashes the app. but still.
-            new SyncManager(Path.of(WORKPATH.toAbsolutePath().toString(), "mods"), CFManifestData, ARD.getThreads()).runSync();
+            new SyncManager(CDLInstanceData).runSync();
 
             logger.print("Entire Process took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s");
             RandomUtils.closeTheApp(0);
@@ -343,10 +327,23 @@ public final class CatDownloader {
         public static void postInit() throws IOException {
             logger.postInit();
 
-            if (!NetworkingUtils.checkConnection("https://github.com/") && !ARD.isBypassNetworkCheckActive()) {
-                System.out.println("It appears you are running this app without access to the internet. This app requires internet connection to function properly.");
-                System.out.println("If you have network connection, and the Check host is unavailable (github.com), run the app with -BypassNetworkCheck argument!");
-                RandomUtils.closeTheApp(2);
+            logger.log("Checking network connection...");
+            if (ARD.isBypassNetworkCheckActive()) {
+                logger.warn("Network Bypass active! Be aware, Un-intended behaviour due to missing network connection is possible!");
+            } else {
+                long StartingTime = System.currentTimeMillis();
+                if (NetworkingUtils.checkConnection("https://github.com/")) {
+                    float CurrentTime = (float) (System.currentTimeMillis() - StartingTime) / 1000F;
+                    logger.log("Network connection checked! Time to verify network: " + CurrentTime + " seconds.");
+                    if (CurrentTime > 2) {
+                        logger.print("It appears you have slow network connection! This might or might not cause issues with Verification or Download steps. Use with caution.", 1);
+                    }
+                } else {
+                    logger.critical("No network connection! This app can not run properly without access to the internet.");
+                    System.out.println("It appears you are running this app without access to the internet. This app requires internet connection to function properly.");
+                    System.out.println("If you have network connection, and the Check host is unavailable (github.com), run the app with -BypassNetworkCheck argument!");
+                    RandomUtils.closeTheApp(2);
+                }
             }
 
             Updater.checkForUpdates();

@@ -26,10 +26,11 @@ package com.kanzaji.catdownloaderlegacy.utils;
 
 import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -86,7 +87,7 @@ public class FileVerUtils {
      * @return {@link Boolean} with the result of the verification.
      * @throws IOException when IO Operation fails.
      */
-    public static boolean verifyFileSize(Path File, Number Size) throws IOException {
+    public static boolean verifyFileSize(Path File, @NotNull Number Size) throws IOException {
         return verifyFileSize(File, Size.intValue());
     }
 
@@ -116,7 +117,7 @@ public class FileVerUtils {
         if (!ArgumentDecoder.getInstance().isHashVerActive()) {
             return true;
         }
-        return Arrays.equals(getHash(File, Algorithm), Hash.getBytes());
+        return Objects.equals(getHash(File, Algorithm), Hash);
     }
 
     /**
@@ -131,7 +132,7 @@ public class FileVerUtils {
         if (!ArgumentDecoder.getInstance().isHashVerActive()) {
             return true;
         }
-        return Arrays.equals(getHash(File), getHash(DownloadURL));
+        return Objects.equals(getHash(File), getHash(DownloadURL));
     }
 
     /**
@@ -141,7 +142,7 @@ public class FileVerUtils {
      * @throws IOException when IO operation fails.
      * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm.
      */
-    public static byte[] getHash(String DownloadURL) throws IOException, NoSuchAlgorithmException {
+    public static @NotNull String getHash(String DownloadURL) throws IOException, NoSuchAlgorithmException {
         return getHash(DownloadURL, null, "SHA-256");
     }
 
@@ -152,7 +153,7 @@ public class FileVerUtils {
      * @throws IOException when IO operation fails.
      * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm for some reason.
      */
-    public static byte[] getHash(Path FilePath) throws IOException, NoSuchAlgorithmException {
+    public static @NotNull String getHash(Path FilePath) throws IOException, NoSuchAlgorithmException {
         return getHash(null, FilePath, "SHA-256");
     }
 
@@ -164,7 +165,7 @@ public class FileVerUtils {
      * @throws IOException when IO operation fails.
      * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm.
      */
-    private static byte[] getHash(String DownloadURL, String Algorithm) throws IOException, NoSuchAlgorithmException {
+    public static @NotNull String getHash(String DownloadURL, String Algorithm) throws IOException, NoSuchAlgorithmException {
         return getHash(DownloadURL, null, Algorithm);
     }
 
@@ -176,7 +177,7 @@ public class FileVerUtils {
      * @throws IOException when IO operation fails.
      * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm.
      */
-    private static byte[] getHash(Path FilePath, String Algorithm) throws IOException, NoSuchAlgorithmException {
+    public static @NotNull String getHash(Path FilePath, String Algorithm) throws IOException, NoSuchAlgorithmException {
         return getHash(null, FilePath, Algorithm);
     }
 
@@ -191,7 +192,7 @@ public class FileVerUtils {
      * @throws NullPointerException when both arguments are null.
      * @apiNote Non-Fatal exception will be thrown and logged when both DownloadURL and FilePath are not-null.
      */
-    private static byte[] getHash(String DownloadURL, Path FilePath, String Algorithm) throws IOException, NoSuchAlgorithmException {
+    private static @NotNull String getHash(String DownloadURL, Path FilePath, String Algorithm) throws IOException, NoSuchAlgorithmException {
         Objects.requireNonNull(Algorithm);
 
         if (Objects.isNull(DownloadURL) && Objects.isNull(FilePath)) {
@@ -220,6 +221,11 @@ public class FileVerUtils {
             MD.update(Buffer, 0, read);
 
         InputData.close();
-        return MD.digest();
+
+        StringBuilder hash = new StringBuilder(new BigInteger(1, MD.digest()).toString(16));
+        while (hash.length() < MD.getDigestLength()*2) {
+            hash.insert(0, "0");
+        }
+        return hash.toString();
     }
 }

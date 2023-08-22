@@ -24,389 +24,399 @@
 
 package com.kanzaji.catdownloaderlegacy;
 
-import com.kanzaji.catdownloaderlegacy.data.CFManifest;
-import com.kanzaji.catdownloaderlegacy.utils.NetworkingUtils;
-import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
+import com.kanzaji.catdownloaderlegacy.data.CDLInstance;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
-import static com.kanzaji.catdownloaderlegacy.utils.FileVerUtils.verifyFile;
+import com.kanzaji.catdownloaderlegacy.utils.FileUtils;
+import com.kanzaji.catdownloaderlegacy.utils.RandomUtils;
+import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Stream;
+
+import static com.kanzaji.catdownloaderlegacy.CatDownloader.WORKPATH;
 
 /**
  * SyncManager is a class used to manage synchronization of the mods.
- * @see SyncManager#runSync()
- * @see SyncManager#passData(Path, CFManifest, int)
  */
 public class SyncManager {
     private static final LoggerCustom logger = new LoggerCustom("Sync Manager");
+    private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
+    private static Path CDLTemp;
+    private final CDLInstance CDLInstanceData;
     private ExecutorService downloadExecutor;
     private ExecutorService verificationExecutor;
-    private Path ModFolderPath;
-    private CFManifest CFManifestData;
-    private int RemovedCount = 0;
-    private int DownloadSuccess = 0;
-    private int ReDownloadQueue = 0;
-    private int NullMods = 0;
-    private final List<Runnable> DownloadQueueL = new LinkedList<>();
-    private final List<Runnable> VerificationQueueL = new LinkedList<>();
-    private final List<String> ModFileNames = new LinkedList<>();
-    private final List<String> FailedVerifications = new LinkedList<>();
-    private final List<String> FailedDownloads = new LinkedList<>();
-    private final List<String> FailedRemovals = new LinkedList<>();
-    private final List<String> IgnoredVerification = new LinkedList<>();
-    private final List<String> IgnoredRemoval = new LinkedList<>();
-    public final List<String> DataGatheringWarnings = new LinkedList<>();
+    private final HashSet<Integer> missing = new HashSet<>();
+    private final HashSet<Integer> corrupted = new HashSet<>();
+    private final HashSet<String> removed = new HashSet<>();
+    private final HashSet<Integer> failedDownloads = new HashSet<>();
+    private final HashSet<Integer> failedVerifications = new HashSet<>();
+    private final HashSet<String> failedRemovals = new HashSet<>();
+    private final HashSet<Integer> IgnoredVerification = new HashSet<>();
+    private final HashSet<Integer> IgnoredRemoval = new HashSet<>();
 
     /**
-     * Constructor of SyncManager.
-     * @see SyncManager#passData(Path, CFManifest, int)
-     * @see SyncManager#runSync()
+     * Constructor of SyncManager Object.
+     * @param CDLInstanceData CDLInstance with data about the instance.
      */
-    public SyncManager() {}
-
-    /**
-     * Constructor of SyncManager with {@link SyncManager#passData(Path, CFManifest, int)} integrated.
-     * @param modFolderPath Path to mods folder.
-     * @param CFManifest Manifest Data
-     * @param nThreadsCount Amount of Threads for downloader to use.
-     * @see SyncManager#runSync()
-     */
-    public SyncManager(Path modFolderPath, CFManifest CFManifest, int nThreadsCount) {
-        this.ModFolderPath = modFolderPath;
-        this.CFManifestData = CFManifest;
-        this.downloadExecutor = Executors.newFixedThreadPool(nThreadsCount);
-        this.verificationExecutor = Executors.newFixedThreadPool(nThreadsCount);
+    public SyncManager(CDLInstance CDLInstanceData) {
+        this.CDLInstanceData = CDLInstanceData;
     }
 
     /**
-     * Used to pass required Data to FileManager instance.
-     * @param modFolderPath Path to mods folder.
-     * @param CFManifest Manifest Data
-     * @param nThreadsCount Amount of Threads for downloader to use.
+     * This method is used to run Synchronization routines for specified instance in the Constructor of this Object.
+     * @throws InterruptedException when any of the executors are interrupted.
+     * @throws TimeoutException when any of the executors take more than 24 hours to complete.
+     * @throws IOException when IO Exception occurs.
      */
-    public void passData(Path modFolderPath, CFManifest CFManifest, int nThreadsCount) {
-        this.ModFolderPath = modFolderPath;
-        this.CFManifestData = CFManifest;
-        this.downloadExecutor = Executors.newFixedThreadPool(nThreadsCount);
-        this.verificationExecutor = Executors.newFixedThreadPool(nThreadsCount);
+    public void runSync() throws InterruptedException, TimeoutException, IOException {
+        Objects.requireNonNull(CDLInstanceData, "CDLInstanceData is null!");
+
+        verificationExecutor = Executors.newFixedThreadPool(ARD.getThreads());
+        downloadExecutor = Executors.newFixedThreadPool(ARD.getThreads());
+        CDLTemp = Path.of(WORKPATH.toString(), "CDLTemp");
+
+        logger.log("Running GC to clear out memory before running synchronization process...");
+        Runtime run = Runtime.getRuntime();
+        long memory = run.totalMemory() - run.freeMemory();
+        System.gc();
+        logger.log(((float)(memory - run.totalMemory() + run.freeMemory())/(1024L*1024L)) + " MegaBytes were cleared up.");
+
+        logger.print("Starting synchronization process!");
+        System.out.println("---------------------------------------------------------------------");
+
+        verifyInstalledMods();
+        printVerificationResults();
+
+        removeRemovedMods();
+
+        downloadRequiredMods();
+
+        printStatistics();
+
+        cleanup();
+
+        System.out.println("Synchronization of the profile finished!");
     }
 
-    //TODO: Simplify runSync (Separate huge blocks of code into separate methods / classes).
     /**
-     * Used to start process of Syncing a Profile. It uses a data passed by FileManager#passData to a FileManager instance.
-     * @throws NullPointerException when Path to Mod Folder, Manifest Data or Executor is null.
-     * @throws IOException when IO Operation fails.
+     * This method is used internally by {@link SyncManager} to query verification and lookup tasks for mods in the specified Instance. Respects Blacklist from the Settings File.
      * @throws InterruptedException when Executor is interrupted.
-     * @throws RuntimeException when downloading process takes over a day.
+     * @throws TimeoutException if Executor doesn't finish before 24 hours pass.
      */
-    public void runSync() throws NullPointerException, IOException, InterruptedException, RuntimeException {
-        if (ModFolderPath == null || CFManifestData == null || downloadExecutor == null || verificationExecutor == null) {
-            if (ModFolderPath == null) {
-                throw new NullPointerException("ModFolderPath is null!");
+    private void verifyInstalledMods() throws InterruptedException, TimeoutException {
+        List<Future<Integer[]>> verificationResults = new LinkedList<>();
+        System.out.println("Looking for already installed mods...");
+        logger.log("Requesting of lookups for installed mods and their verification started.");
+
+        for (int index = 0; index < CDLInstanceData.files.length; index++) {
+            CDLInstance.ModFile mod = CDLInstanceData.files[index];
+            if (SettingsManager.ModBlackList.contains(mod.fileName)) {
+                logger.warn("Skipping verification of  " + mod.fileName + " because its present on the blacklist!");
+                IgnoredVerification.add(index);
+                continue;
             }
-            if (CFManifestData == null) {
-                throw new NullPointerException("ManifestData is null!");
-            }
-            throw new NullPointerException("Executor is null! passData seems to have failed?");
+            logger.log("Lookup and verification of file " + mod.fileName + " has been requested.");
+            verificationResults.add(verificationExecutor.submit(CDLInstanceData.getVerificationTask(index)));
         }
 
-        logger.print("Started syncing process!");
+        RandomUtils.waitForExecutor(verificationExecutor, 1, TimeUnit.DAYS, "Verification takes over a day!");
+        decodeVerificationResults(verificationResults);
+    }
 
-        System.out.println("---------------------------------------------------------------------");
-        System.out.println("Looking for already installed mods...");
-        logger.log("Checking for already existing files, and getting download queue ready...");
-
-        for (CFManifest.ModFile mod: CFManifestData.files) {
-            if (mod == null || mod.downloadUrl == null || mod.fileSize == null) {
-                if (mod != null) {
-                    if (mod.error403) {
-                        logger.error("Mod with 403 error found! Skipping...");
-                        continue;
-                    }
-                    if (mod.error202) {
-                        logger.error("Mod with 202/500 Response code and failed regathering found! Skipping...");
-                        continue;
-                    }
+    /**
+     * This method is used internally by {@link SyncManager} to decode results from the verification tasks.
+     * @param verificationResults A list with Future objects from the executor.
+     * @throws NullPointerException when verificationResults are null.
+     */
+    private void decodeVerificationResults(@NotNull List<Future<Integer[]>> verificationResults) {
+        Objects.requireNonNull(verificationResults);
+        // LinkedList<>#forEach() and enhanced for use Iterators.
+        // For some reason, I got issues with random NullPointerExceptions while using them in the old SyncManager.
+        for (int i = 0; i < verificationResults.size(); i++) {
+            Future<Integer[]> Future = verificationResults.get(i);
+            try {
+                Integer[] results = Future.get();
+                CDLInstance.ModFile mod = CDLInstanceData.files[results[0]];
+                Objects.requireNonNull(results, "Null value got while gathering verification results!");
+                if (!Objects.equals(results.length, 2)) {
+                    throw new IllegalStateException("Results from the verification are not in correct schema! => " + Arrays.toString(results));
                 }
-                logger.error("Mod without any data found! Skipping...");
-                NullMods += 1;
-                continue;
-            }
-
-            String FileName = mod.getFileName();
-            Path ModFile = Path.of(ModFolderPath.toString(), FileName);
-            ModFileNames.add(FileName);
-
-            if (SettingsManager.ModBlackList.contains(FileName)) {
-                logger.warn("Skipping " + FileName + " in verification because its present on the blacklist!");
-                IgnoredVerification.add(FileName);
-                continue;
-            }
-
-            if (Files.notExists(ModFile, LinkOption.NOFOLLOW_LINKS)) {
-                logger.log(FileName + " not found! Added to the download queue.");
-                DownloadQueueL.add(() -> {
-                    NetworkingUtils.download(ModFile, mod.downloadUrl, FileName);
-                    try {
-                        logger.log("Verifying " + FileName + " after download...");
-                        if (!verifyFile(ModFile, mod.fileSize, mod.downloadUrl)) {
-                            logger.warn("Mod " + FileName + " appears to have not downloaded correctly! Re-downloading...");
-                            if(NetworkingUtils.reDownload(ModFile, mod.fileSize, mod.downloadUrl, FileName)) {
-                                logger.log("Re-download of " + FileName + " was successful!");
-                                DownloadSuccess += 1;
-                            } else {
-                                logger.error("Re-download of " + FileName + " after " + ArgumentDecoder.getInstance().getDownloadAttempts() + " attempts failed!");
-                                FailedDownloads.add(FileName);
-                            }
-                        } else {
-                            logger.log("Verification of " + FileName + " was successful!");
-                            DownloadSuccess += 1;
-                        }
-                    } catch (Exception e) {
-                        logger.logStackTrace("Exception thrown while re-downloading " + FileName + "!", e);
-                        FailedDownloads.add(FileName);
+                switch (results[1]) {
+                    case 0 -> logger.log("File \"" + mod.path + "\" has been verified successfully.");
+                    case 1 -> {
+                        logger.log("File \"" + mod.path + "\" not found!");
+                        missing.add(results[0]);
                     }
-                });
+                    case -1 -> {
+                        logger.warn("File \"" + mod.path + "\" is corrupted!");
+                        corrupted.add(results[0]);
+                    }
+                    default -> throw new IllegalStateException("Invalid value in the verification results! => " + Arrays.toString(results));
+                }
+            } catch (Exception e) {
+                if (Objects.equals(e.getClass(),ExecutionException.class)) {
+                    Throwable e2 = e.getCause();
+                    logger.logStackTrace("Exception found in the verification results!", e2.getCause());
+                    failedVerifications.add(Integer.parseInt(e2.getMessage()));
+                } else {
+                    throw new RuntimeException("Exception thrown while gathering results from the verification!", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * This method is used internally by {@link SyncManager} to print results of the verification and mod lookup.
+     */
+    private void printVerificationResults() {
+        if (CDLInstanceData.files.length - missing.size() > 0) {
+            logger.print(
+                (CDLInstanceData.files.length - missing.size()) + " out of " +
+                RandomUtils.intGrammar(CDLInstanceData.files.length, " mod", " mods", true) +
+                " have been found on the hard drive!"
+            );
+
+            if (missing.size() > 0) {
+                logger.print("> " + RandomUtils.intGrammar(missing.size(), " mod is", " mods are", true) + " missing and designated to download.");
+            }
+
+            logger.print(
+                "> " + RandomUtils.intGrammar(CDLInstanceData.files.length - missing.size() - corrupted.size(), " mod", " mods", true) +
+                " have been verified successfully."
+            );
+
+            if (corrupted.size() > 0) {
+                logger.print("> " + RandomUtils.intGrammar(corrupted.size(), " mod is", " mods are", true) + " corrupted and designated to re-download.");
             } else {
-                logger.log("Found mod " + FileName + " on the drive! Added to the Verification queue.");
-                VerificationQueueL.add(() -> {
-                    logger.log("Verifying " + FileName + " ...");
-                    try {
-                        if (!verifyFile(ModFile, mod.fileSize, mod.downloadUrl)) {
-                            logger.warn("Mod " + FileName + " seems to be corrupted! Added to re-download queue.");
-                            ReDownloadQueue += 1;
-                            DownloadQueueL.add(() -> {
-                                logger.log("Re-downloading " + FileName + " ...");
-                                try {
-                                    if(NetworkingUtils.reDownload(ModFile, mod.fileSize, mod.downloadUrl, FileName)) {
-                                        logger.log("Re-download of " + FileName + " was successful!");
-                                        DownloadSuccess += 1;
-                                    } else {
-                                        logger.error("Re-download of " + FileName + " after " + ArgumentDecoder.getInstance().getDownloadAttempts() + " attempts failed!");
-                                        FailedDownloads.add(FileName);
-                                    }
-                                } catch (Exception e) {
-                                    logger.logStackTrace("Exception thrown while re-downloading " + FileName + "!", e);
-                                    FailedDownloads.add(FileName);
-                                }
-                            });
-                        } else {
-                            logger.log("Verification of " + FileName + " was successful!");
-                        }
-                    } catch (Exception e) {
-                        logger.logStackTrace("Verification of " + FileName + " failed with exception!", e);
-                        FailedVerifications.add(FileName);
+                logger.print("> No mods are corrupted.");
+            }
+        } else {
+            logger.print("Any of the required mods have been found on the hard drive.");
+            logger.print("> " + RandomUtils.intGrammar(missing.size(), " mod is", " mods are", true) + " missing and designated to download.");
+        }
+    }
+
+    /**
+     * This method is used internally by {@link SyncManager} to download any mods that are missing from the local installation of the instance passed to the constructor.
+     * @throws InterruptedException when Executor is interrupted.
+     * @throws TimeoutException if Executor doesn't finish before 24 hours pass.
+     */
+    private void downloadRequiredMods() throws InterruptedException, TimeoutException {
+        HashSet<Integer> downloads = new HashSet<>(missing);
+        downloads.addAll(corrupted);
+        HashSet<Callable<Integer[]>> downloadTasks = new HashSet<>();
+        if (downloads.size() < 1) {
+            return;
+        }
+
+        logger.print("Download process has been started!");
+
+        downloads.forEach((index) -> {
+            CDLInstance.ModFile mod = CDLInstanceData.files[index];
+            logger.log("Downloading of " + mod.fileName + " has been requested.");
+            downloadTasks.add(CDLInstanceData.getDownloadTask(index));
+        });
+
+        List<Future<Integer[]>> downloadResults = new LinkedList<>(downloadExecutor.invokeAll(downloadTasks));
+        RandomUtils.waitForExecutor(downloadExecutor, 1, TimeUnit.DAYS, "Downloads take over a day!");
+
+        decodeDownloadResults(downloadResults);
+    }
+
+    /**
+     * This method is used internally by {@link SyncManager} to decode results from the Download tasks.
+     * @param downloadResults A list with Future objects from the executor.
+     * @throws NullPointerException when downloadResults are null.
+     */
+    private void decodeDownloadResults(@NotNull List<Future<Integer[]>> downloadResults) {
+        Objects.requireNonNull(downloadResults);
+        for (int i = downloadResults.size() - 1; i >= 0; i--) {
+            try {
+                Integer[] results = downloadResults.get(i).get();
+                if (!Objects.equals(results.length, 2)) {
+                    throw new IllegalStateException("Results from the downloads are not in correct schema! => " + Arrays.toString(results));
+                }
+                switch (results[1]) {
+                    case 0 -> logger.log("File \"" + CDLInstanceData.files[results[0]].path + "\" has been downloaded successfully.");
+                    case -1 -> {
+                        logger.log("File \"" + CDLInstanceData.files[results[0]].path + "\" has failed to download correctly!!");
+                        failedDownloads.add(results[0]);
                     }
-                });
+                    default -> throw new IllegalStateException("Invalid value in the download results! => " + Arrays.toString(results));
+                }
+            } catch (Exception e) {
+                if (Objects.equals(e.getClass(),ExecutionException.class)) {
+                    Throwable e2 = e.getCause();
+                    logger.logStackTrace("Exception found in the download results!", e2.getCause());
+                    failedDownloads.add(Integer.parseInt(e2.getMessage().substring(0, e2.getMessage().indexOf(";")-1)));
+                } else {
+                    throw new RuntimeException("Exception thrown while gathering results from the downloads!", e);
+                }
             }
         }
 
         logger.print(
-            ((VerificationQueueL.size() > 0)?
-                "Found " + VerificationQueueL.size() + ((VerificationQueueL.size() == 1)? " mod": " mods") + " on the drive. Verifying installation..." :
-                "No installed mods found!"
-        ));
-
-        for (Runnable Task: VerificationQueueL) { verificationExecutor.submit(Task); }
-        verificationExecutor.shutdown();
-
-        if (!verificationExecutor.awaitTermination(1, TimeUnit.DAYS)) {
-            logger.error("Verification takes over a day! This for sure isn't right???");
-            System.out.println("Verification interrupted due to taking over a day! This for sure isn't right???");
-            throw new RuntimeException("Verification is taking over a day! Something is horribly wrong.");
-        }
-
-        if (VerificationQueueL.size() > 0) logger.print("Verification of existing files finished!");
-
-        logger.log("Required data received for " + ModFileNames.size() + " out of " + CFManifestData.files.length + ((CFManifestData.files.length == 1)? " mod.": " mods"));
-        if (ArgumentDecoder.getInstance().isPackMode()) System.out.println("> Data received for " + ModFileNames.size() + " out of " + CFManifestData.files.length + ((CFManifestData.files.length == 1)? " mod.": " mods."));
-
-        if (DownloadQueueL.size() > 0) {
-            logger.log("Mods designated to download: " + DownloadQueueL.size());
-            System.out.println("> Mods designated to download: " + DownloadQueueL.size());
-        } else {
-            logger.log("No mods designated to download!");
-            System.out.println("> No mods designated to download!");
-        }
-
-        if (ReDownloadQueue > 0) {
-            logger.warn("Found corrupted mods! Mods designated to re-download: " + ReDownloadQueue);
-            System.out.println("> Found corrupted mods! Mods designated to re-download: " + ReDownloadQueue);
-        } else if (VerificationQueueL.size() > 0) {
-            logger.log("No corrupted mods found!");
-            System.out.println("> No corrupted mods found!");
-        }
-
-        logger.log("Checking Mods folder for removed mods...");
+            "Finished downloading process! " +
+                ((failedDownloads.size() > 0)?
+                    RandomUtils.intGrammar(
+                            missing.size() + corrupted.size() - failedDownloads.size(),
+                            " mod out of " + (missing.size() + corrupted.size()) +" was",
+                            " mods out of " + (missing.size() + corrupted.size()) +" were",
+                            true
+                    ) +
+                    " downloaded successfully.":
+                    "All mods have been downloaded successfully"
+                ),
+            (failedDownloads.size() > 0)? 2 : 0
+        );
         System.out.println("---------------------------------------------------------------------");
-        System.out.println("Checking for removed mods...");
-        try (Stream<Path> pathStream = Files.list(ModFolderPath)) {
+    }
+
+    /**
+     * This method is used internally by {@link SyncManager} to remove any mods that are not present in the mod list of the instance specified in the constructor. Respects Blacklist from the Settings File.
+     */
+    private void removeRemovedMods() throws IOException {
+        logger.log("Looking for removed mods...");
+        try (Stream<Path> pathStream = Files.list(Path.of(WORKPATH.toString(), "mods"))) {
             pathStream.forEach(File -> {
                 String FileName = File.getFileName().toString();
-                if (!ModFileNames.contains(FileName)) {
+                if (Arrays.stream(CDLInstanceData.files).noneMatch((mod) -> Objects.equals(mod.fileName, FileName) && mod.path.startsWith("mods"))) {
+                    if (Files.exists(Path.of(CDLTemp.toString(), RandomUtils.removeCommonPart(WORKPATH.toAbsolutePath().toString(), File.toAbsolutePath().toString())))) return;
 
-                    // Check if the filename exists in the Blacklist
-                    if (SettingsManager.ModBlackList.contains(FileName)) {
+                    int index = SettingsManager.ModBlackList.indexOf(FileName);
+                    if (index >= 0) {
                         logger.warn("Found removed mod " + FileName + ", but its present on the blacklist. Skipping!");
-                        IgnoredRemoval.add(FileName);
+                        IgnoredRemoval.add(index);
                         return;
                     }
 
                     logger.log("Found removed mod " + File.getFileName() + "! Deleting...");
                     try {
-                        Files.delete(File);
-                        logger.log("Deleted " + File.getFileName() + ".");
-                        RemovedCount += 1;
+                        FileUtils.delete(File);
+                        removed.add(File.getFileName().toString());
                     } catch (IOException e) {
                         logger.logStackTrace("Failed deleting " + File.getFileName() + "!", e);
-                        FailedRemovals.add(File.getFileName().toString());
+                        failedRemovals.add(File.getFileName().toString());
                     }
                 }
             });
         }
 
-        logger.log("Check for removed mods done.");
-        System.out.println("Finished checking for removed mods!");
-        if (RemovedCount > 0) {
-            logger.log("Removed " + RemovedCount + " mods!");
-            System.out.println("> Removed " + RemovedCount + " mods!");
+        if (removed.size() > 0) {
+            logger.print("> " + RandomUtils.intGrammar(removed.size(), " mod was", " mods were", true) + " removed!");
         } else {
-            logger.log("No mods were removed.");
-            System.out.println("> No mods were removed!");
+            logger.print("> No mods were removed!");
         }
-
-
-        if (DownloadQueueL.size() > 0 || ReDownloadQueue > 0) {
-            System.out.println("---------------------------------------------------------------------");
-            logger.log("Starting download process...");
-            System.out.println("Starting download process... This may take a while.");
-        } else {
-            logger.log("Download queue is empty.");
-        }
-
-        for (Runnable Task: DownloadQueueL) { downloadExecutor.submit(Task); }
-        downloadExecutor.shutdown();
-        if (!downloadExecutor.awaitTermination(1, TimeUnit.DAYS)) {
-            logger.error("Downloading takes over a day! This for sure isn't right???");
-            System.out.println("Downloads interrupted due to taking over a day! This for sure isn't right???");
-            throw new RuntimeException("Downloads are taking over a day! Something is horribly wrong.");
-        }
-
-        if (DownloadQueueL.size() > 0 || ReDownloadQueue > 0) {
-            logger.log("Finished downloading process.");
-            System.out.println("Finished downloading process, " + DownloadSuccess + " mods downloaded successfully!");
-        }
-
         System.out.println("---------------------------------------------------------------------");
-        if (SettingsManager.ModBlackList.size() > 0) {
+    }
 
-            System.out.println("Ignored mods found in the config file! (" + SettingsManager.ModBlackList.size() + " " + ((SettingsManager.ModBlackList.size() == 1)? "file":"files") + ")");
+    /**
+     * This method is used internally by {@link SyncManager} to clean up any temporary files and directories created by the app.
+     */
+    private void cleanup() {
+        try {
+            if (Files.exists(CDLTemp)) {
+                logger.log("Found CDLTemp folder in the working directory!");
+                Path overrides = Path.of(CDLTemp.toString(), CDLInstanceData.modpackData.overrides);
+                if (Files.notExists(overrides)) throw new NoSuchFileException("No overrides folder in the CDLTemp!");
 
+                logger.log("Moving overrides content to the Working Directory...");
+                try (Stream<Path> dirListing = Files.list(overrides)) {
+                    dirListing.forEach((File) -> {
+                        try {
+                            FileUtils.move(File, WORKPATH, true);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                } catch (Exception e)  {
+                    logger.logStackTrace("Exception thrown while moving override's content to the root directory!", e);
+                    logger.print("Failed to move override's content to the root directory! You will have to do that manually from the zip file or try again.",3);
+                    System.out.println("---------------------------------------------------------------------");
+                }
+
+                logger.log("Deleting CDLTemp folder...");
+
+                FileUtils.delete(CDLTemp);
+                logger.log("Cleanup completed.");
+            }
+        } catch (Exception e) {
+            logger.logStackTrace("Exception thrown while cleaning up working space!", e);
+            logger.print("Failed to properly cleanup working directory! CDLTemp was most likely not deleted. Please verify all config files from the overrides are intact, and delete CDLTemp manually.", 3);
+            System.out.println("---------------------------------------------------------------------");
+        }
+    }
+
+    /**
+     * This method is used internally by {@link SyncManager} to print Synchronization statistics, like failed download tasks.
+     */
+    private void printStatistics() {
+        if (IgnoredRemoval.size() > 0 || IgnoredVerification.size() > 0) {
+            logger.print("Ignored mods found in the config file! (" + RandomUtils.intGrammar(SettingsManager.ModBlackList.size(), " file)", " files)", true), 1);
             logger.log("Mods contained in the blacklist:");
             SettingsManager.ModBlackList.forEach((mod) -> logger.log("- " + mod));
 
             if (IgnoredVerification.size() > 0) {
-                logger.print("> " + IgnoredVerification.size() + " " + ((IgnoredVerification.size() == 1)? "mod was":"mods were") + " not verified!",1);
+                logger.print("> " + RandomUtils.intGrammar(IgnoredVerification.size(), " mod was", " mods were", true) + "not verified!", 1);
                 IgnoredVerification.forEach((mod) -> logger.warn("- " + mod));
             } else {
                 logger.print("> All mods have been verified.");
             }
 
             if (IgnoredRemoval.size() > 0) {
-                logger.print("> " + IgnoredRemoval.size() + " " + ((IgnoredRemoval.size() == 1)? "mod was":"mods were") + " not removed!", 1);
+                logger.print("> " + RandomUtils.intGrammar(IgnoredRemoval.size(), " mod was", " mods were", true) + "not removed!", 1);
                 IgnoredRemoval.forEach((mod) -> logger.warn("- " + mod));
             } else {
                 logger.print("> All mods designated to removal were removed.");
             }
 
-            System.out.println("\nFor more details, check your configuration file or the log at:\n\"" + logger.getLogPath() + "\"\n\"" + Path.of(ArgumentDecoder.getInstance().getSettingsPath()).toAbsolutePath() + "\\Cat-Downloader-Legacy Settings.json5\"");
+            System.out.println(
+                "\nFor more details, check your configuration file or the log at:\n" +
+                "\"" + logger.getLogPath() + "\"\n" +
+                "\"" + Path.of(ArgumentDecoder.getInstance().getSettingsPath()).toAbsolutePath() + "\\Cat-Downloader-Legacy Settings.json5\""
+            );
             System.out.println("---------------------------------------------------------------------");
         }
 
-        if (DataGatheringWarnings.size() > 0) {
-            logger.warn("Warnings were found while doing synchronisation of the profile!");
-            System.out.println("Warnings were found while doing synchronisation of the profile!");
-            System.out.println("Warnings present: " + DataGatheringWarnings.size());
-            for (String Warning : DataGatheringWarnings) {
-                logger.warn(Warning);
-            }
-            System.out.println("For more details, check log file at " + logger.getLogPath());
-            System.out.println("---------------------------------------------------------------------");
-        }
-
-        int errors = FailedRemovals.size() + FailedDownloads.size() + FailedVerifications.size() + NullMods;
+        int errors = failedRemovals.size() + failedDownloads.size() + failedVerifications.size();
 
         if (errors > 0) {
-            logger.print("Errors were found while doing synchronisation of the profile!",2);
+            logger.print("Errors were found while doing synchronisation of the profile!", 2);
 
-            if (FailedVerifications.size() > 0) {
-                logger.error("Failed Verifications: " + FailedVerifications.size());
-                System.out.println("> Failed Verifications: " + FailedVerifications.size());
-            } else {
-                logger.error("No verification errors found.");
-            }
-
-            if (FailedRemovals.size() > 0) {
-                logger.error("Failed removals: " + FailedRemovals.size());
-                System.out.println("> Failed removals: " + FailedRemovals.size());
-            } else {
-                logger.error("No removal errors occurred.");
-            }
-
-            if (FailedDownloads.size() > 0) {
-                logger.error("Download errors: " + FailedDownloads.size());
-                System.out.println("> Download errors: " + FailedDownloads.size());
-            } else {
-                logger.error("No download errors occurred.");
-            }
-
-            if (NullMods > 0) {
-                logger.error("Mods without any data: " + NullMods);
-                System.out.println("> Mods without any data: " + NullMods);
-            } else {
-                logger.error("No Null mods found.");
-            }
+            if (failedVerifications.size() > 0) logger.print("> Failed Verifications: " + failedVerifications.size(),2);
+            if (failedRemovals.size() > 0) logger.print("> Failed removals: " + failedRemovals.size(),2);
+            if (failedDownloads.size() > 0) logger.print("> Download errors: " + failedDownloads.size(),2);
 
             System.out.println("For more details, check log file at " + logger.getLogPath());
-            logger.error("Files that failed verification with an exception:");
 
-            if (FailedVerifications.size() > 0) {
-                for (String FileName : FailedVerifications) {
+            if (failedVerifications.size() > 0) {
+                logger.error("Files that failed verification with an exception:");
+                failedVerifications.forEach((index) -> {
+                    String FileName = CDLInstanceData.files[index].fileName;
                     logger.error("  " + FileName);
-                }
-            } else {
-                logger.error(" None \\o/");
+                });
             }
 
-            logger.error("Files that weren't possible to remove:");
-            if (FailedRemovals.size() > 0) {
-                for (String FileName : FailedRemovals) {
-                    logger.error("  " + FileName);
-                }
-            } else {
-                logger.error(" None \\o/");
+            if (failedRemovals.size() > 0) {
+                logger.error("Files that weren't possible to remove:");
+                failedRemovals.forEach((FileName) -> logger.error("  " + FileName));
             }
 
-            logger.error("Files that failed to Download:");
-            if (FailedDownloads.size() > 0) {
-                for (String FileName : FailedDownloads) {
+            if (failedDownloads.size() > 0) {
+                logger.error("Files that failed to Download:");
+                failedDownloads.forEach((index) -> {
+                    String FileName = CDLInstanceData.files[index].fileName;
                     logger.error("  " + FileName);
-                }
-            } else {
-                logger.error(" None \\o/");
+                });
             }
-
-        } else {
-            logger.print("Finished syncing profile!");
+            System.out.println("---------------------------------------------------------------------");
         }
     }
 }
