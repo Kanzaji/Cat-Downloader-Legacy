@@ -1,69 +1,27 @@
 # [Cat-Downloader Legacy](https://kanzaji.github.io/Cat-Downloader-Legacy/)
 Cat-Downloader Legacy is an app that is meant to allow for easy synchronization of minecraft mods between modpack developers, with use of, for example, Git hooks.
 
-It supports CurseForge `minecraftinstance.json` format, and has **Experimental** support for CurseForge site format `manifest.json`. *Modrinth support is Work in Progress!*
+It Supports Modrinth index (`.mrpack` and modrinth index format), Curseforge Site Format (`manifest.json` format), and CurseForge Instance Format (`minecraftinstance.json` format, from the CF Launcher)!
 
-It also features file verification with Checksum (SHA-256), File Size Check and automatic updates for the app!
+It also features file verification with Checksum (SHA-512), File Size Check and automatic updates for the app!
 
-**Website for easier navigation about configuration and troubleshooting is WIP**
+## Setup
+The app requires Java 17 with SHA-512 Digest module (However, this should be in most of the common distributions), and can be launched manually or by the automation like Git Hooks.<br>
+The app at first launch will generate Settings file (if not disabled) with default settings and documentation. The file extension is json5, that allows to put comments into json!
 
 ## Configuration
-(*Outdated, use documentation in the Settings file generated for now before website is ready 😅* Alternatively, go [here](https://github.com/Kanzaji/Cat-Downloader-Legacy/blob/develop/src/catdownloaderlegacy/src/main/resources/assets/templates/settings.json5))<br>
 Cat-Downloader Legacy can be configured in two ways, to customize the behaviour of the app.<br>
 You can configure it either by the Configuration file, or with the Arguments.
+Note: Here are only shown options that are argument only! For full configuration, check out the website (WIP) or the [configuration file](https://github.com/Kanzaji/Cat-Downloader-Legacy/blob/main/src/catdownloaderlegacy/src/main/resources/assets/templates/settings.json5).
 
 ### Configuration keys
-
-- `Mode` String // **Default: "Instance"**
-  <br>Determines the mode of the app. Available modes are: "Instance" / "Pack"
-  <br>**Argument representation:** `-Mode:`<br><br>
-
-- `WorkingDirectory` String // **Default: "."**
-  <br>Determines working directory of the app, so where mods are getting downloaded and log file is getting generated.
-  <br>Empty string will result in working directory being set to place of execution of the app!
-  <br>Accepts both relative and absolute paths.
-  <br>**Argument representation:** `-WorkingDirectory:`<br><br>
-
-- `ThreadCount` Integer // **Default: "16"**
-  <br>Amount of threads an app is going to create for Data gathering, Verification and Downloading processes.
-  <br>Accepts any Integer Value above 1!
-  <br>**Argument representation:** `-ThreadCount:`<br><br>
-
-- `DownloadAttempts` Integer // **Default: "5"**
-  <br>Amount of tries the app will take before giving up on re-downloading a corrupted mod.
-  <br>Accepts any Integer Value above 1!
-  <br>**Argument representation:** `-DownloadAttempts:`<br><br>
-
-- `isFileSizeVerificationActive` Boolean // **Default: "True"**
-  <br>Determines if file size verification is turned on. Barely-Visible performance gain and will result in corrupted mods if disabled.
-  <br>Accepts Boolean Values (Example: True)
-  <br>**Argument representation:** `-SizeVerification:`<br><br>
-
-- `isHashVerificationActive` Boolean // **Default: "True"**
-  <br>Determines if Hash verification is turned on. Huge Performance gain but can result in corrupted mods if disabled!
-  <br>Accepts Boolean Values (Example: True)
-  <br>**Argument representation:** `-HashVerification:`<br><br>
-
-- `isLoggerActive` Boolean // **Default: "True"**
-  <br>Determines if the logger is enabled. *It is not recommended to disable Logger service. Entire Logger output will be printed to the console!*
-  <br> Accepts Boolean Value (Example: True)
-  <br> **Argument representation:** `-Logger:`<br><br>
-
-- `-Settings:` Boolean or Integer (0/1) // **Default: "True"**
-  <br>Determines if app generates and uses Configuration File (Argument only!)
-  <br> Accepts Boolean Value (Example: True)<br><br>
-
-- `-SettingsPath:` String // **Default: "."**
-  <br>Determines directory where is located Configuration file.
-  <br>Empty string will result in Settings path being set to place of execution of the app!
-  <br>Accepts both relative and absolute paths.<br><br>
-
-- `-DefaultSettings:` Boolean or Integer (0/1) // **Default: "True"**
-  <br>Determines if app generates a template of the Settings file, or is going to override / generate settings with values from the Arguments. Useful for setting up the app in your repo without shipping the actual config file.
-  <br> Accepts Boolean Value (Example: True)
+`-Settings:`        -> Boolean // Determines if Settings are enabled or disabled. (Default: true)<br>
+`-SettingsPath:`    -> String // Specifies a directory where configuration file is. Can be absolute/relative.<br>
+`-DefaultSettings:` -> Boolean // Determines if generated Settings file should have values from the arguments of the app. Useful for setup scripts (Default: false)<br>
+`-BypassNetworkCheck` -> Null // If this argument is present, the Network Connection check will be by-passed. (The host for testing connection is github.com)<br>
 
 ## License
-This project is under a MIT License, what you can find in the LICENSE file of this Repo. I of course don't have anything against you using/including this app in your modpack repo :D If you would mention that you are using this project in your Repo Readme file tho, I would be happy!
+This project is under a MIT License, what you can find in the LICENSE file of this Repo and each Source File. I of course don't have anything against you using/including this app in your modpack repo :D If you would mention that you are using this project in your Repo Readme file tho, I would be happy!
 
 ## FAQ
 - **Why Legacy in the name?<br>**
