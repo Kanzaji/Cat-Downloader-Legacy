@@ -25,7 +25,7 @@
 package com.kanzaji.catdownloaderlegacy.utils;
 
 import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
-import com.kanzaji.catdownloaderlegacy.jsons.Settings;
+import com.kanzaji.catdownloaderlegacy.data.Settings;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import static com.kanzaji.catdownloaderlegacy.utils.RandomUtils.checkIfJsonObject;
 
@@ -163,7 +163,7 @@ public class SettingsManager {
      * Used to parse Settings data from Settings file.
      * @return {@link Settings} contained in Settings file.
      */
-    private static @Nullable Settings parseSettings() {
+    private static @NotNull Settings parseSettings() {
         logger.log("Parsing data from settings file...");
         try {
             Settings SettingsFileData = gson.fromJson(Files.readString(SettingsFile), Settings.class);
@@ -174,8 +174,9 @@ public class SettingsManager {
             System.out.println("Settings file seems to be corrupted! Make sure you have all values as correct data type!");
             logger.logStackTrace("Failed parsing settings file!", e);
             RandomUtils.closeTheApp(1);
+            // Only here due to IDE complaining.
+            return new Settings();
         }
-        return null;
     }
 
     /**
@@ -187,9 +188,9 @@ public class SettingsManager {
         logger.log("Validating settings...");
         List<String> errors = new LinkedList<>();
         if (Objects.isNull(SettingsData.mode)) {
-            errors.add("Mode is null! Available modes are: Pack // Instance");
+            errors.add("Mode is null! Available modes are: CF-Pack // CF-Instance // Modrinth // Automatic");
         } else if (!ArgumentDecoder.validateMode(SettingsData.mode.toLowerCase(Locale.ROOT))) {
-            errors.add("Mode: " + SettingsData.mode + " is not correct! Available modes are: Pack // Instance");
+            errors.add("Mode: " + SettingsData.mode + " is not correct! Available modes are: CF-Pack // CF-Instance // Modrinth // Automatic");
         }
         if (Objects.isNull(SettingsData.workingDirectory)) {
             errors.add("Working Directory is null!");
@@ -322,7 +323,7 @@ public class SettingsManager {
     private static @NotNull Settings generateSettingsFromARD() {
         logger.log("Generating settings file based out of argument values...");
         Settings ARDConfig = new Settings();
-        ARDConfig.mode = ARD.getMode();
+        ARDConfig.mode = ARD.getCurrentMode();
         ARDConfig.workingDirectory = ARD.getWorkingDir();
         ARDConfig.logDirectory = ARD.getLogPath();
         ARDConfig.isLoggerActive = ARD.isLoggerActive();
@@ -351,7 +352,7 @@ public class SettingsManager {
     /**
      * Used to create a String required to save ModBlackList into the settings file!
      * @param Line {@link String} current line in the settings file.
-     * @param blackList {@link com.kanzaji.catdownloaderlegacy.jsons.Settings.BlackList}<{@link String}> with blacklist entries.
+     * @param blackList {@link com.kanzaji.catdownloaderlegacy.data.Settings.BlackList}<{@link String}> with blacklist entries.
      * @param iterator {@link Iterator}<{@link String}> with iterator over Settings file.
      * @return {@link String} with formatted ModBlackList ready to write to Settings File.
      */

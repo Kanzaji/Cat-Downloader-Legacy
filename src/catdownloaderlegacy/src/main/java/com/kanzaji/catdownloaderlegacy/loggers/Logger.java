@@ -37,6 +37,7 @@ import java.util.Date;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -44,7 +45,7 @@ import java.util.stream.Stream;
  * @apiNote This class is a Singleton, use {@link Logger#getInstance()} for reference of this class.
  * @see LoggerCustom
  */
-public class Logger implements ILogger {
+class Logger implements ILogger {
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
     private static final class InstanceHolder {private static final Logger instance = new Logger();}
     private Logger() {}
@@ -107,7 +108,7 @@ public class Logger implements ILogger {
         Path archivedLogInLogPath = Path.of(logPath.toString(), "Cat-Downloader Archived.log");
 
         // Move Log files to the log Path if specified.
-        if (!FileUtils.getFolder(Path.of(logPath.toString(), ".")).toString().equals(FileUtils.getFolder(this.LogFile).toString())) {
+        if (!FileUtils.getParentFolder(Path.of(logPath.toString(), ".")).toString().equals(FileUtils.getParentFolder(this.LogFile).toString())) {
             if (Files.notExists(logPath)) {
                 this.log("Custom path for logs has been specified, but it doesn't exists! Creating \"" + logPath.toAbsolutePath() + "\".");
                 Files.createDirectory(logPath);
@@ -311,7 +312,16 @@ public class Logger implements ILogger {
                 for (StackTraceElement stackTraceElement : stackTraceList) {
                     stackTrace.append("    at ").append(stackTraceElement).append("\n");
                 }
-                Files.writeString(this.LogFile, "[" + new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new Date()) + "] [" + Type + "] " + throwable + "\n" + stackTrace + "\n", StandardOpenOption.APPEND);
+
+                Files.writeString(this.LogFile, "[" + new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new Date()) + "] [" + Type + "] " + throwable + "\n" + stackTrace, StandardOpenOption.APPEND);
+
+                if (Objects.nonNull(throwable.getCause())) {
+                    this.logStackTrace("Caused By:", throwable.getCause());
+                }
+
+                for (Throwable throwable1 : throwable.getSuppressed()) {
+                    this.logStackTrace("Suppressed Exception!", throwable1);
+                }
             }
         } catch (NoSuchFileException e) {
             if (this.crashed) {

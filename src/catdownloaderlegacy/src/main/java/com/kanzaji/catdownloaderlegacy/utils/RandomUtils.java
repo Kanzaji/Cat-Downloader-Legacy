@@ -29,6 +29,13 @@ import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 /**
  * This class holds random utility methods that aren't worth their own class.
  * @see RandomUtils#checkIfJsonObject(String) 
@@ -45,7 +52,8 @@ public class RandomUtils {
      */
     public static boolean checkIfJsonObject(String JSONObject) {
         try {
-            // Return value of gson#fromJson here is intended! I use this as a check if entire array is in a single line.
+            // Ignoring return value of gson#fromJson here is intended!.
+            // When String isn't an JsonObject, it will throw an exception.
             gson.fromJson(JSONObject, Object.class);
             return true;
         } catch (Exception e) {
@@ -62,5 +70,60 @@ public class RandomUtils {
             logger.log("https://github.com/Kanzaji/Cat-Downloader-Legacy");
         }
         System.exit(exitCode);
+    }
+
+    /**
+     * This method is used to choose between two Strings, depending on if the int value is 1. Appends the value to the start of the String if requested.
+     * @param Value Value to check if is 1.
+     * @param String1 String to return when value is 1.
+     * @param String2 String to return when value is not 1.
+     * @param AppendValue if true, Value is appended at the beginning of the Strings.
+     * @return {@code String1} when Value is 1, Otherwise {@code String2};
+     */
+    public static String intGrammar(int Value, String String1, String String2, boolean AppendValue) {
+        if (AppendValue) {
+            String1 = Value + String1;
+            String2 = Value + String2;
+        }
+        return (Objects.equals(Value, 1))? String1: String2;
+    }
+
+    /**
+     * This method is used to shut down and wait specified amount of time for passed ExecutorService.
+     * @param executor ExecutorService to shut down.
+     * @param time Amount of time to wait for the Executor.
+     * @param timeUnit TimeUnit to use with specified time.
+     * @param msg Message to log at the Critical level.
+     * @throws InterruptedException if executor is interrupted while waiting.
+     * @throws TimeoutException when specified Timeout passes.
+     */
+    public static void waitForExecutor(@NotNull ExecutorService executor, int time, TimeUnit timeUnit, String msg)
+    throws InterruptedException, TimeoutException {
+        Objects.requireNonNull(executor);
+        executor.shutdown();
+        if (!executor.awaitTermination(time, timeUnit)) {
+            logger.critical(msg);
+            throw new TimeoutException(msg);
+        }
+    }
+
+    /**
+     * This method is used to remove common part from the Strings passed as arguments.
+     * @param StringToEdit String to remove common part from.
+     * @param StringToCompareAgainst String to compare against StringToEdit.
+     * @return Substring of StringToEdit with removed common part between the two.
+     * @apiNote This method returns common part from the beginning.
+     */
+    public static @NotNull String removeCommonPart(@NotNull String StringToEdit, @NotNull String StringToCompareAgainst) {
+        if (StringToEdit.equals(StringToCompareAgainst)) return "";
+        if (StringToEdit.startsWith(StringToCompareAgainst)) return StringToEdit.substring(StringToCompareAgainst.length());
+
+        char[] STE = StringToEdit.toCharArray();
+        char[] STC = StringToCompareAgainst.toCharArray();
+        int i;
+        for (i = 0; i < STE.length; i++) {
+            if (!Objects.equals(STE[i], STC[i])) break;
+        }
+        return StringToEdit.substring(i);
     }
 }

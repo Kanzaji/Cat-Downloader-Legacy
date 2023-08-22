@@ -24,7 +24,7 @@
 
 package com.kanzaji.catdownloaderlegacy;
 
-import com.kanzaji.catdownloaderlegacy.jsons.Settings;
+import com.kanzaji.catdownloaderlegacy.data.Settings;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
 import org.jetbrains.annotations.NotNull;
@@ -32,17 +32,24 @@ import org.jetbrains.annotations.NotNull;
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
 
 public class ArgumentDecoder {
     private static final LoggerCustom logger = new LoggerCustom("Argument Decoder");
     private static final class InstanceHolder {private static final ArgumentDecoder instance = new ArgumentDecoder();}
+    private static final String[] modes = {
+            "cf-pack",
+            "cf-instance",
+            "modrinth",
+            "automatic"
+    };
     private ArgumentDecoder() {}
     private String WorkingDirectory = "";
     private String SettingsPath = "";
     private String LogPath = "";
-    private String Mode = "instance";
+    private String Mode = "automatic";
     private int ThreadCount = 16;
     private int DownloadAttempts = 5;
     private int LogStockSize = 10;
@@ -55,6 +62,7 @@ public class ArgumentDecoder {
     private boolean Settings = true;
     private boolean DefaultSettingsFromTemplate = true;
     private boolean Experimental = false;
+    private boolean BypassNetworkCheck = false;
 
     /**
      * Used to get a reference to {@link ArgumentDecoder} instance.
@@ -104,18 +112,20 @@ public class ArgumentDecoder {
                 case "settings" -> this.Settings = getBooleanValue(value);
                 case "defaultsettings" -> this.DefaultSettingsFromTemplate = getBooleanValue(value);
                 case "experimental" -> this.Experimental = getBooleanValue(value);
+                case "bypassnetworkcheck" -> this.BypassNetworkCheck = true;
 
                 // Custom
                 case "mode" -> {
                     value = value.toLowerCase(Locale.ROOT);
                     if (!validateMode(value)) {
                         logger.print("Wrong mode selected!", 3);
-                        logger.print("Available modes: Pack // Instance", 3);
+                        logger.print("Available modes: CF-Pack // CF-Instance // Modrinth // Automatic", 3);
                         logger.print("Check my Github Page at https://github.com/Kanzaji/Cat-Downloader-Legacy for more details!", 3);
                         throw new IllegalArgumentException("Incorrect Mode detected (" + value + ")!");
                     }
                     this.Mode = value;
                 }
+
                 default -> {
                 }
             }
@@ -191,7 +201,8 @@ public class ArgumentDecoder {
      * @return boolean True when mode is available.
      */
     public static boolean validateMode(String Mode) {
-        return Objects.equals(Mode, "pack") || Objects.equals(Mode, "instance");
+
+        return Arrays.asList(modes).contains(Mode);
     }
 
     /**
@@ -202,7 +213,8 @@ public class ArgumentDecoder {
         logger.log(message);
         logger.log("> Working directory: " + this.WorkingDirectory);
         logger.log("- Full Path: " + Path.of(this.WorkingDirectory).toAbsolutePath());
-        logger.log("> Program Mode: " + this.Mode);
+        logger.log("> Program Mode: " + ((Objects.nonNull(this.Mode))? this.Mode: "Automatic Mode Determination"));
+        logger.log("> Network Check Bypass: " + this.BypassNetworkCheck);
         logger.log("> Updater enabled: " + this.UpdaterActive);
         logger.log("> Settings enabled: " + this.Settings);
         logger.log("> Default Settings from the template: " + this.DefaultSettingsFromTemplate);
@@ -225,7 +237,7 @@ public class ArgumentDecoder {
      * Used to load data to ARD from Settings Manager.
      * @param SettingsData {@link Settings} object with data to load.
      */
-    public void loadFromSettings(Settings SettingsData, boolean Print) {
+    public void loadFromSettings(@NotNull Settings SettingsData, boolean Print) {
         this.Mode = SettingsData.mode;
         this.UpdaterActive = SettingsData.isUpdaterActive;
         this.WorkingDirectory = SettingsData.workingDirectory;
@@ -242,10 +254,31 @@ public class ArgumentDecoder {
         if (Print) { printConfiguration("Program Configuration from Settings:");}
     }
 
+    /**
+     * Used to set the app mode in ARD after Automatic Detection.
+     * <h3>Currently available modes: </h3>
+     * <ul>
+     *     <li>cf-pack</li>
+     *     <li>cf-instance</li>
+     *     <li>modrinth</li>
+     * </ul>
+     * @param mode String with app mode.
+     * @throws IllegalArgumentException when illegal mode is passed as argument.
+     */
+    public void setCurrentMode(String mode) throws IllegalArgumentException {
+        Objects.requireNonNull(mode);
+        mode = mode.toLowerCase(Locale.ROOT);
+        if (!validateMode(mode) || Objects.equals(mode, "automatic")) throw new IllegalArgumentException("Tried to set invalid or automatic mode (" + mode + ")");
+        this.Mode = mode;
+    }
+
     // Just a spam of Get methods. nothing spectacular to see here.
-    public String getMode() {return this.Mode;}
-    public boolean isPackMode() {return Objects.equals(this.Mode, "pack");}
-    public boolean isInstanceMode() {return !isPackMode();}
+    public String[] getAvailableModes() {return modes;}
+    public String getCurrentMode() {return this.Mode;}
+    public boolean isPackMode() {return Objects.equals(this.Mode, "cf-pack");}
+    public boolean isInstanceMode() {return Objects.equals(this.Mode, "cf-instance");}
+    public boolean isModrinthMode() {return Objects.equals(this.Mode, "modrinth");}
+    public boolean isAutomaticModeDetectionActive() {return Objects.equals(this.Mode, "automatic");}
     public String getWorkingDir() {return this.WorkingDirectory;}
     public String getSettingsPath() {return this.SettingsPath;}
     public String getLogPath() {return this.LogPath;}
@@ -261,4 +294,5 @@ public class ArgumentDecoder {
     public boolean isFileSizeVerActive() {return this.FileSizeVerification;}
     public boolean isHashVerActive() {return this.HashVerification;}
     public boolean isExperimental() {return this.Experimental;}
+    public boolean isBypassNetworkCheckActive() {return this.BypassNetworkCheck;}
 }

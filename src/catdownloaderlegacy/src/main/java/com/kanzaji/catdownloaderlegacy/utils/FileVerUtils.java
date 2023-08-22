@@ -26,15 +26,18 @@ package com.kanzaji.catdownloaderlegacy.utils;
 
 import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * This class holds utility methods related to verification of the files.
@@ -42,6 +45,24 @@ import java.util.Arrays;
  */
 public class FileVerUtils {
     private static final LoggerCustom logger = new LoggerCustom("File Verification Utilities");
+
+    /**
+     * Used to verify integrity of the file with use of {@link FileVerUtils#verifyFileSize(Path, int)} and {@link FileVerUtils#verifyHash(Path, String, String)}.
+     * @param File {@link Path} to a file designated for verification.
+     * @param Size {@link Number} with Expected file length.
+     * @param Hash {@link String} with Expected Hash value.
+     * @param Algorithm {@link String} with Algorithm of the Hash passed to the method.
+     * @return {@link Boolean} with the result of the verification.
+     * @throws IOException when IO Operation fails.
+     * @throws NoSuchAlgorithmException when Algorithm is invalid or not supported.
+     */
+    public static boolean verifyFile(Path File, Number Size, String Hash, String Algorithm) throws IOException, NoSuchAlgorithmException {
+        if (Files.notExists(File)) {
+            logger.error("File for mod " + File.getFileName() + " doesn't exists??");
+            return false;
+        }
+        return verifyFileSize(File, Size) && verifyHash(File, Hash, Algorithm);
+    }
 
     /**
      * Used to verify integrity of the file with use of {@link FileVerUtils#verifyFileSize(Path, int)} and {@link FileVerUtils#verifyHash(Path, String)}.
@@ -66,7 +87,7 @@ public class FileVerUtils {
      * @return {@link Boolean} with the result of the verification.
      * @throws IOException when IO Operation fails.
      */
-    public static boolean verifyFileSize(Path File, Number Size) throws IOException {
+    public static boolean verifyFileSize(Path File, @NotNull Number Size) throws IOException {
         return verifyFileSize(File, Size.intValue());
     }
 
@@ -85,7 +106,22 @@ public class FileVerUtils {
     }
 
     /**
-     * Used to verify a file using Hash calculations (SHA-256).
+     * Used to verify a file using Hash calculations with specified algorithm, comparing to passed Hash value.
+     * @param File {@link Path} to a file to calculate Hash from.
+     * @param Algorithm {@link String} Algorithm to use for Calculations.
+     * @return {@link Byte} array with the result of the Hash calculations
+     * @throws IOException when IO operation fails.
+     * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm.
+     */
+    public static boolean verifyHash(Path File, String Hash, String Algorithm) throws IOException, NoSuchAlgorithmException {
+        if (!ArgumentDecoder.getInstance().isHashVerActive()) {
+            return true;
+        }
+        return Objects.equals(getHash(File, Algorithm), Hash);
+    }
+
+    /**
+     * Used to verify a file using Hash calculations (SHA-256) with the resource from the network.
      * @param File {@link Path} to a file designated for verification.
      * @param DownloadURL {@link String} DownloadURL to a source file.
      * @return {@link Boolean} with the result of the verification.
@@ -96,7 +132,7 @@ public class FileVerUtils {
         if (!ArgumentDecoder.getInstance().isHashVerActive()) {
             return true;
         }
-        return Arrays.equals(getHash(File), getHash(DownloadURL));
+        return Objects.equals(getHash(File), getHash(DownloadURL));
     }
 
     /**
@@ -106,7 +142,7 @@ public class FileVerUtils {
      * @throws IOException when IO operation fails.
      * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm.
      */
-    public static byte[] getHash(String DownloadURL) throws IOException, NoSuchAlgorithmException {
+    public static @NotNull String getHash(String DownloadURL) throws IOException, NoSuchAlgorithmException {
         return getHash(DownloadURL, null, "SHA-256");
     }
 
@@ -117,33 +153,64 @@ public class FileVerUtils {
      * @throws IOException when IO operation fails.
      * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm for some reason.
      */
-    public static byte[] getHash(Path FilePath) throws IOException, NoSuchAlgorithmException {
+    public static @NotNull String getHash(Path FilePath) throws IOException, NoSuchAlgorithmException {
         return getHash(null, FilePath, "SHA-256");
     }
 
     /**
      * Used to get a Hash from a file or URL.
      * @param DownloadURL {@link String} URL for data stream to calculate Hash from.
+     * @param Algorithm {@link String} Algorithm to use for Calculations.
+     * @return {@link Byte} array with the result of the Hash calculations
+     * @throws IOException when IO operation fails.
+     * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm.
+     */
+    public static @NotNull String getHash(String DownloadURL, String Algorithm) throws IOException, NoSuchAlgorithmException {
+        return getHash(DownloadURL, null, Algorithm);
+    }
+
+    /**
+     * Used to get a Hash from a file or URL.
      * @param FilePath {@link Path} to a file to calculate Hash from.
      * @param Algorithm {@link String} Algorithm to use for Calculations.
      * @return {@link Byte} array with the result of the Hash calculations
      * @throws IOException when IO operation fails.
      * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm.
      */
-    private static byte[] getHash(String DownloadURL, Path FilePath, String Algorithm) throws IOException, NoSuchAlgorithmException {
-        // Logger commands are commented out because they are making a lot of mess in the log itself, and they aren't that important
-        if (DownloadURL == null && FilePath == null) {
+    public static @NotNull String getHash(Path FilePath, String Algorithm) throws IOException, NoSuchAlgorithmException {
+        return getHash(null, FilePath, Algorithm);
+    }
+
+    /**
+     * Used to get a Hash from a file or URL. Either DownloadURL or FilePath should be null.
+     * @param DownloadURL {@link String} URL for data stream to calculate Hash from.
+     * @param FilePath {@link Path} to a file to calculate Hash from.
+     * @param Algorithm {@link String} Algorithm to use for Calculations.
+     * @return {@link Byte} array with the result of the Hash calculations
+     * @throws IOException when IO operation fails.
+     * @throws NoSuchAlgorithmException when Hash Verification complains about Algorithm.
+     * @throws NullPointerException when both arguments are null.
+     * @apiNote Non-Fatal exception will be thrown and logged when both DownloadURL and FilePath are not-null.
+     */
+    private static @NotNull String getHash(String DownloadURL, Path FilePath, String Algorithm) throws IOException, NoSuchAlgorithmException {
+        Objects.requireNonNull(Algorithm);
+
+        if (Objects.isNull(DownloadURL) && Objects.isNull(FilePath)) {
             throw new NullPointerException("Both arguments for Hash verification are null!");
+        } else if (Objects.nonNull(DownloadURL) && Objects.nonNull(FilePath)) {
+            try {
+                throw new IllegalArgumentException("Both arguments for Hash verification are populated!");
+            } catch (IllegalArgumentException e) {
+                logger.logStackTrace("Invalid implementation of getHash() detected! Stacktrace below to trace problematic implementation. DownloadURL will be prioritized.", e);
+            }
         }
-//        long StartTime = System.currentTimeMillis();
+
         InputStream InputData;
         MessageDigest MD = MessageDigest.getInstance(Algorithm);
 
         if (DownloadURL == null) {
-//            logger.log("Getting Hash for file " + FilePath.getFileName());
             InputData = Files.newInputStream(FilePath);
         } else {
-//            logger.log("Getting Hash for file from URL " + DownloadURL);
             InputData = new URL(DownloadURL).openStream();
         }
 
@@ -154,11 +221,11 @@ public class FileVerUtils {
             MD.update(Buffer, 0, read);
 
         InputData.close();
-//        logger.log(
-//                String.format("Finished getting Hash for %s (Took %.2fs)",
-//                (DownloadURL == null)? FilePath.getFileName(): DownloadUrl,
-//                (float) (System.currentTimeMillis() - StartTime) / 1000F
-//                ));
-        return MD.digest();
+
+        StringBuilder hash = new StringBuilder(new BigInteger(1, MD.digest()).toString(16));
+        while (hash.length() < MD.getDigestLength()*2) {
+            hash.insert(0, "0");
+        }
+        return hash.toString();
     }
 }
