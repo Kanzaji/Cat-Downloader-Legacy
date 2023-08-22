@@ -364,15 +364,15 @@ public class SyncManager {
             SettingsManager.ModBlackList.forEach((mod) -> logger.log("- " + mod));
 
             if (IgnoredVerification.size() > 0) {
-                logger.print("> " + RandomUtils.intGrammar(IgnoredVerification.size(), " mod was", " mods were", true) + "not verified!", 1);
-                IgnoredVerification.forEach((mod) -> logger.warn("- " + mod));
+                logger.print("> " + RandomUtils.intGrammar(IgnoredVerification.size(), " mod was", " mods were", true) + " not verified!", 1);
+                IgnoredVerification.forEach((mod) -> logger.warn("- " + CDLInstanceData.files[mod].fileName));
             } else {
                 logger.print("> All mods have been verified.");
             }
 
             if (IgnoredRemoval.size() > 0) {
-                logger.print("> " + RandomUtils.intGrammar(IgnoredRemoval.size(), " mod was", " mods were", true) + "not removed!", 1);
-                IgnoredRemoval.forEach((mod) -> logger.warn("- " + mod));
+                logger.print("> " + RandomUtils.intGrammar(IgnoredRemoval.size(), " mod was", " mods were", true) + " not removed!", 1);
+                IgnoredRemoval.forEach((mod) -> logger.warn("- " + CDLInstanceData.files[mod].fileName));
             } else {
                 logger.print("> All mods designated to removal were removed.");
             }
@@ -398,10 +398,7 @@ public class SyncManager {
 
             if (failedVerifications.size() > 0) {
                 logger.error("Files that failed verification with an exception:");
-                failedVerifications.forEach((index) -> {
-                    String FileName = CDLInstanceData.files[index].fileName;
-                    logger.error("  " + FileName);
-                });
+                failedVerifications.forEach((index) -> logger.error("  " + CDLInstanceData.files[index].fileName));
             }
 
             if (failedRemovals.size() > 0) {
@@ -411,10 +408,7 @@ public class SyncManager {
 
             if (failedDownloads.size() > 0) {
                 logger.error("Files that failed to Download:");
-                failedDownloads.forEach((index) -> {
-                    String FileName = CDLInstanceData.files[index].fileName;
-                    logger.error("  " + FileName);
-                });
+                failedDownloads.forEach((index) -> logger.error("  " + CDLInstanceData.files[index].fileName));
             }
             System.out.println("---------------------------------------------------------------------");
         }
