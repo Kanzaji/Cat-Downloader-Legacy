@@ -1,7 +1,7 @@
 {
   // Cat-Downloader Legacy Configuration file!
 
-  // Mode -> Determines the mode of the app. Available modes are: "CF-Instance" / "CF-Pack" / "Modrinth" / "Automatic" (Experimental)
+  // Mode -> Determines the mode of the app (case-insensitive). Available modes are: "CF-Instance" / "CF-Pack" / "Modrinth" / "Automatic" (Experimental)
   // Argument representation: -Mode:
   "mode": "cf-instance",
 
