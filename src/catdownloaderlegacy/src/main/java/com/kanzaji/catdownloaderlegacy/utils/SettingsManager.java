@@ -56,7 +56,7 @@ public class SettingsManager {
     private static final LoggerCustom logger = new LoggerCustom("SettingsManager");
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().setLenient().create();
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
-    private static final Path SettingsFile = Path.of(ARD.getSettingsPath(),"Cat-Downloader-Legacy Settings.json5");
+    private static final Path SettingsFile = Path.of(ARD.getSettingsPath(),"Cat-Downloader-Legacy-Settings.json5");
     private static boolean SettingsInitialized = false;
     public static Settings.BlackList<String> ModBlackList = new Settings.BlackList<>();
 
@@ -167,6 +167,7 @@ public class SettingsManager {
         logger.log("Parsing data from settings file...");
         try {
             Settings SettingsFileData = gson.fromJson(Files.readString(SettingsFile), Settings.class);
+            SettingsFileData.mode = SettingsFileData.mode.toLowerCase(Locale.ROOT);
             ModBlackList = (Objects.isNull(SettingsFileData.modBlackList))? new Settings.BlackList<>(): SettingsFileData.modBlackList;
             logger.log("Parsing of Settings was successful!");
             return SettingsFileData;
@@ -268,8 +269,8 @@ public class SettingsManager {
                     // While adding new Settings Keys, this requires implementing handler for that key.
                     Line = Line.substring(0,Line.indexOf(settingsKey)).replaceFirst("//","") + settingsKey + "\": " + switch (settingsKey) {
                         case "mode" -> "\"" + SettingsData.mode + "\"";
-                        case "workingDirectory" -> "\"" + SettingsData.workingDirectory + "\"";
-                        case "logDirectory" -> "\"" + SettingsData.logDirectory + "\"";
+                        case "workingDirectory" -> "\"" + SettingsData.workingDirectory.replaceAll("\\\\", "/") + "\"";
+                        case "logDirectory" -> "\"" + SettingsData.logDirectory.replaceAll("\\\\", "/") + "\"";
                         case "threadCount" -> SettingsData.threadCount;
                         case "downloadAttempts" -> SettingsData.downloadAttempts;
                         case "logStockpileSize" -> SettingsData.logStockpileSize;
