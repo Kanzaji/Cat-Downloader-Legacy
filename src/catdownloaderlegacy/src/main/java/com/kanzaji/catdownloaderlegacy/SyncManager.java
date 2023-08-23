@@ -380,7 +380,7 @@ public class SyncManager {
             System.out.println(
                 "\nFor more details, check your configuration file or the log at:\n" +
                 "\"" + logger.getLogPath() + "\"\n" +
-                "\"" + Path.of(ArgumentDecoder.getInstance().getSettingsPath()).toAbsolutePath() + "\\Cat-Downloader-Legacy Settings.json5\""
+                "\"" + Path.of(ArgumentDecoder.getInstance().getSettingsPath()).toAbsolutePath() + "\\Cat-Downloader-Legacy-Settings.json5\""
             );
             System.out.println("---------------------------------------------------------------------");
         }

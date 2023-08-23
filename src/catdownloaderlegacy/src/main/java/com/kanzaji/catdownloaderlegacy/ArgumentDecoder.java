@@ -218,7 +218,6 @@ public class ArgumentDecoder {
      * @return boolean True when mode is available.
      */
     public static boolean validateMode(String Mode) {
-
         return Arrays.asList(modes).contains(Mode);
     }
 
