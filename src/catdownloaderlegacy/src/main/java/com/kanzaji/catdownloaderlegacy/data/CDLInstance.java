@@ -42,10 +42,9 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.rmi.UnexpectedException;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.UnknownFormatConversionException;
+import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 /**
  * This class holds data for CDLPack format, and additional methods for transforming other formats (CurseForge Instance / Pack, Modrinth mrpack) to this format.
@@ -395,7 +394,12 @@ public class CDLInstance {
      */
     public int clearCFModFiles() {
         int originalLength = this.files.length;
-        this.files = (ModFile[]) Arrays.stream(this.files).dropWhile(mod -> Objects.equals(mod.fileName, "CF-PACK_MOD")).toArray();
+        List<ModFile> modFiles = new LinkedList<>();
+        for (ModFile file : this.files) {
+            if (Objects.equals(file.fileName, "CF-PACK_MOD")) continue;
+            modFiles.add(file);
+        }
+        this.files = modFiles.toArray(this.files);
         return originalLength - this.files.length;
     }
 

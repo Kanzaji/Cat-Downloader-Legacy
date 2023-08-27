@@ -118,11 +118,18 @@ public class SyncManager {
         for (int index = 0; index < CDLInstanceData.files.length; index++) {
             if (ARD.isPackMode()) CDLInstanceData.gatherCFModInformation(index);
             CDLInstance.ModFile mod = CDLInstanceData.files[index];
+
+            if (Objects.equals(mod.fileName, "CF-PACK_MOD")) {
+                failedDownloads.add(index);
+                continue;
+            }
+
             if (SettingsManager.ModBlackList.contains(mod.fileName)) {
                 logger.warn("Skipping verification of  " + mod.fileName + " because its present on the blacklist!");
                 IgnoredVerification.add(index);
                 continue;
             }
+
             logger.log("Lookup and verification of file " + mod.fileName + " has been requested.");
             verificationResults.add(verificationExecutor.submit(CDLInstanceData.getVerificationTask(index)));
         }
@@ -180,8 +187,8 @@ public class SyncManager {
     private void printVerificationResults() {
         if (CDLInstanceData.files.length - missing.size() > 0) {
             logger.print(
-                (CDLInstanceData.files.length - missing.size()) + " out of " +
-                RandomUtils.intGrammar(CDLInstanceData.files.length, " mod", " mods", true) +
+                (CDLInstanceData.files.length - missing.size() - failedDownloads.size()) + " out of " +
+                RandomUtils.intGrammar(CDLInstanceData.files.length - failedDownloads.size(), " mod", " mods", true) +
                 " have been found on the hard drive!"
             );
 
@@ -190,7 +197,7 @@ public class SyncManager {
             }
 
             logger.print(
-                "> " + RandomUtils.intGrammar(CDLInstanceData.files.length - missing.size() - corrupted.size(), " mod", " mods", true) +
+                "> " + RandomUtils.intGrammar(CDLInstanceData.files.length - missing.size() - corrupted.size() - failedDownloads.size(), " mod", " mods", true) +
                 " have been verified successfully."
             );
 
@@ -410,7 +417,14 @@ public class SyncManager {
 
             if (failedDownloads.size() > 0) {
                 logger.error("Files that failed to Download:");
-                failedDownloads.forEach((index) -> logger.error("  " + CDLInstanceData.files[index].fileName));
+                failedDownloads.forEach((index) -> {
+                    CDLInstance.ModFile mod = CDLInstanceData.files[index];
+                    if (Objects.equals(mod.fileName, "CF-PACK_MOD")) {
+                        logger.error("  A CurseForge mod from the project with id " + mod.fileLength + " (" + mod.downloadURL + ") was not possible to found! Project URL: \"https://cfwidget.com/" + mod.fileLength + "\"");
+                    } else {
+                        logger.error("  " + mod.fileName);
+                    }
+                });
             }
             System.out.println("---------------------------------------------------------------------");
         }
