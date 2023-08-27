@@ -32,7 +32,6 @@ import static com.kanzaji.catdownloaderlegacy.utils.RandomUtils.checkIfJsonObjec
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

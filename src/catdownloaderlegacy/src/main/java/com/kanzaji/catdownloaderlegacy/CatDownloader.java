@@ -51,7 +51,7 @@ public final class CatDownloader {
     static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
 
     // Global variables
-    public static final String VERSION = "2.1.2-DEVELOP";
+    public static final String VERSION = "2.1.3-DEVELOP";
     public static final String REPOSITORY = "https://github.com/Kanzaji/Cat-Downloader-Legacy";
     public static final String NAME = "Cat Downloader Legacy";
     /**
@@ -85,7 +85,7 @@ public final class CatDownloader {
      * Main method of the app.
      * @param args String[] arguments for the app.
      */
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         long StartingTime = System.currentTimeMillis();
         ARGUMENTS = args;
 
@@ -214,15 +214,14 @@ public final class CatDownloader {
 
     /**
      * This method is responsible for fetching and verifying the Manifest file.
-     * @throws IOException when IO Exception occurs.
      */
-    private static void fetchAndVerifyManifestFile() throws IOException {
+    private static void fetchAndVerifyManifestFile() {
         logger.log("Fetching data from the manifest file and translating it to CDLInstance Format...");
         try {
             switch (ARD.getCurrentMode()) {
                 case "modrinth" -> CDLInstanceData.importModrinthPack(gson.fromJson(Files.readString(manifestFile), MRIndex.class));
                 case "cf-instance" -> CDLInstanceData.importCFInstance(gson.fromJson(Files.readString(manifestFile), CFMinecraftInstance.class));
-                case "cf-pack" -> CDLInstanceData.importCFPack(gson.fromJson(Files.readString(manifestFile), CFManifest.class));
+                case "cf-pack" -> CDLInstanceData.importCFPack(gson.fromJson(Files.readString(manifestFile), CFManifest.class), false);
                 default -> throw new RuntimeException("Unknown mode passed mode validation step! This shouldn't happen. Mode -> " + ARD.getCurrentMode());
             }
         } catch (Exception e) {

@@ -27,7 +27,7 @@ This project is under a MIT License, what you can find in the LICENSE file of th
 - **Why Legacy in the name?<br>**
   [Cat-Downloader](https://github.com/Kanzaji/Cat-Downloader) is actually a different project of mine that is meant to be full Minecraft Launcher! It is, however, in very early stages of the development, so for now it has more or less the same functionality as this app (Okay at the point of writing this ReadMe, it has way less features).
 - **Why don't just, use CurseForge way of updating mods for modpack developers?**<br>
-  CurseForge launcher MinecraftInstance is created for a specified user on specified computer. It doesn't always work when you import it from github repository and it doesn't completely work on non-CurseForge launcher. That is why InstanceSync was used for modpack developements. Due to InstanceSync lacking file verification and being archived by Vazkii, Cat-Downloader-Legacy was created.
+  CurseForge launcher MinecraftInstance is created for a specified user on specified computer. It doesn't always work when you import it from GitHub repository, and it doesn't completely work on non-CurseForge launcher. That is why InstanceSync was used for modpack development. Due to InstanceSync lacking file verification and being archived by Vazkii, Cat-Downloader-Legacy was created.
 
 ## Contributions
 

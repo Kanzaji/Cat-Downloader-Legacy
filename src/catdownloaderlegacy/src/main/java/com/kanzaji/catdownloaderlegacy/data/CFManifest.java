@@ -41,8 +41,9 @@ import java.util.*;
 
 /**
  * Class used to represent data structure for Manifest.json file.
- * @see ModFile
+ * @see CFModFile
  */
+@SuppressWarnings("unused")
 public class CFManifest {
     public static LinkedList<String> DataGatheringWarnings = new LinkedList<>();
     public String author;
@@ -50,38 +51,47 @@ public class CFManifest {
     public String version;
     public String overrides;
     public minecraft minecraft;
-    public ModFile[] files;
+    public CFModFile[] files;
 
     /**
-     * Used to hold information and methods related to a single {@link ModFile} object.
-     * @see ModFile#getData(CFManifest.minecraft)
+     * Used to hold information and methods related to a single {@link CFModFile} object.
+     * @see CFModFile#getData(CFManifest.minecraft)
      */
-    public static class ModFile {
+    public static class CFModFile {
         public boolean error403 = false;
         public boolean error202 = false;
 
-        public Number projectID;
-        public Number fileID;
+        public CFModFile() {}
+        public CFModFile(int projectID, int fileID) {
+            this.projectID = projectID;
+            this.fileID = fileID;
+        }
+        public int projectID;
+        public int fileID;
         public String downloadUrl;
         public boolean required;
-        public Number fileSize;
+        public int fileSize;
+
+        /**
+         * This method creates new {@link com.kanzaji.catdownloaderlegacy.data.CDLInstance.ModFile} object, with information taken from this object. It does not guarantee that returned mod file will not contain null or incorrect values.
+         * @return new {@link com.kanzaji.catdownloaderlegacy.data.CDLInstance.ModFile} with information from this object.
+         */
+        public CDLInstance.ModFile toCDLModFile() {return new CDLInstance.ModFile(this.getFileName(), this.downloadUrl, this.fileSize);}
 
         //TODO: Rework this.. again. Also add notes!
 
         /**
          * Used to gather required data for this object.
          * @param minecraftData {@link minecraft} object from the main Manifest Object.
-         * @return {@link ModFile} with data acquired in Data Gathering.
+         * @return {@link CFModFile} with data acquired in Data Gathering.
          * @Deprecated This method is meant for a rework in separate class, because of that it is marked as deprecated and should be replaced with updated version whenever possible.
          */
         @ApiStatus.Experimental
         @Deprecated(since = "2.0", forRemoval = true)
-        public ModFile getData(minecraft minecraftData) {
-            ModFile ModFileData = new ModFile();
+        public CFModFile getData(minecraft minecraftData) {
+            CFModFile CFModFileData = new CFModFile();
             LoggerCustom logger = new LoggerCustom("Manifest");
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
-
-            logger.log("Getting data for project with ID: " + projectID + " with file ID: " + fileID);
 
             try {
                 HttpsURLConnection url;
@@ -140,7 +150,7 @@ public class CFManifest {
                                 }
                             }
 
-                            ModFileData.downloadUrl = (
+                            CFModFileData.downloadUrl = (
                                     "https://edge.forgecdn.net/files/" +
                                             String.valueOf(file.id).substring(0, 4) +
                                             "/" +
@@ -149,26 +159,26 @@ public class CFManifest {
                                             file.name
                             ).replaceAll(" ", "%20");
 
-                            ModFileData.fileSize = file.filesize;
+                            CFModFileData.fileSize = file.filesize;
                             break;
                         }
 
-                        if (ModFileData.downloadUrl == null) {
+                        if (CFModFileData.downloadUrl == null) {
                             logger.error("No file for version " + minecraftData.version + " was found in project with id " + projectID + "! Please report this to the pack creator.");
                             return null;
                         }
 
-                        return ModFileData;
+                        return CFModFileData;
                     }
 
                     if (!Objects.equals(downloadData.download.id, fileID)) {
                         logger.error("Data received from api.cfwidget.com is not correct!");
                         logger.error("\n" + gson.toJson(downloadData));
-                        logger.error(fileID.toString());
+                        logger.error(Integer.toString(fileID));
                         return null;
                     }
 
-                    ModFileData.downloadUrl = (
+                    CFModFileData.downloadUrl = (
                             "https://edge.forgecdn.net/files/" +
                                     String.valueOf(downloadData.download.id).substring(0, 4) +
                                     "/" +
@@ -177,7 +187,7 @@ public class CFManifest {
                                     downloadData.download.name
                     ).replaceAll(" ", "%20");
 
-                    ModFileData.fileSize = downloadData.download.filesize;
+                    CFModFileData.fileSize = downloadData.download.filesize;
 
                 } catch (Exception e) {
                     if (!e.getMessage().startsWith("Server returned")) {
@@ -195,12 +205,12 @@ public class CFManifest {
                                     "\n     > Site with CurseForge link: https://cfwidget.com/" + projectID + "?&version=" + fileID +
                                     "\n     > Please report it on my github (Link at the end of the log file) if this still happens after waiting few minutes!"
                             );
-                            return ModFileData;
+                            return CFModFileData;
                         }
 
                         logger.error("Response code 403 (Access Denied) returned for project id: " + projectID + " trying to get data for file id: " + fileID + ". Trying to request data without version parameter at the end of the queue.");
-                        ModFileData.error403 = true;
-                        return ModFileData;
+                        CFModFileData.error403 = true;
+                        return CFModFileData;
                     }
 
                     if (
@@ -208,12 +218,12 @@ public class CFManifest {
                             Objects.equals(responseCode, 202)
                     ) {
                         logger.warn("API returned response code " + responseCode + " (Wait for the request), trying requesting data again at the end of the queue!");
-                        ModFileData.error202 = true;
+                        CFModFileData.error202 = true;
                         if (error403) {
                             error403 = false;
                             return getData(minecraftData);
                         }
-                        return ModFileData;
+                        return CFModFileData;
                     } else {
                         logger.error("Unknown response code (" + responseCode + ") returned for project id: " + projectID + " while trying to request data for file id: " + fileID);
                         return null;
@@ -223,11 +233,11 @@ public class CFManifest {
                 logger.logStackTrace("Failed to get Data for project with ID " + projectID, e);
                 return null;
             }
-            return ModFileData;
+            return CFModFileData;
         }
 
         /**
-         * Used to get a file name for this {@link ModFile} object.
+         * Used to get a file name for this {@link CFModFile} object.
          * @return {@link String} with a file name for this object.
          */
         public String getFileName() {
@@ -241,10 +251,15 @@ public class CFManifest {
     }
 
     public static class modLoaders {
+        public modLoaders(String modLoaderID, boolean primaryModLoader) {
+            this.id = modLoaderID;
+            this.primary = primaryModLoader;
+        }
         public String id;
         public boolean primary;
     }
 
+    @SuppressWarnings("MismatchedReadAndWriteOfArray")
     private static class data {
         private urls urls;
         private legacyFile[] files;
@@ -253,9 +268,9 @@ public class CFManifest {
 
     private static class downloadData {
         private String url;
-        private Number id;
+        private int id;
         private String name;
-        private Number filesize;
+        private int filesize;
     }
 
     private static class urls {
@@ -263,11 +278,12 @@ public class CFManifest {
         private String project;
     }
 
+    @SuppressWarnings("MismatchedReadAndWriteOfArray")
     private static class legacyFile {
         private String url;
-        private Number id;
+        private int id;
         private String name;
-        private Number filesize;
+        private int filesize;
         private String[] versions;
     }
 }

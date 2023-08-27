@@ -65,10 +65,9 @@ public class LoggerCustom implements ILogger {
 
     /**
      * Used to disable Logger and remove the log file.
-     * @throws IOException when log deletion failed.
      */
     @Override
-    public void exit() throws IOException {
+    public void exit() {
         logger.exit();
     }
 

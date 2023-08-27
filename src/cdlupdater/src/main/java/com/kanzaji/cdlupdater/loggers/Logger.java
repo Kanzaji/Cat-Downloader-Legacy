@@ -144,12 +144,10 @@ public class Logger implements ILogger {
      * Used to disable Logger and remove log file.
      * Has to be implemented manually.
      *
-     * @throws IOException when log deletion failed.
      * @apiNote This method is not implemented in this implementation of the {@link ILogger}. Calling it will do nothing.
      */
     @Override
-    public void exit() throws IOException {
-        return;
+    public void exit() {
     }
 
 }

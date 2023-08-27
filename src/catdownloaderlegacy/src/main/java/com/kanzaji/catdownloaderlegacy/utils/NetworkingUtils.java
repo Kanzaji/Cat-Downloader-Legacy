@@ -219,6 +219,7 @@ public class NetworkingUtils {
 
         for (int i = 0; i < ArgumentDecoder.getInstance().getDownloadAttempts(); i++) {
             // Waiting a while in case server has some small issue and requires a bit of time, Each attempt increases the time to wait.
+            //noinspection BusyWait
             Thread.sleep(2500L * i);
 
             if (Files.deleteIfExists(file)) {

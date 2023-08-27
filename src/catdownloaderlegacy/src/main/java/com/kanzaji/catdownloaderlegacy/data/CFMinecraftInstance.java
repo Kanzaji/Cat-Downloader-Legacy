@@ -26,8 +26,8 @@ package com.kanzaji.catdownloaderlegacy.data;
 
 /**
  * Class used to represent Data Structure for MinecraftInstance.json file.
- * @see com.kanzaji.catdownloaderlegacy.utils.MIInterpreter
  */
+@SuppressWarnings("unused")
 public class CFMinecraftInstance {
 
     public baseModLoader baseModLoader;

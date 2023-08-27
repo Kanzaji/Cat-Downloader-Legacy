@@ -29,14 +29,12 @@ import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.rmi.UnexpectedException;
 import java.util.*;
 import java.util.stream.Stream;

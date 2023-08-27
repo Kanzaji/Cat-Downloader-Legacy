@@ -116,6 +116,7 @@ public class SyncManager {
         logger.log("Requesting of lookups for installed mods and their verification started.");
 
         for (int index = 0; index < CDLInstanceData.files.length; index++) {
+            if (ARD.isPackMode()) CDLInstanceData.gatherCFModInformation(index);
             CDLInstance.ModFile mod = CDLInstanceData.files[index];
             if (SettingsManager.ModBlackList.contains(mod.fileName)) {
                 logger.warn("Skipping verification of  " + mod.fileName + " because its present on the blacklist!");
@@ -135,6 +136,7 @@ public class SyncManager {
      * @param verificationResults A list with Future objects from the executor.
      * @throws NullPointerException when verificationResults are null.
      */
+    @SuppressWarnings("ForLoopReplaceableByForEach")
     private void decodeVerificationResults(@NotNull List<Future<Integer[]>> verificationResults) {
         Objects.requireNonNull(verificationResults);
         // LinkedList<>#forEach() and enhanced for use Iterators.

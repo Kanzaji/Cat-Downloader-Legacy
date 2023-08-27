@@ -35,7 +35,7 @@ public class Settings {
     /**
      * This static contains all Setting Keys from the Settings File.
      */
-    public static String[] SettingsKeys = {
+    public static final String[] SettingsKeys = {
             "mode",
             "workingDirectory",
             "logDirectory",

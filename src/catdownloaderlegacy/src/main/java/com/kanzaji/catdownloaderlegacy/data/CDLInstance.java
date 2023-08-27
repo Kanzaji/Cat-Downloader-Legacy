@@ -24,32 +24,34 @@
 
 package com.kanzaji.catdownloaderlegacy.data;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import com.kanzaji.catdownloaderlegacy.utils.FileUtils;
 import com.kanzaji.catdownloaderlegacy.utils.FileVerUtils;
 import com.kanzaji.catdownloaderlegacy.utils.NetworkingUtils;
 import com.kanzaji.catdownloaderlegacy.utils.RandomUtils;
+import static com.kanzaji.catdownloaderlegacy.CatDownloader.WORKPATH;
+import static com.kanzaji.catdownloaderlegacy.guis.MRSecurityCheckGUI.modrinthSecurityCheckFail;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.rmi.UnexpectedException;
+import java.util.Arrays;
 import java.util.Objects;
-import java.util.Random;
 import java.util.UnknownFormatConversionException;
 import java.util.concurrent.Callable;
-
-import static com.kanzaji.catdownloaderlegacy.CatDownloader.WORKPATH;
-import static com.kanzaji.catdownloaderlegacy.guis.MRSecurityCheckGUI.modrinthSecurityCheckFail;
-
 
 /**
  * This class holds data for CDLPack format, and additional methods for transforming other formats (CurseForge Instance / Pack, Modrinth mrpack) to this format.
  * @apiNote This class will be extended in the future with more fields in the Launcher version of the app.
  */
+@SuppressWarnings("unused")
 public class CDLInstance {
     private static final LoggerCustom logger = new LoggerCustom("CDLInstance Utilities");
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -245,15 +247,21 @@ public class CDLInstance {
     /**
      * This method is used to fill up data in CDLInstance Object with information from passed CFManifest object.
      * @param CFPackData CFManifest to import data from.
+     * @param shouldGatherData Determines if the mods present in the CFManifestObject should be parsed at the stage of importing.
      * @return Itself, for easier use after importing.
      * @throws UnexpectedException when Exception occurs in the translating code.
-     * @apiNote This method DOES NOT return Hashes used for verification of the downloads. Filling up missing hashes is required to do at the download process.
+     * @apiNote This method, when {@code shouldGatherData} is false, generates mod files in specific schema:<ul>
+     * <li> {@code fileName} -> {@code CF-PACK_MOD}</li>
+     * <li> {@code downloadURL} -> FileID of the mod</li>
+     * <li> {@code fileSize} -> ProjectID of the mod</li>
+     * </ul>
+     * In a scenario where {@code shouldGatherData} is {@code true}, this method DOES NOT return Hashes used for verification of the downloads. Filling up missing hashes is required to do at the download process.
      */
     @ApiStatus.Experimental
-    public CDLInstance importCFPack(@NotNull CFManifest CFPackData) throws UnexpectedException  {
+    public CDLInstance importCFPack(@NotNull CFManifest CFPackData, boolean shouldGatherData) throws UnexpectedException  {
         logger.log("Translating CF Manifest into CDLInstance format...");
         logger.print("Warning! CF-Pack importing is still experimental! Use with caution.", 1);
-        logger.print("Gathering data about mods present in the modpack... (This will take a while)");
+        if (shouldGatherData) logger.print("Gathering data about mods present in the modpack... (This will take a while)");
 
         Objects.requireNonNull(CFPackData);
         try {
@@ -282,17 +290,12 @@ public class CDLInstance {
 
             this.files = new ModFile[CFPackData.files.length];
             for (int i = 0; i < CFPackData.files.length; i++) {
-                CFManifest.ModFile mod = CFPackData.files[i];
-                //TODO: Create own getData() method. Replace use of Deprecated method.
-                // Additionally make use of multithreading and experimental option.
-                // - Mods without data support
-                // - Mods without any data statistics
-                // - Required data present for x out of y for CF Pack
-                mod = mod.getData(CFPackData.minecraft);
-                if (Objects.isNull(mod) || Objects.isNull(mod.downloadUrl)) continue;
-                this.files[i] = new ModFile(mod.getFileName(), mod.downloadUrl, mod.fileSize.intValue());
+                CFManifest.CFModFile mod = CFPackData.files[i];
+                this.files[i] = new ModFile("CF-PACK_MOD", Integer.toString(mod.fileID), mod.projectID);
+                if (shouldGatherData) this.gatherCFModInformation(i);
             }
-            logger.print("Finished gathering data about mods, got required data for " + this.files.length + " out of " + RandomUtils.intGrammar(CFPackData.files.length, " mod.", " mods.", true));
+
+            if (shouldGatherData) logger.print("Finished gathering data about mods, got required data for " + this.clearCFModFiles() + " out of " + RandomUtils.intGrammar(CFPackData.files.length, " mod.", " mods.", true));
             System.out.println("---------------------------------------------------------------------");
         } catch (Exception e) {
             logger.logStackTrace("Interpretation of CF Manifest failed!", e);
@@ -360,6 +363,51 @@ public class CDLInstance {
         logger.log("Translation successful.");
         return this;
     }
+
+    /**
+     * This method is used to gather information for CF-PACK_MOD returned from {@link CDLInstance#importCFPack(CFManifest, boolean)} when data gathering was not enabled.
+     * @param index Index to a mod file to gather information about.
+     * @apiNote If the method fails to gather information, the mod is left at the original state. Look for CF-PACK_MOD at the filename to get information if the gathering was successful.
+     */
+    public void gatherCFModInformation(int index) {
+        //TODO: Create own getData() method. Replace use of Deprecated method.
+        // Additionally make use of multithreading and experimental option.
+        // - Mods without data support
+        // - Mods without any data statistics
+        // - Required data present for x out of y for CF Pack
+        ModFile mod = this.files[index];
+        if (!ArgumentDecoder.getInstance().isPackMode() || !Objects.equals(mod.fileName, "CF-PACK_MOD")) return;
+
+        CFManifest.minecraft CFminecraft = new CFManifest.minecraft();
+        CFminecraft.version = this.minecraftData.version;
+        CFminecraft.modLoaders = new CFManifest.modLoaders[] {
+            new CFManifest.modLoaders(this.modLoaderData.modLoader, true)
+        };
+
+        CFManifest.CFModFile CFmod = new CFManifest.CFModFile(mod.fileLength, Integer.parseInt(mod.downloadURL)).getData(CFminecraft);
+        if (Objects.isNull(CFmod) || Objects.isNull(CFmod.downloadUrl)) return;
+        this.files[index] = CFmod.toCDLModFile();
+    }
+
+    /**
+     * This method removes all CFModFiles from the file list of this object, overriding current array with a fresh one.
+     * @return Integer with amount of mods removed.
+     */
+    public int clearCFModFiles() {
+        int originalLength = this.files.length;
+        this.files = (ModFile[]) Arrays.stream(this.files).dropWhile(mod -> Objects.equals(mod.fileName, "CF-PACK_MOD")).toArray();
+        return originalLength - this.files.length;
+    }
+
+    /**
+     * This method is used to fill up data in CDLInstance Object with information from passed CFManifest object. It automatically tries to gather information about mods present in the manifest object.
+     * @param CFPackData CFManifest to import data from.
+     * @return Itself, for easier use after importing.
+     * @throws UnexpectedException when Exception occurs in the translating code.
+     * @apiNote This method DOES NOT return Hashes used for verification of the downloads. Filling up missing hashes is required to do at the download process.
+     */
+    @ApiStatus.Experimental
+    public CDLInstance importCFPack(@NotNull CFManifest CFPackData) throws UnexpectedException { return this.importCFPack(CFPackData, true);}
 
     // Data Fields
     public String instanceName;
