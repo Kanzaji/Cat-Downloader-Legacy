@@ -369,11 +369,8 @@ public class CDLInstance {
      * @apiNote If the method fails to gather information, the mod is left at the original state. Look for CF-PACK_MOD at the filename to get information if the gathering was successful.
      */
     public void gatherCFModInformation(int index) {
-        //TODO: Create own getData() method. Replace use of Deprecated method.
+        //TODO: Create new getData() method. Replace use of Deprecated method.
         // Additionally make use of multithreading and experimental option.
-        // - Mods without data support
-        // - Mods without any data statistics
-        // - Required data present for x out of y for CF Pack
         ModFile mod = this.files[index];
         if (!ArgumentDecoder.getInstance().isPackMode() || !Objects.equals(mod.fileName, "CF-PACK_MOD")) return;
 

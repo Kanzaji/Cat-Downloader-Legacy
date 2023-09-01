@@ -114,7 +114,13 @@ public class CFManifest {
                         // OKAY This is not going to happen. CF Server doesn't want to send the data I need, and (at least for this project) I am not going to implement full blown web-browser here.
                         // Note is staying however for future, and because I will be importing this project to the one I am going to actually implement a web browser.
 
-                        logger.warn("No data was received for file id " + fileID + " from project " + projectID + "! Falling back to latest version of the mod for minecraft version requested by the modpack (" + minecraftData.version + ").");
+                        logger.warn("No data was received for file id " + fileID + " from project " + projectID + " (Mod: \"" + downloadData.title + "\")! Falling back to latest version of the mod for minecraft version requested by the modpack (" + minecraftData.version + ").");
+                        DataGatheringWarnings.add(
+                                "The file requested by the modpack for the mod \"" + downloadData.title + "\" wasn't found! " +
+                                "The app will download latest version of the mod if possible. If you plan on playing on the server, or the game crashes due to update, please download the mod manually.\n" +
+                                "   > CurseForge project link: " + ((downloadData.urls.curseforge == null) ? downloadData.urls.project : downloadData.urls.curseforge) + "\n" +
+                                "   > CurseForge possible file link: " + ((downloadData.urls.curseforge == null) ? downloadData.urls.project : downloadData.urls.curseforge) + "/files/" + fileID
+                        );
 
                         for (legacyFile file : downloadData.files) {
                             Set<String> asSet = new HashSet<>(Arrays.asList(file.versions));
@@ -203,7 +209,7 @@ public class CFManifest {
                             DataGatheringWarnings.add(
                                     "403 (Access denied) Error occurred while trying to request data for project " + projectID + "! Mod has to be downloaded manually at this moment." +
                                     "\n     > Site with CurseForge link: https://cfwidget.com/" + projectID + "?&version=" + fileID +
-                                    "\n     > Please report it on my github (Link at the end of the log file) if this still happens after waiting few minutes!"
+                                    "\n     > Please report it on my github (Link at the end of the log file) if this still happens after waiting for some time!"
                             );
                             return CFModFileData;
                         }
@@ -264,6 +270,7 @@ public class CFManifest {
         private urls urls;
         private legacyFile[] files;
         private downloadData download;
+        private String title;
     }
 
     private static class downloadData {

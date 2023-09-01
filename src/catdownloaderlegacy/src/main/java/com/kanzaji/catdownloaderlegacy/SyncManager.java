@@ -25,6 +25,7 @@
 package com.kanzaji.catdownloaderlegacy;
 
 import com.kanzaji.catdownloaderlegacy.data.CDLInstance;
+import com.kanzaji.catdownloaderlegacy.data.CFManifest;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import com.kanzaji.catdownloaderlegacy.utils.FileUtils;
 import com.kanzaji.catdownloaderlegacy.utils.RandomUtils;
@@ -245,6 +246,7 @@ public class SyncManager {
      * @throws NullPointerException when downloadResults are null.
      */
     private void decodeDownloadResults(@NotNull List<Future<Integer[]>> downloadResults) {
+        int initFailedDownloadsSize = failedDownloads.size();
         Objects.requireNonNull(downloadResults);
         for (int i = downloadResults.size() - 1; i >= 0; i--) {
             try {
@@ -273,7 +275,7 @@ public class SyncManager {
 
         logger.print(
             "Finished downloading process! " +
-                ((failedDownloads.size() > 0)?
+                ((failedDownloads.size()-initFailedDownloadsSize > 0)?
                     RandomUtils.intGrammar(
                             missing.size() + corrupted.size() - failedDownloads.size(),
                             " mod out of " + (missing.size() + corrupted.size()) +" was",
@@ -426,6 +428,14 @@ public class SyncManager {
                     }
                 });
             }
+            System.out.println("---------------------------------------------------------------------");
+        }
+        //TODO: Proper warning from the data gathering, this is here just to give info that some mods were not found and fallback was found to give possible to play instance!
+        if (CFManifest.DataGatheringWarnings.size() > 0) {
+            logger.print("Data gathering warnings found!",1);
+            logger.print("This might signal that some mods were not found and fallback was used.",1);
+            logger.print("Please inspect your log file at " + logger.getLogPath() + " for more information.",1);
+            CFManifest.DataGatheringWarnings.forEach(warn -> logger.warn("\n"+warn));
             System.out.println("---------------------------------------------------------------------");
         }
     }
