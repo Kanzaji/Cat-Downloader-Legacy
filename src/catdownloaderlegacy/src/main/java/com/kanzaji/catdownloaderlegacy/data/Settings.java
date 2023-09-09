@@ -48,15 +48,19 @@ public class Settings {
             "isUpdaterActive",
             "isFileSizeVerificationActive",
             "isHashVerificationActive",
-            "modBlackList"
+            "modBlackList",
+            "dataCache",
+            "dataCacheDirectory"
     };
 
     public String mode;
     public String workingDirectory;
     public String logDirectory;
+    public String dataCacheDirectory;
     public int threadCount;
     public int downloadAttempts;
     public int logStockpileSize;
+    public boolean dataCache;
     public boolean isLoggerActive;
     public boolean shouldStockpileLogs;
     public boolean shouldCompressLogFiles;

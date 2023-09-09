@@ -46,7 +46,24 @@ import java.io.IOException;
 
 
 /**
+ * <h3>Class Description</h3>
  * SettingsManager is a class used to manage, create, update and load Settings file for Cat-Downloader.
+ * <h3>Adding new key to Settings file</h3>
+ * <ul>
+ *     <li>Add new key to {@code settings.json5} file in the assets folder.</li>
+ *     <li>Add new key to {@link Settings#SettingsKeys} array and create new field with the name of the key.</li>
+ *     <li>Add new field and get method to {@link ArgumentDecoder}.</li>
+ *     <li>Add key handlers to: <ul>
+ *         <li>{@link ArgumentDecoder#loadFromSettings(Settings, boolean)}</li>
+ *         <li>{@link SettingsManager#generateSettingsFromARD()}</li>
+ *         <li>{@link SettingsManager#saveSettings(Settings)}</li>
+ *     </ul></li>
+ * </ul><h3>Optional steps</h3>
+ * <ul>
+ *     <li>If key is not Settings exclusive, add Argument Handler to the {@link ArgumentDecoder#decodeArguments(String[])}.</li>
+ *     <li>If Required, add special handler in {@link SettingsManager#parseSettings()}.</li>
+ *     <li>If Required, add special handler in {@link SettingsManager#validateSettings(Settings)}.</li>
+ * </ul>
  * @see SettingsManager#initSettings()
  * @see SettingsManager#getSettings()
  * @see SettingsManager#updateSettings(Settings)
@@ -166,8 +183,14 @@ public class SettingsManager {
         logger.log("Parsing data from settings file...");
         try {
             Settings SettingsFileData = gson.fromJson(Files.readString(SettingsFile), Settings.class);
+
+            if (Objects.isNull(SettingsFileData.logDirectory)) SettingsFileData.logDirectory = "";
+            if (Objects.isNull(SettingsFileData.workingDirectory)) SettingsFileData.workingDirectory = "";
+            if (Objects.isNull(SettingsFileData.dataCacheDirectory)) SettingsFileData.dataCacheDirectory = SettingsFileData.logDirectory;
+
             SettingsFileData.mode = SettingsFileData.mode.toLowerCase(Locale.ROOT);
             ModBlackList = (Objects.isNull(SettingsFileData.modBlackList))? new Settings.BlackList<>(): SettingsFileData.modBlackList;
+
             logger.log("Parsing of Settings was successful!");
             return SettingsFileData;
         } catch (Exception e) {
@@ -193,12 +216,9 @@ public class SettingsManager {
             errors.add("Mode: " + SettingsData.mode + " is not correct! Available modes are: CF-Pack // CF-Instance // Modrinth // Automatic");
         }
         if (Objects.isNull(SettingsData.workingDirectory)) {
-            errors.add("Working Directory is null!");
+            SettingsData.workingDirectory = "";
         } else if (!Files.exists(Path.of(SettingsData.workingDirectory))) {
             errors.add("Working Directory in Settings file does not exists!");
-        }
-        if (Objects.isNull(SettingsData.logDirectory)) {
-            errors.add("Log Directory is null!");
         }
         if (SettingsData.threadCount < 1) {
             errors.add("Thread count can't be below 1!");
@@ -253,8 +273,7 @@ public class SettingsManager {
         logger.log("Saving settings to a file...");
         List<String> SettingsLines = Files.readAllLines(SettingsFile);
         Files.writeString(SettingsFile, "", StandardOpenOption.TRUNCATE_EXISTING);
-        AtomicReference<List<String>> existingKeys = new AtomicReference<>();
-        existingKeys.set(new LinkedList<>(Arrays.asList(Settings.SettingsKeys)));
+        AtomicReference<List<String>> existingKeys = new AtomicReference<>(new LinkedList<>(Arrays.asList(Settings.SettingsKeys)));
 
         Iterator<String> it = SettingsLines.listIterator();
 
@@ -270,9 +289,11 @@ public class SettingsManager {
                         case "mode" -> "\"" + SettingsData.mode + "\"";
                         case "workingDirectory" -> "\"" + SettingsData.workingDirectory.replaceAll("\\\\", "/") + "\"";
                         case "logDirectory" -> "\"" + SettingsData.logDirectory.replaceAll("\\\\", "/") + "\"";
+                        case "dataCacheDirectory" -> "\"" + SettingsData.dataCacheDirectory.replaceAll("\\\\", "/") + "\"";
                         case "threadCount" -> SettingsData.threadCount;
                         case "downloadAttempts" -> SettingsData.downloadAttempts;
                         case "logStockpileSize" -> SettingsData.logStockpileSize;
+                        case "dataCache" -> SettingsData.dataCache;
                         case "isLoggerActive" -> SettingsData.isLoggerActive;
                         case "shouldStockpileLogs" -> SettingsData.shouldStockpileLogs;
                         case "shouldCompressLogFiles" -> SettingsData.shouldCompressLogFiles;
@@ -336,6 +357,8 @@ public class SettingsManager {
         ARDConfig.isHashVerificationActive = ARD.isHashVerActive();
         ARDConfig.isFileSizeVerificationActive = ARD.isFileSizeVerActive();
         ARDConfig.modBlackList = new Settings.BlackList<>();
+        ARDConfig.dataCache = ARD.isCacheEnabled();
+        ARDConfig.dataCacheDirectory = ARD.getCachePath();
         logger.log("Generation of Settings from ARD finished!");
         return ARDConfig;
     }

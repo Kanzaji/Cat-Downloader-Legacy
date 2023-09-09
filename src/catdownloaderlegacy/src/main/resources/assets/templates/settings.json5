@@ -17,10 +17,16 @@
   "isUpdaterActive": true,
 
   // dataCache -> Determines if a "cache" file is generated, with calculated hashes for faster verification after install.
-  // Caches are considered valid until an update of any mod file is found.
+  // Cached values are valid until any information about modpack doesn't change. (Excluding Mods and ModLoader version)
   // Accepts: Boolean Value (Example: true)
   // Argument representation: -Cache:
   "dataCache": true,
+
+  // dataCacheDirectory -> Determines directory where the cache file is going to be stored.
+  // Empty String will result in using LOGS Directory for storing Cache file.
+  // Accepts: Both relative and absolute Paths as String.
+  // Argument representation: -CachePath:
+  "dataCacheDirectory": "",
 
   // LogDirectory -> Determines a directory where the app will generate and store log files.
   // Empty string will result in the app generating log files in the WorkingDirectory.

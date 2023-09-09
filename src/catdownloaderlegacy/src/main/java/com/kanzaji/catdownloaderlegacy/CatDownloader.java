@@ -37,6 +37,7 @@ import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.rmi.UnexpectedException;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -102,6 +103,8 @@ public final class CatDownloader {
             fetchAndVerifyManifestFile();
 
             new SyncManager(CDLInstanceData).runSync();
+
+            createCacheFile();
 
             logger.print("Entire Process took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s");
             RandomUtils.closeTheApp(0);
@@ -287,10 +290,14 @@ public final class CatDownloader {
      * @apiNote This method is CDL exclusive! Instance files are going to be used properly in the launcher version.
      */
     private static void parseCachedInstanceFile() {
+        if (!ARD.isCacheEnabled()) {
+            logger.warn("Caches are disabled! Looking for cached version of the CDLInstance will be skipped.");
+            return;
+        }
+
         logger.log("Looking for cached version of the CDLInstance...");
         try {
-            //TODO: Change this to Cache path!
-            Path cachedPath = Path.of(ARD.getLogPath(), "CDL-Instance-cache.json");
+            Path cachedPath = Path.of(ARD.getCachePath(), "CDL-Instance-cache.json");
             if (Files.exists(cachedPath)) {
                 CDLInstance cachedCDLInstance = CDLInstance.parseJson(cachedPath);
 
@@ -303,21 +310,23 @@ public final class CatDownloader {
                     }
                 }
 
+                int length = cachedCDLInstance.files.length;
+
                 // Dropping any mods that aren't present in the current Instance data.
-                cachedCDLInstance.files = Arrays.stream(cachedCDLInstance.files).dropWhile(
-                    (cachedFile) -> Arrays.stream(CDLInstanceData.files).noneMatch(
+                cachedCDLInstance.files = Arrays.stream(cachedCDLInstance.files).filter(
+                    (cachedFile) -> Arrays.stream(CDLInstanceData.files).anyMatch(
                         (file) ->
                             Objects.equals(cachedFile.fileLength, file.fileLength) &&
                             Objects.equals(cachedFile.fileName, file.fileName) &&
                             ((Objects.isNull(file.path))? Objects.equals(cachedFile.path, "mods/" + file.fileName): Objects.equals(cachedFile.path, file.path)) &&
                             Objects.equals(cachedFile.downloadURL, file.downloadURL)
                         )
-                ).toList().toArray(cachedCDLInstance.files);
+                ).toList().toArray(new CDLInstance.ModFile[]{});
 
-                long removedCount = Arrays.stream(cachedCDLInstance.files).filter(Objects::isNull).count();
+                int removedCount = length - cachedCDLInstance.files.length;
 
-                logger.log("Removed " + RandomUtils.intGrammar((int) removedCount,  " mod", "mods", true) + " from the cached instance file due to them missing from the main data set.");
-                logger.log("Updating information for " + (cachedCDLInstance.files.length - removedCount) + " out of " + RandomUtils.intGrammar(CDLInstanceData.files.length,  " mod.", "mods.", true));
+                logger.log("Removed " + RandomUtils.intGrammar(removedCount,  " mod", " mods", true) + " from the cached instance file due to them missing from the main data set.");
+                logger.log("Updating information for " + cachedCDLInstance.files.length + " out of " + RandomUtils.intGrammar(CDLInstanceData.files.length,  " mod.", " mods.", true));
 
                 // Another try block because if something goes wrong here, it is not safe to continue execution.
                 try {
@@ -336,15 +345,46 @@ public final class CatDownloader {
                         }
                     }
                 } catch (Exception e) {
-                    throw new RuntimeException("Exception thrown while updating hash information of the main data set. Execution can't continue.", e);
+                    throw new IllegalStateException("Exception thrown while updating hash information of the main data set. Execution can't continue.", e);
                 }
             } else {
                 logger.log("Couldn't find cached version of the CDLInstance. Verification will be performed from the source.");
             }
-        } catch (RuntimeException e) {
+        } catch (IllegalStateException e) {
             throw e;
         } catch (Exception e) {
             logger.logStackTrace("Exception thrown while looking for cached version of CDLInstance! Verification will be performed from the source.", e);
+        }
+    }
+
+    /**
+     * Used to create Cache file based on the information that was acquired by the app at the runtime.
+     * Increases the speed of the instance verification process.
+     */
+    private static void createCacheFile() {
+        if (!ARD.isCacheEnabled()) {
+            logger.warn("Caches are disabled! Cache file is not going to be generated in this session.");
+            return;
+        }
+
+        try {
+            Path cachedPath = Path.of(ARD.getCachePath(), "CDL-Instance-cache.json");
+            if (Files.notExists(cachedPath)) {
+                logger.log("Cache file not found! Creating required path for the Cache file...");
+                FileUtils.createRequiredPathToAFile(cachedPath);
+                Files.createFile(cachedPath);
+            }
+
+            logger.log("Saving cache data...");
+            Files.writeString(cachedPath, CDLInstanceData.toString(), StandardOpenOption.TRUNCATE_EXISTING);
+            logger.log("Cache data has been saved.");
+        } catch (Exception e) {
+            logger.logStackTrace("Exception thrown while saving Cache data!", e);
+            try {
+                Files.deleteIfExists(Path.of(ARD.getCachePath(), "CDL-Instance-cache.json"));
+            } catch (Exception e2) {
+                logger.logStackTrace("Exception thrown while deleting cache file after main exception! Was the original exception IO Error? Is the path write-protected?", e);
+            }
         }
     }
 

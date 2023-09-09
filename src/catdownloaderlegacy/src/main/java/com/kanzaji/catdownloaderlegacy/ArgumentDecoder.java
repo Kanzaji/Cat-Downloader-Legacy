@@ -51,11 +51,13 @@ public class ArgumentDecoder {
     private String WorkingDirectory = "";
     private String SettingsPath = "";
     private String LogPath = "";
+    private String CachePath = "";
     private String Mode = "automatic";
     private int ThreadCount = 16;
     private int DownloadAttempts = 5;
     private int LogStockSize = 10;
     private boolean UpdaterActive = true;
+    private boolean CacheActive = true;
     private boolean LoggerActive = true;
     private boolean StockpileLogs = true;
     private boolean CompressStockPiledLogs = true;
@@ -98,6 +100,7 @@ public class ArgumentDecoder {
                 case "workingdirectory" -> this.WorkingDirectory = validatePath(value, "-WorkingDirectory");
                 case "settingspath" -> this.SettingsPath = validatePath(value, "-SettingsPath");
                 case "logspath" -> this.LogPath = validatePath(value, "-LogsPath", true);
+                case "cachepath" -> this.CachePath = validatePath(value, "-CachePath", true);
 
                 // Int Arguments
                 case "threadcount" -> this.ThreadCount = getIntValue(value, "-ThreadCount", 1, 128);
@@ -108,6 +111,7 @@ public class ArgumentDecoder {
                 case "sizeverification" -> this.FileSizeVerification = getBooleanValue(value);
                 case "hashverification" -> this.HashVerification = getBooleanValue(value);
                 case "updater" -> this.UpdaterActive = getBooleanValue(value);
+                case "cache" -> this.CacheActive = getBooleanValue(value);
                 case "logger" -> this.LoggerActive = getBooleanValue(value);
                 case "stockpilelogs" -> this.StockpileLogs = getBooleanValue(value);
                 case "compresslogs" -> this.CompressStockPiledLogs = getBooleanValue(value);
@@ -131,6 +135,10 @@ public class ArgumentDecoder {
                 default -> {
                 }
             }
+        }
+
+        if (Objects.equals(this.CachePath, "")) {
+            this.CachePath = this.LogPath;
         }
     }
 
@@ -242,6 +250,9 @@ public class ArgumentDecoder {
         logger.log("> Compressing of logs active: " + this.CompressStockPiledLogs);
         logger.log("> Logs Path: " + this.LogPath);
         logger.log("- Full Path: " + Path.of(this.LogPath).toAbsolutePath());
+        logger.log("> Caches enabled: " + this.CacheActive);
+        logger.log("> Caches Path: " + this.CachePath);
+        logger.log("- Full Path: " + Path.of(this.CachePath).toAbsolutePath());
         logger.log("> Thread count for downloads: " + this.ThreadCount);
         logger.log("> Download attempts for re-downloads: " + this.DownloadAttempts);
         logger.log("> Hash Verification: " + this.HashVerification);
@@ -267,6 +278,8 @@ public class ArgumentDecoder {
         this.FileSizeVerification = SettingsData.isFileSizeVerificationActive;
         this.HashVerification = SettingsData.isHashVerificationActive;
         this.Experimental = SettingsData.experimental;
+        this.CacheActive = SettingsData.dataCache;
+        this.CachePath = (Objects.equals(SettingsData.dataCacheDirectory, "")? this.LogPath: SettingsData.dataCacheDirectory);
         if (Print) { printConfiguration("Program Configuration from Settings:");}
     }
 
@@ -298,6 +311,7 @@ public class ArgumentDecoder {
     public String getWorkingDir() {return this.WorkingDirectory;}
     public String getSettingsPath() {return this.SettingsPath;}
     public String getLogPath() {return this.LogPath;}
+    public String getCachePath() {return this.CachePath;};
     public int getDownloadAttempts() {return this.DownloadAttempts;}
     public int getThreads() {return this.ThreadCount;}
     public int getLogStockSize() {return this.LogStockSize;}
@@ -311,4 +325,5 @@ public class ArgumentDecoder {
     public boolean isHashVerActive() {return this.HashVerification;}
     public boolean isExperimental() {return this.Experimental;}
     public boolean isBypassNetworkCheckActive() {return this.BypassNetworkCheck;}
+    public boolean isCacheEnabled() {return this.CacheActive;}
 }
