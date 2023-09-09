@@ -290,8 +290,12 @@ public final class CatDownloader {
      * @apiNote This method is CDL exclusive! Instance files are going to be used properly in the launcher version.
      */
     private static void parseCachedInstanceFile() {
-        if (!ARD.isCacheEnabled()) {
-            logger.warn("Caches are disabled! Looking for cached version of the CDLInstance will be skipped.");
+        if (!ARD.isCacheEnabled() || ARD.isPackMode()) {
+            if (ARD.isPackMode()) {
+                logger.warn("Caches are not-available in the CF-Pack mode! Looking for cached versions of the CDLInstance will be skipped.");
+            } else {
+                logger.warn("Caches are disabled! Looking for cached version of the CDLInstance will be skipped.");
+            }
             return;
         }
 
@@ -362,8 +366,12 @@ public final class CatDownloader {
      * Increases the speed of the instance verification process.
      */
     private static void createCacheFile() {
-        if (!ARD.isCacheEnabled()) {
-            logger.warn("Caches are disabled! Cache file is not going to be generated in this session.");
+        if (!ARD.isCacheEnabled() || ARD.isPackMode()) {
+            if (ARD.isPackMode()) {
+                logger.warn("Caches are not-available in the CF-Pack mode! Cache file is not going to be generated in this session.");
+            } else {
+                logger.warn("Caches are disabled! Cache file is not going to be generated in this session.");
+            }
             return;
         }
 
