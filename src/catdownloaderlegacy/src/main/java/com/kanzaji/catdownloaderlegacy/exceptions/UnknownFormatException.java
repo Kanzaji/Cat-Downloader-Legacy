@@ -22,69 +22,31 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.cdlupdater.loggers;
-
-import java.nio.file.Path;
-import java.util.Objects;
+package com.kanzaji.catdownloaderlegacy.exceptions;
 
 /**
- * This class is used to create custom logger services, by wrapping around the single instance of the main {@link Logger} service.
- * @apiNote Imported from com.kanzaji.catdownloaderlegacy
+ * Signals that parsed file is in a format that is either incorrect or is an unknown format.
  */
-public class LoggerCustom implements ILogger {
-    private final Logger logger = Logger.getInstance();
-    private String name = "default";
-    public LoggerCustom(String name) {
-        if (Objects.nonNull(name)) this.name = name;
-    }
+public class UnknownFormatException extends RuntimeException {
 
     /**
-     * Used to initialize Logger. Uses old log file if present.
+     * Constructs UnknownFormatException with no detail message.
      */
-    public void init(Path logPath) {
-        logger.init(logPath);
-    }
+    public UnknownFormatException() {super();}
 
     /**
-     * Used to initialize Logger. Uses old log file if present.
+     * Constructs UnknownFormatException with the specified detail message.
      */
-    @Override
-    public void init() {
-        logger.init(null);
-    }
+    public UnknownFormatException(String msg) {super(msg);}
 
     /**
-     * Used to get a path to a log file.
-     * @return String with the absolute path of a log file.
+     * Constructs UnknownFormatException with the specified detail message and cause;
      */
-    @Override
-    public String getLogPath() {
-        return logger.getLogPath();
-    }
+    public UnknownFormatException(String msg, Throwable e) {super(msg, e);}
 
     /**
-     * Used to disable Logger and remove the log file.
+     * Constructs a new exception with the specified cause and a detail message of (cause==null ? null : cause.toString()) (which typically contains the class and detail message of cause).
      */
-    @Override
-    public void exit() {
-        logger.exit();
-    }
+    public UnknownFormatException(Throwable e) {super(e);}
 
-    /**
-     * Custom Log method that allows to set level of log, message and attach throwable.
-     * Available levels:
-     * <ul>
-     *     <li>0 | LOG</li>
-     *     <li>1 | WARN</li>
-     *     <li>2 | ERROR</li>
-     *     <li>3 | CRITICAL</li>
-     * </ul>
-     * @param msg String message to log to a log file.
-     * @param type Int between 0 and 2 specifying selected level. Defaults to 0. (Nullable)
-     * @param throwable Exception to log. (Nullable)
-     */
-    @Override
-    public void logCustom(String msg, int type, Throwable throwable) {
-        logger.logCustom("[" + name + "] " + msg, type, throwable);
-    }
 }

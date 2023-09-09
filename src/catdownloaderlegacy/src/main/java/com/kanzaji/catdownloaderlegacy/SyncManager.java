@@ -84,20 +84,18 @@ public class SyncManager {
         CDLTemp = Path.of(WORKPATH.toString(), "CDLTemp");
 
         logger.log("Running GC to clear out memory before running synchronization process...");
-        Runtime run = Runtime.getRuntime();
-        long memory = run.totalMemory() - run.freeMemory();
-        System.gc();
-        logger.log(((float)(memory - run.totalMemory() + run.freeMemory())/(1024L*1024L)) + " MegaBytes were cleared up.");
-
+        RandomUtils.runGCL();
         logger.print("Starting synchronization process!");
         System.out.println("---------------------------------------------------------------------");
 
         verifyInstalledMods();
         printVerificationResults();
+        RandomUtils.runGCL();
 
         removeRemovedMods();
 
         downloadRequiredMods();
+        RandomUtils.runGCL();
 
         printStatistics();
 
@@ -109,7 +107,7 @@ public class SyncManager {
     /**
      * This method is used internally by {@link SyncManager} to query verification and lookup tasks for mods in the specified Instance. Respects Blacklist from the Settings File.
      * @throws InterruptedException when Executor is interrupted.
-     * @throws TimeoutException if Executor doesn't finish before 24 hours pass.
+     * @throws TimeoutException if the Executor doesn't finish before 24-hours pass.
      */
     private void verifyInstalledMods() throws InterruptedException, TimeoutException {
         List<Future<Integer[]>> verificationResults = new LinkedList<>();
@@ -216,7 +214,7 @@ public class SyncManager {
     /**
      * This method is used internally by {@link SyncManager} to download any mods that are missing from the local installation of the instance passed to the constructor.
      * @throws InterruptedException when Executor is interrupted.
-     * @throws TimeoutException if Executor doesn't finish before 24 hours pass.
+     * @throws TimeoutException if the Executor doesn't finish before 24-hours pass.
      */
     private void downloadRequiredMods() throws InterruptedException, TimeoutException {
         HashSet<Integer> downloads = new HashSet<>(missing);
@@ -430,11 +428,13 @@ public class SyncManager {
             }
             System.out.println("---------------------------------------------------------------------");
         }
-        //TODO: Proper warning from the data gathering, this is here just to give info that some mods were not found and fallback was found to give possible to play instance!
+        //TODO: Proper warning from the data gathering,
+        // this is here just to give info that some mods were not found
+        // and fallback was found to give possibility to play that instance!
         if (CFManifest.DataGatheringWarnings.size() > 0) {
             logger.print("Data gathering warnings found!",1);
             logger.print("This might signal that some mods were not found and fallback was used.",1);
-            logger.print("Please inspect your log file at " + logger.getLogPath() + " for more information.",1);
+            System.out.println("Please inspect your log file at " + logger.getLogPath() + " for more information.");
             CFManifest.DataGatheringWarnings.forEach(warn -> logger.warn("\n"+warn));
             System.out.println("---------------------------------------------------------------------");
         }

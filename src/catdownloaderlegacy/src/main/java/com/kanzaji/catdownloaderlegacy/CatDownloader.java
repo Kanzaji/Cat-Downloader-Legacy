@@ -27,6 +27,7 @@ package com.kanzaji.catdownloaderlegacy;
 import com.kanzaji.catdownloaderlegacy.data.CDLInstance;
 import com.kanzaji.catdownloaderlegacy.data.CFManifest;
 import com.kanzaji.catdownloaderlegacy.data.MRIndex;
+import com.kanzaji.catdownloaderlegacy.exceptions.FormatVersionMismatchException;
 import com.kanzaji.catdownloaderlegacy.guis.GUIUtils;
 import com.kanzaji.catdownloaderlegacy.data.CFMinecraftInstance;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
@@ -79,7 +80,7 @@ public final class CatDownloader {
     /**
      * Used to hold data for the SyncManager and manifest parsing.
      */
-    private static final CDLInstance CDLInstanceData = new CDLInstance();
+    private static final CDLInstance CDLInstanceData = CDLInstance.create();
 
     /**
      * Main method of the app.
@@ -120,7 +121,7 @@ public final class CatDownloader {
         if (ARD.isAutomaticModeDetectionActive()) {
             logger.log("Trying to automatically determine required mode for the app...");
             Map<String, String> supportedFiles = new HashMap<>();
-            // "file" , "mode"
+            // "file", "mode"
             // #r at the beginning -> regex searching. Requires special handling in the decoding phase for each mode.
             supportedFiles.put("modrinth.index.json", "modrinth");
             supportedFiles.put("minecraftinstance.json", "cf-instance");
@@ -231,6 +232,9 @@ public final class CatDownloader {
         }
 
         logger.log("Data fetched successfully.");
+
+        parseCachedInstanceFile();
+
         logger.print("Installing modpack " +
             CDLInstanceData.modpackData.name +
             ((CDLInstanceData.modpackData.name.endsWith(" "))? "": " ") +
@@ -278,6 +282,72 @@ public final class CatDownloader {
 
     }
 
+    /**
+     * Used to parse Cached Instance File and fill missing hash values for the main CDLInstanceData.
+     * @apiNote This method is CDL exclusive! Instance files are going to be used properly in the launcher version.
+     */
+    private static void parseCachedInstanceFile() {
+        logger.log("Looking for cached version of the CDLInstance...");
+        try {
+            //TODO: Change this to Cache path!
+            Path cachedPath = Path.of(ARD.getLogPath(), "CDL-Instance-cache.json");
+            if (Files.exists(cachedPath)) {
+                CDLInstance cachedCDLInstance = CDLInstance.parseJson(cachedPath);
+
+                if (!CDLInstanceData.equals(cachedCDLInstance, true)) {
+                    FileUtils.delete(cachedPath);
+                    if (CDLInstanceData.cdlFormatVersion.equals(cachedCDLInstance.cdlFormatVersion)) {
+                        throw new IllegalArgumentException("Cached CDLInstance json isn't for the pack currently being installed, or the details for the pack has changed. Cache file will be regenerated at the end of the sync process.");
+                    } else {
+                        throw new FormatVersionMismatchException("Cached CDLInstance json is different version than currently supported! Cache file will be regenerated at the end of the sync process.");
+                    }
+                }
+
+                // Dropping any mods that aren't present in the current Instance data.
+                cachedCDLInstance.files = Arrays.stream(cachedCDLInstance.files).dropWhile(
+                    (cachedFile) -> Arrays.stream(CDLInstanceData.files).noneMatch(
+                        (file) ->
+                            Objects.equals(cachedFile.fileLength, file.fileLength) &&
+                            Objects.equals(cachedFile.fileName, file.fileName) &&
+                            ((Objects.isNull(file.path))? Objects.equals(cachedFile.path, "mods/" + file.fileName): Objects.equals(cachedFile.path, file.path)) &&
+                            Objects.equals(cachedFile.downloadURL, file.downloadURL)
+                        )
+                ).toList().toArray(cachedCDLInstance.files);
+
+                long removedCount = Arrays.stream(cachedCDLInstance.files).filter(Objects::isNull).count();
+
+                logger.log("Removed " + RandomUtils.intGrammar((int) removedCount,  " mod", "mods", true) + " from the cached instance file due to them missing from the main data set.");
+                logger.log("Updating information for " + (cachedCDLInstance.files.length - removedCount) + " out of " + RandomUtils.intGrammar(CDLInstanceData.files.length,  " mod.", "mods.", true));
+
+                // Another try block because if something goes wrong here, it is not safe to continue execution.
+                try {
+                    for (CDLInstance.ModFile file : CDLInstanceData.files) {
+                        for (CDLInstance.ModFile cachedFile: cachedCDLInstance.files) {
+                            if (
+                                Objects.nonNull(cachedFile) &&
+                                Objects.equals(file.fileLength, cachedFile.fileLength) &&
+                                Objects.equals(file.fileName, cachedFile.fileName) &&
+                                ((Objects.isNull(file.path))? Objects.equals(cachedFile.path, "mods/" + file.fileName): Objects.equals(cachedFile.path, file.path)) &&
+                                Objects.equals(file.downloadURL, cachedFile.downloadURL)
+                            ) {
+                                file.hashes = cachedFile.hashes;
+                                break;
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException("Exception thrown while updating hash information of the main data set. Execution can't continue.", e);
+                }
+            } else {
+                logger.log("Couldn't find cached version of the CDLInstance. Verification will be performed from the source.");
+            }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.logStackTrace("Exception thrown while looking for cached version of CDLInstance! Verification will be performed from the source.", e);
+        }
+    }
+
     private static class Services {
         private static final LoggerCustom logger = new LoggerCustom("Main.Services");
 
@@ -302,7 +372,8 @@ public final class CatDownloader {
             }
 
             GUIUtils.setLookAndFeel();
-            // All arguments should be decoded in the ARD, however this method Overrides arguments, so it is required to run before ARD decoding.
+            // All arguments should be decoded in the ARD.
+            // However, this method Overrides arguments, so it is required to run before ARD decoding.
             if (Arrays.stream(ARGUMENTS).toList().contains("-PostUpdateRoutine")) Updater.updateCleanup();
 
             System.out.println("---------------------------------------------------------------------");
@@ -347,7 +418,7 @@ public final class CatDownloader {
 
             Updater.checkForUpdates();
 
-            // Redirects entire output of any Logger to a console!
+            // Redirects the entire output of any Logger to a console!
             if (!ARD.isLoggerActive()) logger.exit();
         }
     }

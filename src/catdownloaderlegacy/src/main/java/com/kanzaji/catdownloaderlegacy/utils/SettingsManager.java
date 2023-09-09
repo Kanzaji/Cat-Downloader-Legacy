@@ -147,7 +147,7 @@ public class SettingsManager {
     public static boolean areSettingsInitialized() {return SettingsInitialized;}
 
     /**
-     * This method returns full Settings object from {@link ArgumentDecoder} with parsed blacklist information.<br>
+     * This method returns full Settings Object from {@link ArgumentDecoder} with parsed blacklist information.<br>
      * @return {@link Settings} object with app configuration.
      * @apiNote This method <i>does not</i> return fresh information from a Settings file. For parsing new Data from a Settings File, call method {@link SettingsManager#refreshSettings()} before this one.
      * @see SettingsManager#refreshSettings()
@@ -258,7 +258,7 @@ public class SettingsManager {
 
         Iterator<String> it = SettingsLines.listIterator();
 
-        //NOTE: The simplest and fastest way to update Settings file would be to use GSON.toJson(), however that would remove all documentation and user notes.
+        //NOTE: The simplest and fastest way to update Settings file would be to use GSON.toJson(), however, that would remove all documentation and user notes.
         // That is why I went with the "Read all lines and update entries manually" way.
         while (it.hasNext()) {
             String Line = it.next();

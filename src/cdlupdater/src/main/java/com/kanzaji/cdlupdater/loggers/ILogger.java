@@ -32,7 +32,7 @@ import java.io.IOException;
 interface ILogger {
     /**
      * Used to initialize Logger. Creates new log file and overrides old one if present.
-     * Has to be implemented manually.
+     * It Has to be implemented manually.
      */
     void init();
 
@@ -46,9 +46,8 @@ interface ILogger {
     /**
      * Used to disable Logger and remove log file.
      * Has to be implemented manually.
-     * @throws IOException when log deletion failed.
      */
-    void exit() throws IOException;
+    void exit();
 
     /**
      * Logs a message to a log file.

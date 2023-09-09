@@ -151,13 +151,13 @@ public class ArgumentDecoder {
     }
 
     /**
-     * Used to parse {@link Integer} value from a {@link String}, and validate if it's contained in specified threshold.
+     * Used to parse {@link Integer} value from a {@link String}, and validate if it's contained in a specified threshold.
      * @param Value {@link String} with Integer value to parse.
      * @param Argument {@link String} with Name of the argument to provide in Exception.
      * @param MinValue {@link Integer} with Minimal threshold for parsed Integer.
      * @param MaxValue {@link Integer} with Maximal threshold for parsed Integer.
      * @return {@link Integer} parsed from provided String.
-     * @throws IllegalArgumentException when parsed Integer is out of provided threshold.
+     * @throws IllegalArgumentException when parsed Integer is out of the provided threshold.
      * @throws NumberFormatException when String doesn't contain Integer values!
      */
     private int getIntValue(String Value, String Argument, int MinValue, int MaxValue) throws IllegalArgumentException, NumberFormatException {
@@ -250,7 +250,7 @@ public class ArgumentDecoder {
     }
 
     /**
-     * Used to load data to ARD from Settings Manager.
+     * Used to load data to ARD from the Settings Manager.
      * @param SettingsData {@link Settings} object with data to load.
      */
     public void loadFromSettings(@NotNull Settings SettingsData, boolean Print) {
@@ -288,7 +288,7 @@ public class ArgumentDecoder {
         this.Mode = mode;
     }
 
-    // Just a spam of Get methods. nothing spectacular to see here.
+    // Just a spam of Get methods. Nothing spectacular to see here.
     public String[] getAvailableModes() {return modes;}
     public String getCurrentMode() {return this.Mode;}
     public boolean isPackMode() {return Objects.equals(this.Mode, "cf-pack");}

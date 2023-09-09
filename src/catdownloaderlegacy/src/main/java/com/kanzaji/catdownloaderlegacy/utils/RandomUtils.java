@@ -52,7 +52,7 @@ public class RandomUtils {
      */
     public static boolean checkIfJsonObject(String JSONObject) {
         try {
-            // Ignoring return value of gson#fromJson here is intended!.
+            // Ignoring the return value of gson#fromJson here is intended!.
             // When String isn't an JsonObject, it will throw an exception.
             gson.fromJson(JSONObject, Object.class);
             return true;
@@ -89,7 +89,7 @@ public class RandomUtils {
     }
 
     /**
-     * This method is used to shut down and wait specified amount of time for passed ExecutorService.
+     * This method is used to shut down and wait a specified amount of time for passed ExecutorService.
      * @param executor ExecutorService to shut down.
      * @param time Amount of time to wait for the Executor.
      * @param timeUnit TimeUnit to use with specified time.
@@ -125,5 +125,25 @@ public class RandomUtils {
             if (!Objects.equals(STE[i], STC[i])) break;
         }
         return StringToEdit.substring(i);
+    }
+
+    public static void runGC() {
+        runGC(true);
+    }
+
+    public static void runGCL() {
+        runGC(false);
+    }
+
+    public static void runGC(boolean skipLog) {
+        if (skipLog) {
+            System.gc();
+            return;
+        }
+
+        Runtime run = Runtime.getRuntime();
+        long memory = run.totalMemory() - run.freeMemory();
+        System.gc();
+        logger.log(("GC Manual Trigger! " + (float)(memory - run.totalMemory() + run.freeMemory())/(1024L*1024L)) + " MegaBytes were cleared up.");
     }
 }

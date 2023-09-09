@@ -53,7 +53,8 @@ public class LoggerCustom implements ILogger {
     }
 
     /**
-     * Used to finish initialization of the Logger. Handles function of Stockpiling of the logs, and moving the log file to a new location.
+     * Used to finish initialization of the Logger.
+     * Handles the Stockpiling function of the logs, and moving the log file to a new location.
      * @throws IllegalStateException when reading attributes of the compressed log files is not possible.
      * @throws IOException when IO Exception occurs.
      */
@@ -63,7 +64,7 @@ public class LoggerCustom implements ILogger {
 
     /**
      * Used to get a path to a log file.
-     * @return String with absolute path of a log file.
+     * @return String with the absolute path of a log file.
      */
     @Override
     public String getLogPath() {
@@ -100,7 +101,7 @@ public class LoggerCustom implements ILogger {
      *     <li>3 | CRITICAL</li>
      * </ul>
      * @param msg String message to log to a log file.
-     * @param type Int between 0 and 2 specifying selected level. Defaults to 0. (Nullable)
+     * @param type Int between 0 and 3 specifying selected level. Defaults to 0. (Nullable)
      * @param throwable Exception to log. (Nullable)
      */
     @Override

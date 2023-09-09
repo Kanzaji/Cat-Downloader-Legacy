@@ -132,7 +132,7 @@ public class UpdaterGUI {
     /**
      * This method sets changelog text!
      * @param text Text to be displayed in the changelog box.
-     * @throws NullPointerException when Changelog object is null.
+     * @throws NullPointerException when a Changelog object is null.
      */
     public static void setChangelogText(String text) {
         if (Objects.isNull(ChangelogText)) throw new NullPointerException("ChangelogText is null! Was GUI not started?");
@@ -144,7 +144,7 @@ public class UpdaterGUI {
      * This method sets versions in the "Current to Latest" text.
      * @param currentVersion Current App Version.
      * @param latestVersion Latest App Version.
-     * @throws NullPointerException if Changelog object is null.
+     * @throws NullPointerException if a Changelog object is null.
      */
     public static void setUpdateVersion(String currentVersion, String latestVersion) {
         if (Objects.isNull(UpdateText)) throw new NullPointerException("ChangelogText is null! Was GUI not started?");

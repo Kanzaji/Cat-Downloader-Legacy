@@ -73,7 +73,7 @@ public class CFManifest {
         public int fileSize;
 
         /**
-         * This method creates new {@link com.kanzaji.catdownloaderlegacy.data.CDLInstance.ModFile} object, with information taken from this object. It does not guarantee that returned mod file will not contain null or incorrect values.
+         * This method creates new {@link com.kanzaji.catdownloaderlegacy.data.CDLInstance.ModFile} object, with information taken from this object. It does not guarantee that the returned mod file will not contain null or incorrect values.
          * @return new {@link com.kanzaji.catdownloaderlegacy.data.CDLInstance.ModFile} with information from this object.
          */
         public CDLInstance.ModFile toCDLModFile() {return new CDLInstance.ModFile(this.getFileName(), this.downloadUrl, this.fileSize);}
@@ -84,7 +84,9 @@ public class CFManifest {
          * Used to gather required data for this object.
          * @param minecraftData {@link minecraft} object from the main Manifest Object.
          * @return {@link CFModFile} with data acquired in Data Gathering.
-         * @Deprecated This method is meant for a rework in separate class, because of that it is marked as deprecated and should be replaced with updated version whenever possible.
+         * @Deprecated This method is meant for a rework in separate class,
+         * because of that it is marked as deprecated
+         * and should be replaced with the updated version whenever possible.
          */
         @ApiStatus.Experimental
         @Deprecated(since = "2.0", forRemoval = true)

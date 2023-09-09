@@ -53,7 +53,7 @@ public class MRIndex {
         public Number fileSize;
         public String path;
         public String[] downloads;
-        public CDLInstance.ModFile.Hashes hashes;
+        public CDLInstance.Hashes hashes;
         public env env;
         /**
          * Optional field.

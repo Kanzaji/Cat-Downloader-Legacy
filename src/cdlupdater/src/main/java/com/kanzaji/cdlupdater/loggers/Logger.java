@@ -24,7 +24,6 @@
 
 package com.kanzaji.cdlupdater.loggers;
 
-import java.io.IOException;
 import java.nio.file.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -50,7 +49,7 @@ public class Logger implements ILogger {
 
     /**
      * Used to get a path to a log file.
-     * @return String with absolute path of a log file.
+     * @return String with the absolute path of a log file.
      */
     public String getLogPath() {
         if (this.LogFile == null) {
