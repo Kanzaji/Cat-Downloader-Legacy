@@ -1,4 +1,7 @@
-# [Cat-Downloader Legacy](https://kanzaji.github.io/Cat-Downloader-Legacy/)
+# Cat-Downloader Legacy
+[![Discord](https://img.shields.io/discord/1146365683576356884?style=for-the-badge&logo=discord&label=Questions%3F%20Join%20my%20discord!&labelColor=%23333333&color=%235865f2&cacheSeconds=30)](https://discord.gg/ktCFeKECvH)
+[![Static Badge](https://img.shields.io/badge/CDL_Configuration_Website-%5BWIP%5D-FF2222?style=for-the-badge&labelColor=333333)](https://kanzaji.github.io/Cat-Downloader-Legacy/)
+
 Cat-Downloader Legacy is an app that is meant to allow for easy synchronization of minecraft mods between modpack developers, with use of, for example, Git hooks.
 
 It Supports Modrinth index (`.mrpack` and modrinth index format), Curseforge Site Format (`manifest.json` format), and CurseForge Instance Format (`minecraftinstance.json` format, from the CF Launcher)!
