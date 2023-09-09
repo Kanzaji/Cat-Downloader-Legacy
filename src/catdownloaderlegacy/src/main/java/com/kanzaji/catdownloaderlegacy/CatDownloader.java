@@ -52,7 +52,7 @@ public final class CatDownloader {
     static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
 
     // Global variables
-    public static final String VERSION = "2.1.3-DEVELOP";
+    public static final String VERSION = "2.1.3";
     public static final String REPOSITORY = "https://github.com/Kanzaji/Cat-Downloader-Legacy";
     public static final String NAME = "Cat Downloader Legacy";
     /**
