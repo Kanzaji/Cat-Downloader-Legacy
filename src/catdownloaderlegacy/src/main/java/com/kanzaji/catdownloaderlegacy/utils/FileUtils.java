@@ -29,14 +29,12 @@ import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.rmi.UnexpectedException;
 import java.util.*;
 import java.util.stream.Stream;
@@ -85,10 +83,10 @@ public class FileUtils {
     }
 
     /**
-     * This method creates all requires directories for the specified path to exists.
+     * This method creates all requires directories for the specified path to exist.
      * @param path Path to create.
      * @throws UnexpectedException when an Exception occurs.
-     * @apiNote Be aware, this method can't check if specified path is to a file or directory!
+     * @apiNote Be aware, this method can't check if a specified path is to a file or directory!
      */
     public static void createRequiredPath(@NotNull Path path) throws UnexpectedException {
         Objects.requireNonNull(path);
@@ -207,7 +205,8 @@ public class FileUtils {
     }
 
     /**
-     * Used to rename specified file to a specified name. Adds numeric Suffix to the file name if a file with the same name exists.
+     * Used to rename a specified file to a specified name.
+     * Adds numeric Suffix to the file name if a file with the same name exists.
      * @param File Not Null {@link Path} to a file to rename.
      * @param Name Not Null {@link String} with new name for a File.
      * @return Not Null {@link String} with new name for a File (Includes added Suffix)
@@ -246,7 +245,7 @@ public class FileUtils {
     }
 
     /**
-     * This method is used to unzip an ZIP archive. Other types are not supported.
+     * This method is used to unzip a ZIP archive. Other types are not supported.
      * @param zipFilePath Path to the zip file.
      * @param destinationPath Path to the destination. (@Nullable)
      * @param shouldDeleteZipFile Determines if uncompressed zip file should be deleted.
@@ -297,7 +296,7 @@ public class FileUtils {
     }
 
     /**
-     * Used to compress specified File to a Gz archive.
+     * Used to compress a specified File to a Gz archive.
      * @param File Not Null {@link Path} to a file specified for compression.
      * @param FileName Nullable {@link String} with name for an archive.
      * @param DeleteOriginal {@link Boolean} if uncompressed file has to be deleted.
@@ -365,7 +364,7 @@ public class FileUtils {
     }
 
     /**
-     * Used to compress specified File to a Gz archive.
+     * Used to compress a specified File to a Gz archive.
      * @param File Not Null {@link Path} to a file specified for compression.
      * @throws IllegalArgumentException when File is a directory.
      * @throws FileNotFoundException when File specified for compression doesn't exist.
@@ -374,7 +373,7 @@ public class FileUtils {
     public static void compressToGz(@NotNull Path File) throws IllegalArgumentException, FileNotFoundException, IOException { compressToGz(File, null, false, false);}
 
     /**
-     * Used to compress specified File to a Gz archive.
+     * Used to compress a specified File to a Gz archive.
      * @param File Not Null {@link Path} to a file specified for compression.
      * @param DeleteOriginal {@link Boolean} if uncompressed file has to be deleted.
      * @throws IllegalArgumentException when File is a directory.
@@ -384,7 +383,7 @@ public class FileUtils {
     public static void compressToGz(@NotNull Path File, boolean DeleteOriginal) throws IllegalArgumentException, FileNotFoundException, IOException { compressToGz(File, null, DeleteOriginal, false);}
 
     /**
-     * Used to compress specified File to a Gz archive.
+     * Used to compress a specified File to a Gz archive.
      * @param File Not Null {@link Path} to a file specified for compression.
      * @param DeleteOriginal {@link Boolean} if uncompressed file has to be deleted.
      * @param Override {@link Boolean} if should delete an archive with the same name, if found.
@@ -395,7 +394,7 @@ public class FileUtils {
     public static void compressToGz(@NotNull Path File, boolean DeleteOriginal, boolean Override) throws IllegalArgumentException, FileNotFoundException, IOException { compressToGz(File, null, DeleteOriginal, Override);}
 
     /**
-     * Used to compress specified File to a Gz archive.
+     * Used to compress a specified File to a Gz archive.
      * @param File Not Null {@link Path} to a file specified for compression.
      * @param FileName Nullable {@link String} with name for an archive.
      * @throws IllegalArgumentException when File is a directory.
@@ -405,7 +404,7 @@ public class FileUtils {
     public static void compressToGz(@NotNull Path File, @Nullable String FileName) throws IllegalArgumentException, FileNotFoundException, IOException { compressToGz(File, FileName, false, false);}
 
     /**
-     * Used to compress specified File to a Gz archive.
+     * Used to compress a specified File to a Gz archive.
      * @param File Not Null {@link Path} to a file specified for compression.
      * @param FileName Nullable {@link String} with name for an archive.
      * @param DeleteOriginal {@link Boolean} if uncompressed file has to be deleted.
@@ -437,7 +436,7 @@ public class FileUtils {
     public static @NotNull String getFileName(@NotNull Path File) {return File.getFileName().toString();}
 
     /**
-     * This method is used to unzip an ZIP archive. Other types are not supported.
+     * This method is used to unzip a ZIP archive. Other types are not supported.
      * @param zipFilePath Path to the zip file.
      * @param shouldDeleteZipFile Determines if uncompressed zip file should be deleted.
      * @throws IOException when IO Exception occurs.
@@ -445,14 +444,14 @@ public class FileUtils {
     public static void unzip(Path zipFilePath, boolean shouldDeleteZipFile) throws IOException {unzip(zipFilePath, null, shouldDeleteZipFile);}
 
     /**
-     * This method is used to unzip an ZIP archive. Other types are not supported.
+     * This method is used to unzip a ZIP archive. Other types are not supported.
      * @param zipFilePath Path to the zip file.
      * @param destinationPath Path to the destination. (@Nullable)
      * @throws IOException when IO Exception occurs.
      */
     public static void unzip(Path zipFilePath, @Nullable Path destinationPath) throws IOException {unzip(zipFilePath, destinationPath, false);}
     /**
-     * This method is used to unzip an ZIP archive. Other types are not supported. The resulting files and directories will be created in the folder with the same name as the zip file, in the same directory.
+     * This method is used to unzip a ZIP archive. Other types are not supported. The resulting files and directories will be created in the folder with the same name as the zip file, in the same directory.
      * @param zipFilePath Path to the zip file.
      * @throws IOException when IO Exception occurs.
      */
@@ -468,7 +467,7 @@ public class FileUtils {
     public static void move(Path FileOrFolder, Path Destination) throws IOException, IllegalArgumentException { move(FileOrFolder, Destination, false); }
 
     /**
-     * This method creates all requires directories for the specified path to exists.
+     * This method creates all requires directories for the specified path to exist.
      * @param path Path to create.
      * @throws UnexpectedException when an Exception occurs.
      * @apiNote Be aware, this method is meant to be used with files, and will get a parent folder of specified Path.

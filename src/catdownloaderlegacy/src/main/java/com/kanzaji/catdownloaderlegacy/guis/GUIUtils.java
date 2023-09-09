@@ -52,7 +52,7 @@ public class GUIUtils {
     private static int gWidth = 1;
     private static int gHeight = 1;
     /**
-     * This method is used to update static variables for Width and Height of the user display.
+     * This method is used to update static variables for the Width and Height of the user display.
      */
     public static void updateResolutionInformation() {
         GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();

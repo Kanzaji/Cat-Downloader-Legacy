@@ -209,7 +209,7 @@ public class NetworkingUtils {
      * @throws IOException when IO operation fails.
      * @throws NoSuchAlgorithmException when Hash Verification complains about algorithm.
      * @throws InterruptedException when thread is interrupted.
-     * @apiNote The amount of attempts for re-downloading a file is defined in the arguments (Default: 5)
+     * @apiNote The number of attempts for re-downloading a file is defined in the arguments (Default: 5)
      */
     public static boolean reDownload(Path file, Number fileSize, String downloadUrl, @Nullable String fileName, @Nullable String Hash, @Nullable String Algorithm)
         throws IOException, NoSuchAlgorithmException, InterruptedException
@@ -218,7 +218,8 @@ public class NetworkingUtils {
         if (Objects.isNull(fileName)) fileName = file.getFileName().toString();
 
         for (int i = 0; i < ArgumentDecoder.getInstance().getDownloadAttempts(); i++) {
-            // Waiting a while in case server has some small issue and requires a bit of time, Each attempt increases the time to wait.
+            // Waiting a while, in case server has some small issue and requires a bit of time, Each attempt increases the time to wait.
+            //noinspection BusyWait
             Thread.sleep(2500L * i);
 
             if (Files.deleteIfExists(file)) {
@@ -249,7 +250,7 @@ public class NetworkingUtils {
      * @throws IOException when IO operation fails.
      * @throws NoSuchAlgorithmException when Hash Verification complains about algorithm.
      * @throws InterruptedException when thread is interrupted.
-     * @apiNote The amount of attempts for re-downloading a file is defined in the arguments (Default: 5)
+     * @apiNote The number of attempts for re-downloading a file is defined in the arguments (Default: 5)
      */
     public static boolean reDownload(Path file, Number fileSize, String downloadUrl, @Nullable String fileName) throws IOException, NoSuchAlgorithmException, InterruptedException {
         return reDownload(file, fileSize, downloadUrl, fileName, null, null);
@@ -264,7 +265,7 @@ public class NetworkingUtils {
      * @throws IOException when IO operation fails.
      * @throws NoSuchAlgorithmException when Hash Verification complains about algorithm.
      * @throws InterruptedException when thread is interrupted.
-     * @apiNote The amount of attempts for re-downloading a file is defined in the arguments (Default: 5)
+     * @apiNote The number of attempts for re-downloading a file is defined in the arguments (Default: 5)
      */
     public static boolean reDownload(Path file, Number fileSize, String downloadUrl) throws IOException, NoSuchAlgorithmException, InterruptedException {
         return reDownload(file, fileSize, downloadUrl, null);

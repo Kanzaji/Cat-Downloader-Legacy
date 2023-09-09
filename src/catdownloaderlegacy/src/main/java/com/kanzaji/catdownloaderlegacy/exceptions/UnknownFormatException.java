@@ -22,37 +22,31 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.data;
+package com.kanzaji.catdownloaderlegacy.exceptions;
 
 /**
- * Class used to represent Data Structure for MinecraftInstance.json file.
+ * Signals that parsed file is in a format that is either incorrect or is an unknown format.
  */
-@SuppressWarnings("unused")
-public class CFMinecraftInstance {
+public class UnknownFormatException extends RuntimeException {
 
-    public baseModLoader baseModLoader;
-    public String name;
-    public CFManifest manifest;
-    public installedAddons[] installedAddons;
+    /**
+     * Constructs UnknownFormatException with no detail message.
+     */
+    public UnknownFormatException() {super();}
 
-    public static class installedAddons {
-        public Number addonID;
-        public AddonFile installedFile;
-    }
-    public static class AddonFile {
-        public Number id;
-        public Number fileLength;
-        public String downloadUrl;
-        public String fileName;
-    }
-    public static class baseModLoader {
-        public String name;
-        public String minecraftVersion;
-        public String forgeVersion;
-        //TODO: Verify CF Uses those names for different modLoaders.
-        public String fabricVersion;
-        public String quiltVersion;
-        // TODO: Change this to anything that CF will use for "NeoForge" thing.
-        public String neoForgeVersion;
-    }
+    /**
+     * Constructs UnknownFormatException with the specified detail message.
+     */
+    public UnknownFormatException(String msg) {super(msg);}
+
+    /**
+     * Constructs UnknownFormatException with the specified detail message and cause;
+     */
+    public UnknownFormatException(String msg, Throwable e) {super(msg, e);}
+
+    /**
+     * Constructs a new exception with the specified cause and a detail message of (cause==null ? null : cause.toString()) (which typically contains the class and detail message of cause).
+     */
+    public UnknownFormatException(Throwable e) {super(e);}
+
 }

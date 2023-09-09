@@ -31,6 +31,7 @@ import com.google.gson.annotations.SerializedName;
 /**
  * This class holds the data schema for Modrinth.index.json file from the mrpack archives.
  */
+@SuppressWarnings("unused")
 public class MRIndex {
     public Number formatVersion;
     public String game;
@@ -44,7 +45,7 @@ public class MRIndex {
     public MRModFile[] files;
 
     public static class MRModFile {
-        private static Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
         @Override
         public String toString() {
             return gson.toJson(this);
@@ -52,7 +53,7 @@ public class MRIndex {
         public Number fileSize;
         public String path;
         public String[] downloads;
-        public CDLInstance.ModFile.Hashes hashes;
+        public CDLInstance.Hashes hashes;
         public env env;
         /**
          * Optional field.

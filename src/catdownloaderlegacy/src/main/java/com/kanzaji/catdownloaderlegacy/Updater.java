@@ -61,11 +61,11 @@ public class Updater {
     private static final LoggerCustom logger = new LoggerCustom("Updater");
     private static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
     /**
-     * Determines if user have already select any option from the UpdaterGUI prompt.
+     * Determines if user has already selected any option from the UpdaterGUI prompt.
      */
     public static boolean actionSelected = false;
     /**
-     * Determines if the user have chosen to update the app.
+     * Determines if the user has chosen to update the app.
      */
     public static boolean shouldUpdate = false;
 
@@ -87,7 +87,7 @@ public class Updater {
 
         logger.log("Checking for app updates...");
         // Getting the latest version from the GitHub API!
-        // This has... weird rate-limit. Might cause issues, but I doubt someone is going to run this app like... over 100 times in an hour. And if so, it's going to update a bit later that's it.
+        // This has... weird rate-limit. Might cause issues, but I doubt someone is going to run this app like... over 100 times in an hour. And if so, it's going to update a bit later, that's it.
         HttpsURLConnection response = (HttpsURLConnection) new URL(GithubAPIUrl + "/releases/latest").openConnection();
         response.setRequestProperty("Accept", "application/vnd.github+json");
         response.setRequestProperty("X-GitHub-Api-Version", "2022-11-28");
@@ -113,6 +113,7 @@ public class Updater {
 
                     while (!actionSelected) {
                         //TODO: Should be reworked into wait() notify() in the launcher version.
+                        //noinspection BusyWait
                         Thread.sleep(1000);
                     }
 
@@ -302,8 +303,8 @@ public class Updater {
      * It does not support version numbers with characters.
      * @param currentVersion Current Version to compare.
      * @param latestVersion Latest Version to compare against.
-     * @return Boolean {@code true} when current version is the same or higher than latest and when it contains "develop" at the end, otherwise {@code false}.
-     * @throws NumberFormatException when version with non-Number character is passed!
+     * @return Boolean {@code true} when the current version is the same or higher than latest and when it contains "develop" at the end, otherwise {@code false}.
+     * @throws NumberFormatException when the version with non-Number character is passed!
      */
     public static boolean compareVersions(@NotNull String currentVersion, String latestVersion) throws NumberFormatException  {
         return compareVersions(currentVersion, latestVersion, "\\.");
@@ -315,8 +316,8 @@ public class Updater {
      * @param currentVersion Current Version to compare.
      * @param latestVersion Latest Version to compare against.
      * @param separator A {@link String} used to separate numbers in passed version schema (Regex).
-     * @return Boolean {@code true} when current version is the same or higher than latest and when it contains "develop" at the end, otherwise {@code false}.
-     * @throws NumberFormatException when version with non-Number character is passed!
+     * @return Boolean {@code true} when the current version is the same or higher than latest and when it contains "develop" at the end, otherwise {@code false}.
+     * @throws NumberFormatException when the version with non-Number character is passed!
      */
     public static boolean compareVersions(@NotNull String currentVersion, String latestVersion, String separator) throws NumberFormatException {
         if (currentVersion.toLowerCase().endsWith("develop")) return true;
@@ -341,7 +342,7 @@ public class Updater {
         }
 
         // If equal and latest version map size is higher, return false
-        // If not equal, return true. (If latest was higher it would return false earlier on)
+        // If not equal, return true. (If the latest was higher it would return false earlier on)
         // If Equal and current version map size is higher / equal, return true
         // Yes this is here just so I will not mess this up;
         return !equal || currentVersionMap.size() >= latestVersionMap.size();
@@ -374,7 +375,7 @@ public class Updater {
             public Assets[] assets;
 
             /**
-             * This class is data structure for the assets fields in {@link releaseData}.
+             * This class is data structure for the assets' fields in {@link releaseData}.
              */
             private static class Assets {
                 @Contract(pure = true)

@@ -24,7 +24,6 @@
 
 package com.kanzaji.cdlupdater.loggers;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Objects;
 
@@ -56,7 +55,7 @@ public class LoggerCustom implements ILogger {
 
     /**
      * Used to get a path to a log file.
-     * @return String with absolute path of a log file.
+     * @return String with the absolute path of a log file.
      */
     @Override
     public String getLogPath() {
@@ -65,10 +64,9 @@ public class LoggerCustom implements ILogger {
 
     /**
      * Used to disable Logger and remove the log file.
-     * @throws IOException when log deletion failed.
      */
     @Override
-    public void exit() throws IOException {
+    public void exit() {
         logger.exit();
     }
 

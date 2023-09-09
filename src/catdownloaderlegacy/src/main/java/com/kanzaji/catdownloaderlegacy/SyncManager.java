@@ -25,6 +25,7 @@
 package com.kanzaji.catdownloaderlegacy;
 
 import com.kanzaji.catdownloaderlegacy.data.CDLInstance;
+import com.kanzaji.catdownloaderlegacy.data.CFManifest;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import com.kanzaji.catdownloaderlegacy.utils.FileUtils;
 import com.kanzaji.catdownloaderlegacy.utils.RandomUtils;
@@ -83,20 +84,18 @@ public class SyncManager {
         CDLTemp = Path.of(WORKPATH.toString(), "CDLTemp");
 
         logger.log("Running GC to clear out memory before running synchronization process...");
-        Runtime run = Runtime.getRuntime();
-        long memory = run.totalMemory() - run.freeMemory();
-        System.gc();
-        logger.log(((float)(memory - run.totalMemory() + run.freeMemory())/(1024L*1024L)) + " MegaBytes were cleared up.");
-
+        RandomUtils.runGCL();
         logger.print("Starting synchronization process!");
         System.out.println("---------------------------------------------------------------------");
 
         verifyInstalledMods();
         printVerificationResults();
+        RandomUtils.runGCL();
 
         removeRemovedMods();
 
         downloadRequiredMods();
+        RandomUtils.runGCL();
 
         printStatistics();
 
@@ -108,7 +107,7 @@ public class SyncManager {
     /**
      * This method is used internally by {@link SyncManager} to query verification and lookup tasks for mods in the specified Instance. Respects Blacklist from the Settings File.
      * @throws InterruptedException when Executor is interrupted.
-     * @throws TimeoutException if Executor doesn't finish before 24 hours pass.
+     * @throws TimeoutException if the Executor doesn't finish before 24-hours pass.
      */
     private void verifyInstalledMods() throws InterruptedException, TimeoutException {
         List<Future<Integer[]>> verificationResults = new LinkedList<>();
@@ -116,12 +115,20 @@ public class SyncManager {
         logger.log("Requesting of lookups for installed mods and their verification started.");
 
         for (int index = 0; index < CDLInstanceData.files.length; index++) {
+            if (ARD.isPackMode()) CDLInstanceData.gatherCFModInformation(index);
             CDLInstance.ModFile mod = CDLInstanceData.files[index];
+
+            if (Objects.equals(mod.fileName, "CF-PACK_MOD")) {
+                failedDownloads.add(index);
+                continue;
+            }
+
             if (SettingsManager.ModBlackList.contains(mod.fileName)) {
                 logger.warn("Skipping verification of  " + mod.fileName + " because its present on the blacklist!");
                 IgnoredVerification.add(index);
                 continue;
             }
+
             logger.log("Lookup and verification of file " + mod.fileName + " has been requested.");
             verificationResults.add(verificationExecutor.submit(CDLInstanceData.getVerificationTask(index)));
         }
@@ -135,6 +142,7 @@ public class SyncManager {
      * @param verificationResults A list with Future objects from the executor.
      * @throws NullPointerException when verificationResults are null.
      */
+    @SuppressWarnings("ForLoopReplaceableByForEach")
     private void decodeVerificationResults(@NotNull List<Future<Integer[]>> verificationResults) {
         Objects.requireNonNull(verificationResults);
         // LinkedList<>#forEach() and enhanced for use Iterators.
@@ -178,8 +186,8 @@ public class SyncManager {
     private void printVerificationResults() {
         if (CDLInstanceData.files.length - missing.size() > 0) {
             logger.print(
-                (CDLInstanceData.files.length - missing.size()) + " out of " +
-                RandomUtils.intGrammar(CDLInstanceData.files.length, " mod", " mods", true) +
+                (CDLInstanceData.files.length - missing.size() - failedDownloads.size()) + " out of " +
+                RandomUtils.intGrammar(CDLInstanceData.files.length - failedDownloads.size(), " mod", " mods", true) +
                 " have been found on the hard drive!"
             );
 
@@ -188,7 +196,7 @@ public class SyncManager {
             }
 
             logger.print(
-                "> " + RandomUtils.intGrammar(CDLInstanceData.files.length - missing.size() - corrupted.size(), " mod", " mods", true) +
+                "> " + RandomUtils.intGrammar(CDLInstanceData.files.length - missing.size() - corrupted.size() - failedDownloads.size(), " mod", " mods", true) +
                 " have been verified successfully."
             );
 
@@ -206,7 +214,7 @@ public class SyncManager {
     /**
      * This method is used internally by {@link SyncManager} to download any mods that are missing from the local installation of the instance passed to the constructor.
      * @throws InterruptedException when Executor is interrupted.
-     * @throws TimeoutException if Executor doesn't finish before 24 hours pass.
+     * @throws TimeoutException if the Executor doesn't finish before 24-hours pass.
      */
     private void downloadRequiredMods() throws InterruptedException, TimeoutException {
         HashSet<Integer> downloads = new HashSet<>(missing);
@@ -236,6 +244,7 @@ public class SyncManager {
      * @throws NullPointerException when downloadResults are null.
      */
     private void decodeDownloadResults(@NotNull List<Future<Integer[]>> downloadResults) {
+        int initFailedDownloadsSize = failedDownloads.size();
         Objects.requireNonNull(downloadResults);
         for (int i = downloadResults.size() - 1; i >= 0; i--) {
             try {
@@ -264,7 +273,7 @@ public class SyncManager {
 
         logger.print(
             "Finished downloading process! " +
-                ((failedDownloads.size() > 0)?
+                ((failedDownloads.size()-initFailedDownloadsSize > 0)?
                     RandomUtils.intGrammar(
                             missing.size() + corrupted.size() - failedDownloads.size(),
                             " mod out of " + (missing.size() + corrupted.size()) +" was",
@@ -408,8 +417,25 @@ public class SyncManager {
 
             if (failedDownloads.size() > 0) {
                 logger.error("Files that failed to Download:");
-                failedDownloads.forEach((index) -> logger.error("  " + CDLInstanceData.files[index].fileName));
+                failedDownloads.forEach((index) -> {
+                    CDLInstance.ModFile mod = CDLInstanceData.files[index];
+                    if (Objects.equals(mod.fileName, "CF-PACK_MOD")) {
+                        logger.error("  A CurseForge mod from the project with id " + mod.fileLength + " (" + mod.downloadURL + ") was not possible to found! Project URL: \"https://cfwidget.com/" + mod.fileLength + "\"");
+                    } else {
+                        logger.error("  " + mod.fileName);
+                    }
+                });
             }
+            System.out.println("---------------------------------------------------------------------");
+        }
+        //TODO: Proper warning from the data gathering,
+        // this is here just to give info that some mods were not found
+        // and fallback was found to give possibility to play that instance!
+        if (CFManifest.DataGatheringWarnings.size() > 0) {
+            logger.print("Data gathering warnings found!",1);
+            logger.print("This might signal that some mods were not found and fallback was used.",1);
+            System.out.println("Please inspect your log file at " + logger.getLogPath() + " for more information.");
+            CFManifest.DataGatheringWarnings.forEach(warn -> logger.warn("\n"+warn));
             System.out.println("---------------------------------------------------------------------");
         }
     }

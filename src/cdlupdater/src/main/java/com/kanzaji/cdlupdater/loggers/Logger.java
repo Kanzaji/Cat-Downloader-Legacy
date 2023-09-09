@@ -24,7 +24,6 @@
 
 package com.kanzaji.cdlupdater.loggers;
 
-import java.io.IOException;
 import java.nio.file.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -50,7 +49,7 @@ public class Logger implements ILogger {
 
     /**
      * Used to get a path to a log file.
-     * @return String with absolute path of a log file.
+     * @return String with the absolute path of a log file.
      */
     public String getLogPath() {
         if (this.LogFile == null) {
@@ -144,12 +143,10 @@ public class Logger implements ILogger {
      * Used to disable Logger and remove log file.
      * Has to be implemented manually.
      *
-     * @throws IOException when log deletion failed.
      * @apiNote This method is not implemented in this implementation of the {@link ILogger}. Calling it will do nothing.
      */
     @Override
-    public void exit() throws IOException {
-        return;
+    public void exit() {
     }
 
 }

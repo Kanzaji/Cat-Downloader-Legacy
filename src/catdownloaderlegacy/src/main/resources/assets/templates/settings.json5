@@ -6,7 +6,7 @@
   "mode": "cf-instance",
 
   // WorkingDirectory -> Determines working directory of the app, so where mods are getting downloaded and log file is getting generated.
-  // Empty string will result in working directory being set to place of execution of the app!
+  // Empty string will result in working directory being set to the folder of the app execution!
   // Accepts: Both relative and absolute Paths as String.
   // Argument representation: -WorkingDirectory:
   "workingDirectory": "",
@@ -16,7 +16,19 @@
   // Argument representation: -Updater:
   "isUpdaterActive": true,
 
-  // LogDirectory -> Determines a directory where app will generate and store log files.
+  // dataCache -> Determines if a "cache" file is generated, with calculated hashes for faster verification after install.
+  // Cached values are valid until any information about modpack doesn't change. (Excluding Mods and ModLoader version)
+  // Accepts: Boolean Value (Example: true)
+  // Argument representation: -Cache:
+  "dataCache": true,
+
+  // dataCacheDirectory -> Determines directory where the cache file is going to be stored.
+  // Empty String will result in using LOGS Directory for storing Cache file.
+  // Accepts: Both relative and absolute Paths as String.
+  // Argument representation: -CachePath:
+  "dataCacheDirectory": "",
+
+  // LogDirectory -> Determines a directory where the app will generate and store log files.
   // Empty string will result in the app generating log files in the WorkingDirectory.
   // Accepts: Both relative and absolute Paths as String.
   // Argument representation: -LogsPath:
@@ -52,7 +64,7 @@
   // Argument representation: -DownloadAttempts:
   "downloadAttempts": 5,
 
-  // isFileSizeVerificationActive -> Determines if file size verification is turned on. Barely-Visible performance gain and will result in corrupted mods if disabled.
+  // isFileSizeVerificationActive -> Determines if file size verification is turned on. Barely Visible performance gain and will result in corrupted mods if disabled.
   // Accepts: Boolean Values (Example: true)
   // Argument representation: -SizeVerification:
   "isFileSizeVerificationActive": true,
@@ -63,11 +75,11 @@
   "isHashVerificationActive": true,
 
   // modBlackList -> A list of file names that Cat-Downloader should ignore while Removing / Verifying / Downloading mods!
-  // Beware! This does not support regex, if the mod in here is going to get updated you will end up with duplicated mods in your instance!
-  // Accepts: Comma separated array of Strings (Example: ["super_mod.jar","another_super_mod.jar"])
+  // Beware! This does not support regex, if the mod in here is going to get updated, you will end up with duplicated mods in your instance!
+  // Accepts: A comma separated array of Strings (Example: ["super_mod.jar","another_super_mod.jar"])
   // Argument representation: None (Settings Exclusive!)
   "modBlackList": []
 }
 
-// For more configuration options check out my GitHub at "https://github.com/Kanzaji/Cat-Downloader-Legacy"!
+// For more configuration options, check out my GitHub at "https://github.com/Kanzaji/Cat-Downloader-Legacy"!
 // For auto-generation of the file (if you don't want to include it with your repo), you can use `-DefaultSettings:false` to generate this file from the arguments!

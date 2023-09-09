@@ -41,7 +41,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
- * This class is the main instance of the Logger Service, it handles creation, stockpiling and logging to log files.
+ * This class is the main instance of the Logger Service. It handles creation, stockpiling and logging to log files.
  * @apiNote This class is a Singleton, use {@link Logger#getInstance()} for reference of this class.
  * @see LoggerCustom
  */
@@ -64,7 +64,7 @@ class Logger implements ILogger {
 
     /**
      * Used to get a path to a log file.
-     * @return String with absolute path of a log file.
+     * @return String with the absolute path of a log file.
      */
     public String getLogPath() {
         if (this.LogFile == null) {
@@ -96,7 +96,8 @@ class Logger implements ILogger {
     }
 
     /**
-     * Used to finish initialization of the Logger. Handles function of Stockpiling of the logs, and moving the log file to a new location.
+     * Used to finish initialization of the Logger.
+     * Handles the Stockpiling function of the logs, and moving the log file to a new location.
      * @throws IllegalStateException when reading attributes of the compressed log files is not possible.
      * @throws IOException when IO Exception occurs.
      */
@@ -116,7 +117,7 @@ class Logger implements ILogger {
                 this.log("Custom path for logs has been specified: \"" + logPath.toAbsolutePath() + "\".");
             }
 
-            // Checking if non-fully-archived log is present in the new log location.
+            // Checking if non-fully archived log is present in the new log location.
             if (Files.exists(archivedLogInLogPath)) {
                 this.warn("Found old pre-full-archive log file in specified Path! This might signal a crash in the last post-init phase of the logger!");
                 this.warn("The log file is going to be saved as unknown.log" + (ARD.shouldCompressLogs()? ".gz": "") + " for future inspection.");

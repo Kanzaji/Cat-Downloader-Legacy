@@ -27,6 +27,7 @@ package com.kanzaji.catdownloaderlegacy;
 import com.kanzaji.catdownloaderlegacy.data.CDLInstance;
 import com.kanzaji.catdownloaderlegacy.data.CFManifest;
 import com.kanzaji.catdownloaderlegacy.data.MRIndex;
+import com.kanzaji.catdownloaderlegacy.exceptions.FormatVersionMismatchException;
 import com.kanzaji.catdownloaderlegacy.guis.GUIUtils;
 import com.kanzaji.catdownloaderlegacy.data.CFMinecraftInstance;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
@@ -51,7 +52,7 @@ public final class CatDownloader {
     static final ArgumentDecoder ARD = ArgumentDecoder.getInstance();
 
     // Global variables
-    public static final String VERSION = "2.1.2";
+    public static final String VERSION = "2.1.3";
     public static final String REPOSITORY = "https://github.com/Kanzaji/Cat-Downloader-Legacy";
     public static final String NAME = "Cat Downloader Legacy";
     /**
@@ -79,13 +80,13 @@ public final class CatDownloader {
     /**
      * Used to hold data for the SyncManager and manifest parsing.
      */
-    private static final CDLInstance CDLInstanceData = new CDLInstance();
+    private static final CDLInstance CDLInstanceData = CDLInstance.create();
 
     /**
      * Main method of the app.
      * @param args String[] arguments for the app.
      */
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         long StartingTime = System.currentTimeMillis();
         ARGUMENTS = args;
 
@@ -101,6 +102,8 @@ public final class CatDownloader {
             fetchAndVerifyManifestFile();
 
             new SyncManager(CDLInstanceData).runSync();
+
+            createCacheFile();
 
             logger.print("Entire Process took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s");
             RandomUtils.closeTheApp(0);
@@ -120,7 +123,7 @@ public final class CatDownloader {
         if (ARD.isAutomaticModeDetectionActive()) {
             logger.log("Trying to automatically determine required mode for the app...");
             Map<String, String> supportedFiles = new HashMap<>();
-            // "file" , "mode"
+            // "file", "mode"
             // #r at the beginning -> regex searching. Requires special handling in the decoding phase for each mode.
             supportedFiles.put("modrinth.index.json", "modrinth");
             supportedFiles.put("minecraftinstance.json", "cf-instance");
@@ -214,15 +217,14 @@ public final class CatDownloader {
 
     /**
      * This method is responsible for fetching and verifying the Manifest file.
-     * @throws IOException when IO Exception occurs.
      */
-    private static void fetchAndVerifyManifestFile() throws IOException {
+    private static void fetchAndVerifyManifestFile() {
         logger.log("Fetching data from the manifest file and translating it to CDLInstance Format...");
         try {
             switch (ARD.getCurrentMode()) {
                 case "modrinth" -> CDLInstanceData.importModrinthPack(gson.fromJson(Files.readString(manifestFile), MRIndex.class));
                 case "cf-instance" -> CDLInstanceData.importCFInstance(gson.fromJson(Files.readString(manifestFile), CFMinecraftInstance.class));
-                case "cf-pack" -> CDLInstanceData.importCFPack(gson.fromJson(Files.readString(manifestFile), CFManifest.class));
+                case "cf-pack" -> CDLInstanceData.importCFPack(gson.fromJson(Files.readString(manifestFile), CFManifest.class), false);
                 default -> throw new RuntimeException("Unknown mode passed mode validation step! This shouldn't happen. Mode -> " + ARD.getCurrentMode());
             }
         } catch (Exception e) {
@@ -232,6 +234,9 @@ public final class CatDownloader {
         }
 
         logger.log("Data fetched successfully.");
+
+        parseCachedInstanceFile();
+
         logger.print("Installing modpack " +
             CDLInstanceData.modpackData.name +
             ((CDLInstanceData.modpackData.name.endsWith(" "))? "": " ") +
@@ -279,6 +284,117 @@ public final class CatDownloader {
 
     }
 
+    /**
+     * Used to parse Cached Instance File and fill missing hash values for the main CDLInstanceData.
+     * @apiNote This method is CDL exclusive! Instance files are going to be used properly in the launcher version.
+     */
+    private static void parseCachedInstanceFile() {
+        if (!ARD.isCacheEnabled() || ARD.isPackMode()) {
+            if (ARD.isPackMode()) {
+                logger.warn("Caches are not-available in the CF-Pack mode! Looking for cached versions of the CDLInstance will be skipped.");
+            } else {
+                logger.warn("Caches are disabled! Looking for cached version of the CDLInstance will be skipped.");
+            }
+            return;
+        }
+
+        logger.log("Looking for cached version of the CDLInstance...");
+        try {
+            Path cachedPath = Path.of(ARD.getCachePath(), "CDL-Instance-cache.json");
+            if (Files.exists(cachedPath)) {
+                CDLInstance cachedCDLInstance = CDLInstance.parseJson(cachedPath);
+
+                if (!CDLInstanceData.equals(cachedCDLInstance, true)) {
+                    FileUtils.delete(cachedPath);
+                    if (CDLInstanceData.cdlFormatVersion.equals(cachedCDLInstance.cdlFormatVersion)) {
+                        throw new IllegalArgumentException("Cached CDLInstance json isn't for the pack currently being installed, or the details for the pack has changed. Cache file will be regenerated at the end of the sync process.");
+                    } else {
+                        throw new FormatVersionMismatchException("Cached CDLInstance json is different version than currently supported! Cache file will be regenerated at the end of the sync process.");
+                    }
+                }
+
+                int length = cachedCDLInstance.files.length;
+
+                // Dropping any mods that aren't present in the current Instance data.
+                cachedCDLInstance.files = Arrays.stream(cachedCDLInstance.files).filter(
+                    (cachedFile) -> Arrays.stream(CDLInstanceData.files).anyMatch(
+                        (file) ->
+                            Objects.equals(cachedFile.fileLength, file.fileLength) &&
+                            Objects.equals(cachedFile.fileName, file.fileName) &&
+                            ((Objects.isNull(file.path))? Objects.equals(cachedFile.path, "mods/" + file.fileName): Objects.equals(cachedFile.path, file.path)) &&
+                            Objects.equals(cachedFile.downloadURL, file.downloadURL)
+                        )
+                ).toList().toArray(new CDLInstance.ModFile[]{});
+
+                int removedCount = length - cachedCDLInstance.files.length;
+
+                logger.log("Removed " + RandomUtils.intGrammar(removedCount,  " mod", " mods", true) + " from the cached instance file due to them missing from the main data set.");
+                logger.log("Updating information for " + cachedCDLInstance.files.length + " out of " + RandomUtils.intGrammar(CDLInstanceData.files.length,  " mod.", " mods.", true));
+
+                // Another try block because if something goes wrong here, it is not safe to continue execution.
+                try {
+                    for (CDLInstance.ModFile file : CDLInstanceData.files) {
+                        for (CDLInstance.ModFile cachedFile: cachedCDLInstance.files) {
+                            if (
+                                Objects.nonNull(cachedFile) &&
+                                Objects.equals(file.fileLength, cachedFile.fileLength) &&
+                                Objects.equals(file.fileName, cachedFile.fileName) &&
+                                ((Objects.isNull(file.path))? Objects.equals(cachedFile.path, "mods/" + file.fileName): Objects.equals(cachedFile.path, file.path)) &&
+                                Objects.equals(file.downloadURL, cachedFile.downloadURL)
+                            ) {
+                                file.hashes = cachedFile.hashes;
+                                break;
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    throw new IllegalStateException("Exception thrown while updating hash information of the main data set. Execution can't continue.", e);
+                }
+            } else {
+                logger.log("Couldn't find cached version of the CDLInstance. Verification will be performed from the source.");
+            }
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.logStackTrace("Exception thrown while looking for cached version of CDLInstance! Verification will be performed from the source.", e);
+        }
+    }
+
+    /**
+     * Used to create Cache file based on the information that was acquired by the app at the runtime.
+     * Increases the speed of the instance verification process.
+     */
+    private static void createCacheFile() {
+        if (!ARD.isCacheEnabled() || ARD.isPackMode()) {
+            if (ARD.isPackMode()) {
+                logger.warn("Caches are not-available in the CF-Pack mode! Cache file is not going to be generated in this session.");
+            } else {
+                logger.warn("Caches are disabled! Cache file is not going to be generated in this session.");
+            }
+            return;
+        }
+
+        try {
+            Path cachedPath = Path.of(ARD.getCachePath(), "CDL-Instance-cache.json");
+            if (Files.notExists(cachedPath)) {
+                logger.log("Cache file not found! Creating required path for the Cache file...");
+                FileUtils.createRequiredPathToAFile(cachedPath);
+                Files.createFile(cachedPath);
+            }
+
+            logger.log("Saving cache data...");
+            Files.writeString(cachedPath, CDLInstanceData.toString(), StandardOpenOption.TRUNCATE_EXISTING);
+            logger.log("Cache data has been saved.");
+        } catch (Exception e) {
+            logger.logStackTrace("Exception thrown while saving Cache data!", e);
+            try {
+                Files.deleteIfExists(Path.of(ARD.getCachePath(), "CDL-Instance-cache.json"));
+            } catch (Exception e2) {
+                logger.logStackTrace("Exception thrown while deleting cache file after main exception! Was the original exception IO Error? Is the path write-protected?", e);
+            }
+        }
+    }
+
     private static class Services {
         private static final LoggerCustom logger = new LoggerCustom("Main.Services");
 
@@ -303,7 +419,8 @@ public final class CatDownloader {
             }
 
             GUIUtils.setLookAndFeel();
-            // All arguments should be decoded in the ARD, however this method Overrides arguments, so it is required to run before ARD decoding.
+            // All arguments should be decoded in the ARD.
+            // However, this method Overrides arguments, so it is required to run before ARD decoding.
             if (Arrays.stream(ARGUMENTS).toList().contains("-PostUpdateRoutine")) Updater.updateCleanup();
 
             System.out.println("---------------------------------------------------------------------");
@@ -348,7 +465,7 @@ public final class CatDownloader {
 
             Updater.checkForUpdates();
 
-            // Redirects entire output of any Logger to a console!
+            // Redirects the entire output of any Logger to a console!
             if (!ARD.isLoggerActive()) logger.exit();
         }
     }

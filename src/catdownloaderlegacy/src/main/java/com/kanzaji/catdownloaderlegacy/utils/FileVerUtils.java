@@ -33,10 +33,10 @@ import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -81,9 +81,9 @@ public class FileVerUtils {
     }
 
     /**
-     * File size verification, can be disabled with an argument!
+     * File size verification. Can be disabled with an argument!
      * @param File {@link Path} to a file designated for verification.
-     * @param Size {@link Number} with Expected file length..
+     * @param Size {@link Number} with Expected file length.
      * @return {@link Boolean} with the result of the verification.
      * @throws IOException when IO Operation fails.
      */
@@ -92,7 +92,7 @@ public class FileVerUtils {
     }
 
     /**
-     * File size verification, can be disabled with an argument!
+     * File size verification. Can be disabled with an argument!
      * @param File {@link Path} to a file designated for verification.
      * @param Size {@link Number} with Expected file length.
      * @return {@link Boolean} with the result of the verification.
@@ -208,7 +208,8 @@ public class FileVerUtils {
         InputStream InputData;
         MessageDigest MD = MessageDigest.getInstance(Algorithm);
 
-        if (DownloadURL == null) {
+        if (Objects.isNull(DownloadURL)) {
+            if (Files.notExists(FilePath)) throw new NoSuchFileException("Specified File to use for calculating hash value (" + Algorithm +") doesn't exists!");
             InputData = Files.newInputStream(FilePath);
         } else {
             InputData = new URL(DownloadURL).openStream();
