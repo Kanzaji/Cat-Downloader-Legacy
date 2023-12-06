@@ -370,13 +370,10 @@ public class CDLInstance {
                 modLoaderName.contains("forge")?    "forge":
                 modLoaderName.contains("fabric")?   "fabric":
                 modLoaderName.contains("quilt")?    "quilt":
-                //TODO: Trying to future-proof here. I have no idea what CF will use for this... thing.
-                modLoaderName.contains("neo-forge")? "neo-forge":
+                modLoaderName.contains("neoforge")? "neo-forge":
                 "unknown"
             );
 
-            //TODO: Get more manifest files, to see the schema for fabric / quilt mod loaders.
-            // Fabric confirmed, Quilt is not possible due to literally no mod-packs for it on cf.
             this.modLoaderData.version = modLoaderName.substring(modLoaderName.indexOf("-")+1);
 
             this.files = new ModFile[CFPackData.files.length];
@@ -430,8 +427,8 @@ public class CDLInstance {
                 modLoaderName.contains("forge")?    "forge":
                 modLoaderName.contains("fabric")?   "fabric":
                 modLoaderName.contains("quilt")?    "quilt":
-                //TODO: Trying to future-proof here. I have no idea what CF will use for this... thing.
-                modLoaderName.contains("neo-forge")? "neo-forge":
+                //TODO: Get CF Instance for NeoForge, pack confirmed to use neoforge, probably same here.
+                modLoaderName.contains("neoforge")? "neo-forge":
                 "unknown"
             );
 
