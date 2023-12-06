@@ -86,25 +86,26 @@ public class CDLInstance {
     /**
      * Checks if object and passed object are equal.
      * @param object Object to check.
-     * @param exclude Determines if {@link CDLInstance#files} array and {@link CDLInstance#modLoaderData} are meant to be checked.
+     * @param excludeFiles Determines if {@link CDLInstance#files} array and {@link CDLInstance#modLoaderData} are meant to be checked.
      * @return {@code true}, if all values are equal, otherwise {@code false}.
      */
-    public boolean equals(Object object, boolean exclude) {
+    public boolean equals(Object object, boolean excludeFiles) {
         if (Objects.isNull(object)) return false;
         if (!Objects.equals(CDLInstance.class, object.getClass())) return false;
 
         CDLInstance cdlInstance = (CDLInstance) object;
 
         boolean filesEqual = true;
-        if (!exclude) {
-            filesEqual = Arrays.stream(this.files).allMatch(file -> Arrays.asList(cdlInstance.files).contains(file));
+        if (!excludeFiles) {
+            List<ModFile> modFiles = Arrays.asList(cdlInstance.files);
+            filesEqual = Arrays.stream(this.files).allMatch(modFiles::contains);
         }
 
         return  Objects.equals(this.cdlFormatVersion, cdlInstance.cdlFormatVersion) &&
                 Objects.equals(this.instanceName, cdlInstance.instanceName) &&
                 this.minecraftData.equals(cdlInstance.minecraftData) &&
                 this.modpackData.equals(cdlInstance.modpackData) &&
-                (exclude || this.modLoaderData.equals(cdlInstance.modLoaderData)) &&
+                (excludeFiles || this.modLoaderData.equals(cdlInstance.modLoaderData)) &&
                 filesEqual;
     }
 
