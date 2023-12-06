@@ -386,7 +386,7 @@ public class SyncManager {
 
             if (IgnoredRemoval.size() > 0) {
                 logger.print("> " + RandomUtils.intGrammar(IgnoredRemoval.size(), " mod was", " mods were", true) + " not removed!", 1);
-                IgnoredRemoval.forEach((mod) -> logger.warn("- " + CDLInstanceData.files[mod].fileName));
+                IgnoredRemoval.forEach((mod) -> logger.warn("- " + SettingsManager.ModBlackList.get(mod)));
             } else {
                 logger.print("> All mods designated to removal were removed.");
             }
