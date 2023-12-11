@@ -296,7 +296,12 @@ public class SyncManager {
         try (Stream<Path> pathStream = Files.list(Path.of(WORKPATH.toString(), "mods"))) {
             pathStream.forEach(File -> {
                 String FileName = File.getFileName().toString();
-                if (Arrays.stream(CDLInstanceData.files).noneMatch((mod) -> Objects.equals(mod.fileName, FileName) && mod.path.startsWith("mods"))) {
+                if (Arrays.stream(CDLInstanceData.files).noneMatch((mod) ->
+                        Objects.equals(mod.fileName, FileName) &&
+                        (Objects.isNull(mod.path) || mod.path.startsWith("mods"))
+                )) {
+                    // This checks if the mod is in the temp overrides folder extracted from the zip.
+                    // Used only for modrinth for now. Will be used later on by CF Zip Import
                     if (Files.exists(Path.of(CDLTemp.toString(), RandomUtils.removeCommonPart(WORKPATH.toAbsolutePath().toString(), File.toAbsolutePath().toString())))) return;
 
                     int index = SettingsManager.ModBlackList.indexOf(FileName);
@@ -381,7 +386,7 @@ public class SyncManager {
 
             if (IgnoredRemoval.size() > 0) {
                 logger.print("> " + RandomUtils.intGrammar(IgnoredRemoval.size(), " mod was", " mods were", true) + " not removed!", 1);
-                IgnoredRemoval.forEach((mod) -> logger.warn("- " + CDLInstanceData.files[mod].fileName));
+                IgnoredRemoval.forEach((mod) -> logger.warn("- " + SettingsManager.ModBlackList.get(mod)));
             } else {
                 logger.print("> All mods designated to removal were removed.");
             }

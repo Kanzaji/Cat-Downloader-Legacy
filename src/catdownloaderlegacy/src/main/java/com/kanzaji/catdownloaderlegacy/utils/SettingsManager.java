@@ -226,8 +226,8 @@ public class SettingsManager {
         if (SettingsData.downloadAttempts < 1) {
             errors.add("Re-Download attempts can't be below 1!");
         }
-        if (SettingsData.logStockpileSize < 1) {
-            errors.add("LogStockpileSize can't be below 1!");
+        if (SettingsData.logStockpileSize < 0) {
+            errors.add("LogStockpileSize can't be negative!");
         }
 
         if (errors.size() > 0) {
