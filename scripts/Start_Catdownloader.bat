@@ -4,6 +4,6 @@ REM You can add few additional arguments to change the behaviour of the app.
 REM Check out the github repo of this app for more details https://github.com/Kanzaji/Cat-Downloader-Legacy
 
 REM You can configure the command here:
-java -jar Cat-Downloader-Legacy-2.1.3.jar
+java -jar Cat-Downloader-Legacy-2.1.4.jar
 
 pause
