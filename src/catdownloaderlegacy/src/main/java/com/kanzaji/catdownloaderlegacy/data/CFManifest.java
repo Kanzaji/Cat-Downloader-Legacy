@@ -158,11 +158,12 @@ public class CFManifest {
                                 }
                             }
 
+                            int startingIndex = String.valueOf(downloadData.download.id).length() < 7? 3:4;
                             CFModFileData.downloadUrl = (
                                     "https://edge.forgecdn.net/files/" +
-                                            String.valueOf(file.id).substring(0, 4) +
+                                            String.valueOf(file.id).substring(0, startingIndex) +
                                             "/" +
-                                            String.valueOf(file.id).substring(4) +
+                                            String.valueOf(file.id).substring(startingIndex) +
                                             "/" +
                                             file.name
                             ).replaceAll(" ", "%20");
@@ -186,11 +187,12 @@ public class CFManifest {
                         return null;
                     }
 
+                    int startingIndex = String.valueOf(downloadData.download.id).length() < 7? 3:4;
                     CFModFileData.downloadUrl = (
                             "https://edge.forgecdn.net/files/" +
-                                    String.valueOf(downloadData.download.id).substring(0, 4) +
+                                    String.valueOf(downloadData.download.id).substring(0, startingIndex) +
                                     "/" +
-                                    String.valueOf(downloadData.download.id).substring(4) +
+                                    String.valueOf(downloadData.download.id).substring(startingIndex) +
                                     "/" +
                                     downloadData.download.name
                     ).replaceAll(" ", "%20");

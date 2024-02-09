@@ -28,7 +28,6 @@ import com.kanzaji.catdownloaderlegacy.data.CDLInstance;
 import com.kanzaji.catdownloaderlegacy.data.CFManifest;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import com.kanzaji.catdownloaderlegacy.utils.FileUtils;
-import com.kanzaji.catdownloaderlegacy.utils.NetworkingUtils;
 import com.kanzaji.catdownloaderlegacy.utils.RandomUtils;
 import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
 
@@ -173,7 +172,7 @@ public class SyncManager {
                 if (Objects.equals(e.getClass(),ExecutionException.class)) {
                     Throwable e2 = e.getCause();
                     logger.logStackTrace("Exception found in the verification results!", e2.getCause());
-                    failedVerifications.add(Integer.parseInt(e2.getMessage()));
+                    failedVerifications.add(Integer.parseInt(e.getMessage().substring(30, e.getMessage().indexOf(";"))));
                 } else {
                     throw new RuntimeException("Exception thrown while gathering results from the verification!", e);
                 }
@@ -258,17 +257,6 @@ public class SyncManager {
                     case 0 -> logger.log("File \"" + mod.path + "\" has been downloaded successfully.");
                     case -1 -> {
                         logger.error("File \"" + mod.path + "\" has failed to download correctly!");
-                        //Work around for older CF Files.
-                        String id = mod.getCFid();
-                        if (Objects.nonNull(id) && id.length() < 7) {
-                            logger.warn("Trying a workaround for older CF files...");
-                            mod.downloadURL = "https://mediafilez.forgecdn.net/files/" + id.substring(0, 3) + "/" + id.substring(3) + "/" + mod.fileName;
-                            if (NetworkingUtils.downloadAndVerify(Path.of(WORKPATH.toString(), mod.path), mod.downloadURL, mod.fileLength)) {
-                                logger.log("File \"" + mod.path + "\" has been downloaded with use of the workaround successfully!");
-                                continue;
-                            }
-                            logger.error("Failed downloading file \"" + mod.path + "\" with use of the workaround!");
-                        }
                         failedDownloads.add(results[0]);
                     }
                     default -> throw new IllegalStateException("Invalid value in the download results! => " + Arrays.toString(results));
