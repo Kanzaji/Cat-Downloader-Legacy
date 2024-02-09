@@ -690,5 +690,19 @@ public class CDLInstance {
             this.hashes = hashes;
             this.path = path;
         }
+
+        /**
+         * Used to get CF file ID of this file. Returns null if the file is not from cf.
+         * @return CF File ID of this mod file, if present. Otherwise, null.
+         */
+        public String getCFid() {
+            if (downloadURL.startsWith("https://edge.forgecdn.net/files/")) {
+                return downloadURL
+                    .replaceFirst("https://edge.forgecdn.net/files/", "")
+                    .replace("/" + fileName, "")
+                    .replace("/", "");
+            }
+            return null;
+        }
     }
 }

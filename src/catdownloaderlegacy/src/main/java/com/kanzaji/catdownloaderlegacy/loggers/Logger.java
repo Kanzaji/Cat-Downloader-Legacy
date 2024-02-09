@@ -112,7 +112,7 @@ class Logger implements ILogger {
         if (!FileUtils.getParentFolder(Path.of(logPath.toString(), ".")).toString().equals(FileUtils.getParentFolder(this.LogFile).toString())) {
             if (Files.notExists(logPath)) {
                 this.log("Custom path for logs has been specified, but it doesn't exists! Creating \"" + logPath.toAbsolutePath() + "\".");
-                Files.createDirectory(logPath);
+                Files.createDirectories(logPath);
             } else {
                 this.log("Custom path for logs has been specified: \"" + logPath.toAbsolutePath() + "\".");
             }

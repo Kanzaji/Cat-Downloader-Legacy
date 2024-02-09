@@ -28,6 +28,7 @@ import com.kanzaji.catdownloaderlegacy.data.CDLInstance;
 import com.kanzaji.catdownloaderlegacy.data.CFManifest;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import com.kanzaji.catdownloaderlegacy.utils.FileUtils;
+import com.kanzaji.catdownloaderlegacy.utils.NetworkingUtils;
 import com.kanzaji.catdownloaderlegacy.utils.RandomUtils;
 import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
 
@@ -191,7 +192,7 @@ public class SyncManager {
                 " have been found on the hard drive!"
             );
 
-            if (missing.size() > 0) {
+            if (!missing.isEmpty()) {
                 logger.print("> " + RandomUtils.intGrammar(missing.size(), " mod is", " mods are", true) + " missing and designated to download.");
             }
 
@@ -200,7 +201,7 @@ public class SyncManager {
                 " have been verified successfully."
             );
 
-            if (corrupted.size() > 0) {
+            if (!corrupted.isEmpty()) {
                 logger.print("> " + RandomUtils.intGrammar(corrupted.size(), " mod is", " mods are", true) + " corrupted and designated to re-download.");
             } else {
                 logger.print("> No mods are corrupted.");
@@ -220,7 +221,7 @@ public class SyncManager {
         HashSet<Integer> downloads = new HashSet<>(missing);
         downloads.addAll(corrupted);
         HashSet<Callable<Integer[]>> downloadTasks = new HashSet<>();
-        if (downloads.size() < 1) {
+        if (downloads.isEmpty()) {
             return;
         }
 
@@ -252,10 +253,22 @@ public class SyncManager {
                 if (!Objects.equals(results.length, 2)) {
                     throw new IllegalStateException("Results from the downloads are not in correct schema! => " + Arrays.toString(results));
                 }
+                CDLInstance.ModFile mod = CDLInstanceData.files[results[0]];
                 switch (results[1]) {
-                    case 0 -> logger.log("File \"" + CDLInstanceData.files[results[0]].path + "\" has been downloaded successfully.");
+                    case 0 -> logger.log("File \"" + mod.path + "\" has been downloaded successfully.");
                     case -1 -> {
-                        logger.log("File \"" + CDLInstanceData.files[results[0]].path + "\" has failed to download correctly!!");
+                        logger.error("File \"" + mod.path + "\" has failed to download correctly!");
+                        //Work around for older CF Files.
+                        String id = mod.getCFid();
+                        if (Objects.nonNull(id) && id.length() < 7) {
+                            logger.warn("Trying a workaround for older CF files...");
+                            mod.downloadURL = "https://mediafilez.forgecdn.net/files/" + id.substring(0, 3) + "/" + id.substring(3) + "/" + mod.fileName;
+                            if (NetworkingUtils.downloadAndVerify(Path.of(WORKPATH.toString(), mod.path), mod.downloadURL, mod.fileLength)) {
+                                logger.log("File \"" + mod.path + "\" has been downloaded with use of the workaround successfully!");
+                                continue;
+                            }
+                            logger.error("Failed downloading file \"" + mod.path + "\" with use of the workaround!");
+                        }
                         failedDownloads.add(results[0]);
                     }
                     default -> throw new IllegalStateException("Invalid value in the download results! => " + Arrays.toString(results));
@@ -283,7 +296,7 @@ public class SyncManager {
                     " downloaded successfully.":
                     "All mods have been downloaded successfully"
                 ),
-            (failedDownloads.size() > 0)? 2 : 0
+            (!failedDownloads.isEmpty())? 2 : 0
         );
         System.out.println("---------------------------------------------------------------------");
     }
@@ -323,7 +336,7 @@ public class SyncManager {
             });
         }
 
-        if (removed.size() > 0) {
+        if (!removed.isEmpty()) {
             logger.print("> " + RandomUtils.intGrammar(removed.size(), " mod was", " mods were", true) + " removed!");
         } else {
             logger.print("> No mods were removed!");
@@ -372,19 +385,19 @@ public class SyncManager {
      * This method is used internally by {@link SyncManager} to print Synchronization statistics, like failed download tasks.
      */
     private void printStatistics() {
-        if (IgnoredRemoval.size() > 0 || IgnoredVerification.size() > 0) {
+        if (!IgnoredRemoval.isEmpty() || !IgnoredVerification.isEmpty()) {
             logger.print("Ignored mods found in the config file! (" + RandomUtils.intGrammar(SettingsManager.ModBlackList.size(), " file)", " files)", true), 1);
             logger.log("Mods contained in the blacklist:");
             SettingsManager.ModBlackList.forEach((mod) -> logger.log("- " + mod));
 
-            if (IgnoredVerification.size() > 0) {
+            if (!IgnoredVerification.isEmpty()) {
                 logger.print("> " + RandomUtils.intGrammar(IgnoredVerification.size(), " mod was", " mods were", true) + " not verified!", 1);
                 IgnoredVerification.forEach((mod) -> logger.warn("- " + CDLInstanceData.files[mod].fileName));
             } else {
                 logger.print("> All mods have been verified.");
             }
 
-            if (IgnoredRemoval.size() > 0) {
+            if (!IgnoredRemoval.isEmpty()) {
                 logger.print("> " + RandomUtils.intGrammar(IgnoredRemoval.size(), " mod was", " mods were", true) + " not removed!", 1);
                 IgnoredRemoval.forEach((mod) -> logger.warn("- " + SettingsManager.ModBlackList.get(mod)));
             } else {
@@ -404,23 +417,23 @@ public class SyncManager {
         if (errors > 0) {
             logger.print("Errors were found while doing synchronisation of the profile!", 2);
 
-            if (failedVerifications.size() > 0) logger.print("> Failed Verifications: " + failedVerifications.size(),2);
-            if (failedRemovals.size() > 0) logger.print("> Failed removals: " + failedRemovals.size(),2);
-            if (failedDownloads.size() > 0) logger.print("> Download errors: " + failedDownloads.size(),2);
+            if (!failedVerifications.isEmpty()) logger.print("> Failed Verifications: " + failedVerifications.size(),2);
+            if (!failedRemovals.isEmpty()) logger.print("> Failed removals: " + failedRemovals.size(),2);
+            if (!failedDownloads.isEmpty()) logger.print("> Download errors: " + failedDownloads.size(),2);
 
             System.out.println("For more details, check log file at " + logger.getLogPath());
 
-            if (failedVerifications.size() > 0) {
+            if (!failedVerifications.isEmpty()) {
                 logger.error("Files that failed verification with an exception:");
                 failedVerifications.forEach((index) -> logger.error("  " + CDLInstanceData.files[index].fileName));
             }
 
-            if (failedRemovals.size() > 0) {
+            if (!failedRemovals.isEmpty()) {
                 logger.error("Files that weren't possible to remove:");
                 failedRemovals.forEach((FileName) -> logger.error("  " + FileName));
             }
 
-            if (failedDownloads.size() > 0) {
+            if (!failedDownloads.isEmpty()) {
                 logger.error("Files that failed to Download:");
                 failedDownloads.forEach((index) -> {
                     CDLInstance.ModFile mod = CDLInstanceData.files[index];
@@ -436,7 +449,7 @@ public class SyncManager {
         //TODO: Proper warning from the data gathering,
         // this is here just to give info that some mods were not found
         // and fallback was found to give possibility to play that instance!
-        if (CFManifest.DataGatheringWarnings.size() > 0) {
+        if (!CFManifest.DataGatheringWarnings.isEmpty()) {
             logger.print("Data gathering warnings found!",1);
             logger.print("This might signal that some mods were not found and fallback was used.",1);
             System.out.println("Please inspect your log file at " + logger.getLogPath() + " for more information.");
