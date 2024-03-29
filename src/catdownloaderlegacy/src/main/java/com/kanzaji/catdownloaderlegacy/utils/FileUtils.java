@@ -154,7 +154,7 @@ public class FileUtils {
             }
         }
 
-        if (exceptionsHashSet.size() > 0) {
+        if (!exceptionsHashSet.isEmpty()) {
             IOException ioe = new IOException("IO Exception occurred while deleting the folder" + FileOrFolder.toAbsolutePath());
             exceptionsHashSet.forEach(ioe::addSuppressed);
             throw ioe;
@@ -195,7 +195,7 @@ public class FileUtils {
 
         Files.deleteIfExists(FileOrFolder);
 
-        if (exceptionsHashSet.size() > 0) {
+        if (!exceptionsHashSet.isEmpty()) {
             IOException ioe = new IOException("IO Exception occurred while deleting the folder" + FileOrFolder.toAbsolutePath());
             exceptionsHashSet.forEach(ioe::addSuppressed);
             throw ioe;
