@@ -119,7 +119,7 @@ public class Logger implements ILogger, IService {
 
     /**
      * Used as a last resort to try to initialize the logger. If it fails, it prints everything to the console.
-     * @see Logger#preInit()  for any other scenario for logger initialization.
+     * @see Logger#preInit() for any other scenario for logger initialization.
      */
     public void crashInit() {
         try {
@@ -153,7 +153,7 @@ public class Logger implements ILogger, IService {
     public void preInit() throws Throwable {
         try {
             if (Files.exists(this.logFile)) {
-                Files.move(this.logFile, Path.of(this.logFile.getFileName().toString().replace(".log", "-archived.log")), StandardCopyOption.REPLACE_EXISTING);
+                Files.move(this.logFile, Path.of(this.logFile.getFileName().toString().replace(".log", ".archived.log")), StandardCopyOption.REPLACE_EXISTING);
                 this.info("Old Log file found! \"" + this.logFile.toAbsolutePath() + "\" file has been archived for now.");
             }
             Files.createFile(this.logFile);
@@ -168,7 +168,14 @@ public class Logger implements ILogger, IService {
         logPreInitMessages();
     }
 
-    public void newpostInit() throws Throwable {
+    /**
+     * Used to finish initialization of the Logger.
+     * Handles the Stockpiling function of the logs, and moving the log file to a new location.
+     * @throws IllegalStateException when reading attributes of the compressed log files is not possible.
+     * @throws IOException when IO Exception occurs.
+     */
+    @Override
+    public void postInit() throws Throwable {
         // If logger is disabled, we skip the entire Post Init.
         if (!Configuration.LoggerActive.get()) {
             this.exit();
@@ -179,254 +186,10 @@ public class Logger implements ILogger, IService {
         if (Files.notExists(newDir)) {
             this.info("Creating Logs directory at: " + newDir.toAbsolutePath());
             Files.createDirectories(newDir);
-        } else {
-            archiveLogs();
-            checkLogLimit();
         }
-
+        archiveLogs();
+        checkLogLimit();
         moveToLogsFolder();
-    }
-
-    private void checkLogLimit() throws IOException {
-        var newDir = Configuration.LogsDir.get();
-        var logStock = Configuration.LogStockSize;
-        if (!logStock.shouldStockpile()) return;
-
-        if (logStock.isInfinite()) {
-            this.info("Stockpiling of the logs is enabled without the limit!");
-            return;
-        }
-
-        this.info("Stockpiling of the logs is enabled, with set limit of %d.".formatted(logStock.get()));
-        List<Path> archivedLogs = new LinkedList<>();
-        try(Stream<Path> directoryList = Files.list(newDir)) {
-            directoryList.forEach((File) -> {
-                String fileName = File.getFileName().toString();
-                if(fileName.contains(".log") && !fileName.equals(this.logFile.getFileName().toString())) {
-                    archivedLogs.add(File);
-                }
-            });
-        }
-
-        if (archivedLogs.size() > logStock.get()) {
-            this.info("Limit of log stockpile has been reached (Currently found %d log files). Deleting oldest files...".formatted(archivedLogs.size()));
-
-            archivedLogs.sort((e1, e2) -> {
-                try { return Files
-                    .readAttributes(e1, BasicFileAttributes.class)
-                    .creationTime()
-                    .compareTo(Files
-                        .readAttributes(e2, BasicFileAttributes.class)
-                        .creationTime()
-                    );
-                } catch (Exception e) {
-                    this.logStackTrace("Unable to read attributes of file: " + e1.toAbsolutePath(), e);
-                    return 0;
-                }
-            });
-
-            while (archivedLogs.size() > logStock.get()) {
-                try {
-                    if (Files.deleteIfExists(archivedLogs.get(0))) {
-                        this.info(archivedLogs.get(0).toAbsolutePath() + " has been deleted!");
-                    }
-                } catch (Exception e) {
-                    this.logStackTrace("Failed to delete the log file " + archivedLogs.get(0).toAbsolutePath(), e);
-                }
-                archivedLogs.remove(archivedLogs.get(0));
-            }
-        }
-    }
-
-    private void archiveLogs() throws IOException {
-        var newDir = Configuration.LogsDir.get();
-        var archived = newDir.resolve(this.logFile.getFileName());
-        if (Files.notExists(archived)) return;
-
-        if (!Configuration.LogStockSize.shouldStockpile()) {
-            this.info("Stockpiling disabled. Deleting archived log.");
-            FileUtils.delete(archived);
-            return;
-        }
-
-        if (Configuration.CompressStockpiledLogs.get()) {
-            FileUtils.compressToGz(archived, DateUtils.getCurrentFullDate() + ".log", true);
-        } else {
-            FileUtils.rename(archived, DateUtils.getCurrentFullDate() + ".log");
-        }
-    }
-
-    private void moveToLogsFolder() throws IOException {
-        var newDir = Configuration.LogsDir.get();
-        var newLog = newDir.resolve(this.logFile.getFileName());
-        if (FileUtils.getParentFolder(this.logFile) == FileUtils.getParentFolder(newLog)) {
-            this.info("Logs directory set to the root. No need to transfer the log file.");
-            return;
-        }
-
-        this.info("Moving current log file to new location...");
-        if (Files.exists(newLog))
-            this.warn("Previous non-archived log found! The log will be overridden.");
-        Files.move(this.logFile, newLog, StandardCopyOption.REPLACE_EXISTING);
-        this.logFile = newLog;
-    }
-
-    /**
-     * Used to finish initialization of the Logger.
-     * Handles the Stockpiling function of the logs, and moving the log file to a new location.
-     * @throws IllegalStateException when reading attributes of the compressed log files is not possible.
-     * @throws IOException when IO Exception occurs.
-     */
-    @Override
-    public void postInit() throws Throwable {
-        newpostInit();
-//        Path logPath = Path.of(ARD.getLogPath());
-//        Path archivedLog = Path.of("Kanza's-Launcher Archived.log");
-//        Path logInLogPath = Path.of(logPath.toString(), "Kanza's-Launcher.log");
-//        Path archivedLogInLogPath = Path.of(logPath.toString(), "Kanza's-Launcher Archived.log");
-//
-////         Move Log files to the log Path if specified.
-//        if (!FileUtils.getParentFolder(Path.of(logPath.toString(), ".")).toString().equals(FileUtils.getParentFolder(this.logFile).toString())) {
-//            if (Files.notExists(logPath)) {
-//                this.info("Custom path for logs has been specified, but it doesn't exists! Creating \"" + logPath.toAbsolutePath() + "\".");
-//                Files.createDirectory(logPath);
-//            } else {
-//                this.info("Custom path for logs has been specified: \"" + logPath.toAbsolutePath() + "\".");
-//            }
-//
-////             Checking if non-fully archived log is present in the new log location.
-//            if (Files.exists(archivedLogInLogPath)) {
-//                this.warn("Found old pre-full-archive log file in specified Path! This might signal a crash in the last post-init phase of the logger!");
-//                this.warn("The log file is going to be saved as unknown.log" + (ARD.shouldCompressLogs()? ".gz": "") + " for future inspection.");
-//                 if (ARD.shouldCompressLogs()) {
-//                     FileUtils.compressToGz(archivedLogInLogPath,"unknown.log", true);
-//                 } else {
-//                     FileUtils.rename(archivedLogInLogPath, "unknown.log");
-//                 }
-//            }
-//
-////             Kanza's-Launcher Archived.log handling.
-//            if (Files.exists(archivedLog)) {
-//                if (ARD.shouldStockpileLogs()) {
-//                    this.info("Found archived log in working directory! Moving archived log to new location...");
-//                    Files.move(archivedLog, archivedLogInLogPath);
-//                    archivedLog = archivedLogInLogPath;
-//                    if (ARD.shouldCompressLogs()) {
-//                        this.info("Moved archived log to new location! Compressing...");
-//                        FileUtils.compressToGz(archivedLog, DateUtils.getCurrentFullDate() + ".log", true);
-//                    } else {
-//                        this.info("Moved archived log to new location! Changing the filename...");
-//                        FileUtils.rename(archivedLog, DateUtils.getCurrentFullDate() + ".log");
-//                    }
-//                    this.info("Old log file has been archived!");
-//                } else {
-//                    this.info("Found archived log in working directory! However, stockpiling of the logs has been disabled. Deleting old log file...");
-//                    Files.deleteIfExists(archivedLog);
-//                    this.info("Old log file has been deleted!");
-//                }
-//            }
-//
-//            // Kanza's-Launcher.log handling.
-//            if (Files.exists(logInLogPath)) {
-//                if (ARD.shouldStockpileLogs()) {
-//                    this.info("Old log file found in the log Directory! Archiving the log file...");
-//                    String archivedName = FileUtils.rename(logInLogPath, "Kanza's-Launcher Archived.log");
-//                    Path archivedFile = Path.of(logPath.toString(), archivedName);
-//                    if (ARD.shouldCompressLogs()) {
-//                        FileUtils.compressToGz(archivedFile, DateUtils.getCurrentFullDate() + ".log", true);
-//                    } else {
-//                        FileUtils.rename(archivedFile, DateUtils.getCurrentFullDate() + ".log");
-//                    }
-//                    this.info("Old log file has been archived!");
-//                } else {
-//                    this.info("Found old log file in the Log directory! However, stockpiling of the logs has been disabled. Deleting old log file...");
-//                    Files.deleteIfExists(logInLogPath);
-//                    this.info("Old log file has been deleted!");
-//                }
-//            }
-//
-//            // Currently Active log handling.
-//            if (Files.exists(this.logFile)) {
-//                this.info("Moving currently active log file to new location...");
-//                if (Files.exists(logInLogPath)) {
-//                    this.error("Found non-archived log in the final destination, what should not happen at this point of the process!");
-//                    this.error("Archiving the log under unknown_latest.log" + (ARD.shouldCompressLogs()? ".gz": "") + "  name for future inspection.");
-//                    String unknownName = FileUtils.rename(logInLogPath, "unknown_latest.log");
-//                    FileUtils.compressToGz(Path.of(logPath.toString(), unknownName), true);
-//                }
-//                Files.move(this.logFile, logInLogPath);
-//                this.logFile = logInLogPath;
-//                this.info("Moved currently active log to the new Location: \"" + this.logFile.toAbsolutePath() + "\".");
-//            } else {
-//                this.error("The log file doesn't exists before even archiving??? Something is horribly wrong...");
-//            }
-//        } else {
-//            this.info("No custom path for Logs has been specified, using working directory for logging!");
-//            if (Files.exists(archivedLog)) {
-//                if(ARD.shouldStockpileLogs()) {
-//                    this.info("Old log file found! Archiving the log file...");
-//                    if (ARD.shouldCompressLogs()) {
-//                        FileUtils.compressToGz(archivedLog, DateUtils.getCurrentFullDate() + ".log", true);
-//                    } else {
-//                        FileUtils.rename(archivedLog, DateUtils.getCurrentFullDate() + ".log");
-//                    }
-//                    this.info("Log has been archived!");
-//                } else {
-//                    this.info("Old log file found! However, stockpiling of the logs has been disabled. Deleting old log file...");
-//                    Files.delete(archivedLog);
-//                    this.info("Old log file has been deleted.");
-//                }
-//            }
-//        }
-//
-//        // Limit handling
-//        if (ARD.shouldStockpileLogs() && ARD.getLogStockSize() > 0) {
-//            this.info("Stockpiling of the logs is enabled! Stockpile limit is " +  ARD.getLogStockSize());
-//            List<Path> archivedLogs = new LinkedList<>();
-//            try(Stream<Path> directoryList = Files.list(logPath)) {
-//                directoryList.forEach((File) -> {
-//                    String fileName = File.getFileName().toString();
-//                    if(fileName.contains(".log") && !fileName.equals("Kanza's-Launcher.log")) {
-//                        archivedLogs.add(File);
-//                    }
-//                });
-//            }
-//
-//            if (archivedLogs.size() > ARD.getLogStockSize()) {
-//                this.info("Limit of stockpile has been reached (Currently found " + archivedLogs.size() + " log files)! Deleting the oldest files...");
-//
-//                archivedLogs.sort((e1, e2) -> {
-//                    try { return Files
-//                            .readAttributes(e1, BasicFileAttributes.class)
-//                            .creationTime()
-//                            .compareTo(Files
-//                                .readAttributes(e2, BasicFileAttributes.class)
-//                                .creationTime()
-//                            );
-//                    } catch (Exception e) {
-//                        this.logStackTrace("Unable to read attributes of file: " + e1.toAbsolutePath(), e);
-//                        return 0;
-//                    }
-//                });
-//
-//                while (archivedLogs.size() > ARD.getLogStockSize()) {
-//                    try {
-//                        if (Files.deleteIfExists(archivedLogs.get(0))) {
-//                            this.info(archivedLogs.get(0).toAbsolutePath() + " has been deleted!");
-//                        } else {
-//                            this.error(archivedLogs.get(0).toAbsolutePath() + " was meant to be deleted, but it's missing! Something is not right...");
-//                        }
-//                    } catch (Exception e) {
-//                        this.logStackTrace("Failed to delete the log file " + archivedLogs.get(0).toAbsolutePath(), e);
-//                    }
-//                    archivedLogs.remove(archivedLogs.get(0));
-//                }
-//            }
-//        } else if (ARD.shouldStockpileLogs() && ARD.getLogStockSize() < 1) {
-//            this.info("Stockpiling of the logs is enabled! Stockpile limit is infinite!");
-//        }
-//
-//        this.info("Post-Initialization of Logger finished!");
     }
 
     /**
@@ -542,4 +305,94 @@ public class Logger implements ILogger, IService {
      * @param ex Throwable, if any.
      */
     private record PreInitMessage(String msg, int type, Throwable ex) {}
+
+    private void archiveLogs() throws IOException {
+        var newDir = Configuration.LogsDir.get();
+        var archived = Path.of(this.logFile.getFileName().toString().replace(".log", ".archived.log"));
+        var archivedInDir = newDir.resolve(this.logFile.getFileName());
+        if (Files.notExists(archivedInDir) && Files.notExists(archived)) return;
+
+        if (!Configuration.LogStockSize.shouldStockpile()) {
+            this.info("Stockpiling disabled. Deleting archived log.");
+            FileUtils.delete(archivedInDir);
+            FileUtils.delete(archived);
+            return;
+        }
+
+        if (Configuration.CompressStockpiledLogs.get()) {
+            FileUtils.move(archived, newDir, true);
+            FileUtils.compressToGz(archivedInDir, DateUtils.getCurrentFullDate() + ".log", true);
+            FileUtils.compressToGz(newDir.resolve(archived.getFileName()), DateUtils.getCurrentFullDate() + ".log", true);
+        } else {
+            FileUtils.move(archived, newDir, true);
+            FileUtils.rename(archivedInDir, DateUtils.getCurrentFullDate() + ".log");
+            FileUtils.rename(newDir.resolve(archived.getFileName()), DateUtils.getCurrentFullDate() + ".log");
+        }
+    }
+
+    private void checkLogLimit() throws IOException {
+        var newDir = Configuration.LogsDir.get();
+        var logStock = Configuration.LogStockSize;
+        if (!logStock.shouldStockpile()) return;
+
+        if (logStock.isInfinite()) {
+            this.info("Stockpiling of the logs is enabled without the limit!");
+            return;
+        }
+
+        this.info("Stockpiling of the logs is enabled, with set limit of %d.".formatted(logStock.get()));
+        List<Path> archivedLogs = new LinkedList<>();
+        try(Stream<Path> directoryList = Files.list(newDir)) {
+            directoryList.forEach((File) -> {
+                String fileName = File.getFileName().toString();
+                if(fileName.contains(".log") && !fileName.equals(this.logFile.getFileName().toString())) {
+                    archivedLogs.add(File);
+                }
+            });
+        }
+
+        if (archivedLogs.size() > logStock.get()) {
+            this.info("Limit of log stockpile has been reached (Currently found %d log files). Deleting oldest files...".formatted(archivedLogs.size()));
+
+            archivedLogs.sort((e1, e2) -> {
+                try { return Files
+                    .readAttributes(e1, BasicFileAttributes.class)
+                    .creationTime()
+                    .compareTo(Files
+                        .readAttributes(e2, BasicFileAttributes.class)
+                        .creationTime()
+                    );
+                } catch (Exception e) {
+                    this.logStackTrace("Unable to read attributes of file: " + e1.toAbsolutePath(), e);
+                    return 0;
+                }
+            });
+
+            while (archivedLogs.size() > logStock.get()) {
+                try {
+                    if (Files.deleteIfExists(archivedLogs.get(0))) {
+                        this.info(archivedLogs.get(0).toAbsolutePath() + " has been deleted!");
+                    }
+                } catch (Exception e) {
+                    this.logStackTrace("Failed to delete the log file " + archivedLogs.get(0).toAbsolutePath(), e);
+                }
+                archivedLogs.remove(archivedLogs.get(0));
+            }
+        }
+    }
+
+    private void moveToLogsFolder() throws IOException {
+        var newDir = Configuration.LogsDir.get();
+        var newLog = newDir.resolve(this.logFile.getFileName());
+        if (FileUtils.getParentFolder(this.logFile) == FileUtils.getParentFolder(newLog)) {
+            this.info("Logs directory set to the root. No need to transfer the log file.");
+            return;
+        }
+
+        this.info("Moving current log file to new location...");
+        if (Files.exists(newLog))
+            this.warn("Previous non-archived log found! The log will be overridden.");
+        Files.move(this.logFile, newLog, StandardCopyOption.REPLACE_EXISTING);
+        this.logFile = newLog;
+    }
 }

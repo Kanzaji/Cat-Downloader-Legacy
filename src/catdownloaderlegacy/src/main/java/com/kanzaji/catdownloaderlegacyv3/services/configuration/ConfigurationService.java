@@ -192,12 +192,12 @@ public class ConfigurationService implements IService {
                 if (arg.contains(":")) {
                     currentArg = arg.substring(0, arg.indexOf(":"));
                     if (!arg.endsWith(":"))
-                        args.computeIfAbsent(currentArg, (value) -> value + " " + arg.substring(arg.indexOf(":")+1));
+                        args.putIfAbsent(currentArg, arg.substring(arg.indexOf(":")+1).strip());
                 }
             }
             // We skip all arguments that don't have a value specified. Those are handled by the default value generators of specified configuration keys.
             else if (currentArg != null)
-                args.computeIfAbsent(currentArg, (value) -> value + " " + arg);
+                args.putIfAbsent(currentArg, arg);
         }
 
         args.forEach((arg, value) -> {
