@@ -188,15 +188,20 @@ public class ConfigurationService implements IService {
         String currentArg = null;
         for (String arg : CatDownloader.ARGUMENTS) {
             // Skip all values until we find the first argument.
-            if (arg.startsWith("-"))
-                currentArg = arg.toLowerCase(Locale.ROOT).replace("-", "");
+            if (arg.startsWith("-")) {
+                if (arg.contains(":")) {
+                    currentArg = arg.substring(0, arg.indexOf(":"));
+                    if (!arg.endsWith(":"))
+                        args.computeIfAbsent(currentArg, (value) -> value + " " + arg.substring(arg.indexOf(":")+1));
+                }
+            }
             // We skip all arguments that don't have a value specified. Those are handled by the default value generators of specified configuration keys.
             else if (currentArg != null)
                 args.computeIfAbsent(currentArg, (value) -> value + " " + arg);
         }
 
         args.forEach((arg, value) -> {
-            var keyName = arguments.get(arg);
+            var keyName = arguments.get(arg.toLowerCase(Locale.ROOT).replace("-", ""));
             if (keyName == null) {
                 logger.warn("Skipping unknown argument: " + arg);
                 return;
