@@ -1,7 +1,7 @@
 /**************************************************************************************
  * MIT License                                                                        *
  *                                                                                    *
- * Copyright (c) 2023. Kanzaji                                                        *
+ * Copyright (c) 2023-2024. Kanzaji                                                   *
  *                                                                                    *
  * Permission is hereby granted, free of charge, to any person obtaining a copy       *
  * of this software and associated documentation files (the "Software"), to deal      *
@@ -27,8 +27,10 @@ package com.kanzaji.catdownloaderlegacy.utils;
 import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.data.Settings;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
-import static com.kanzaji.catdownloaderlegacy.utils.RandomUtils.checkIfJsonObject;
+import static com.kanzaji.catdownloaderlegacyv3.utils.RandomUtils.checkIfJsonObject;
 
+import com.kanzaji.catdownloaderlegacyv3.utils.FileUtils;
+import com.kanzaji.catdownloaderlegacyv3.utils.RandomUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -68,6 +70,7 @@ import java.io.IOException;
  * @see SettingsManager#getSettings()
  * @see SettingsManager#updateSettings(Settings)
  */
+@Deprecated(forRemoval = true, since = "3.0.0-DEVELOP")
 public class SettingsManager {
     private static final LoggerCustom logger = new LoggerCustom("SettingsManager");
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().setLenient().create();
@@ -230,7 +233,7 @@ public class SettingsManager {
             errors.add("LogStockpileSize can't be negative!");
         }
 
-        if (errors.size() > 0) {
+        if (!errors.isEmpty()) {
             logger.error("---------------------------------------------------------------------");
             logger.error("Failed to validate settings!");
             System.out.println("There appear to be mistakes in your current settings file!");
@@ -281,7 +284,7 @@ public class SettingsManager {
         // That is why I went with the "Read all lines and update entries manually" way.
         while (it.hasNext()) {
             String Line = it.next();
-            if (existingKeys.get().size() > 0) for (String settingsKey : Settings.SettingsKeys) {
+            if (!existingKeys.get().isEmpty()) for (String settingsKey : Settings.SettingsKeys) {
                 if (Line.contains("\"" + settingsKey + "\":") && existingKeys.get().removeIf(settingsKey::equals)) {
 
                     // While adding new Settings Keys, this requires implementing handler for that key.
@@ -305,7 +308,7 @@ public class SettingsManager {
                         default -> throw new IllegalArgumentException("Illegal key in the SettingsFile!");
                     } + ",";
 
-                    if (existingKeys.get().size() < 1 && Line.contains(",")) Line = Line.substring(0,Line.lastIndexOf(","));
+                    if (existingKeys.get().isEmpty() && Line.contains(",")) Line = Line.substring(0,Line.lastIndexOf(","));
 
                     break;
                 }
@@ -319,7 +322,7 @@ public class SettingsManager {
             }
         }
 
-        if (existingKeys.get().size() > 0) {
+        if (!existingKeys.get().isEmpty()) {
             logger.warn("Found missing entries in the Settings file! Adding missing entries...");
             Files.copy(FileUtils.getInternalAsset("templates/settings.json5"), SettingsFile, StandardCopyOption.REPLACE_EXISTING);
             saveSettings(SettingsData);
@@ -386,7 +389,7 @@ public class SettingsManager {
         StringBuilder modBlackListString = new StringBuilder();
         LinkedList<String> blackListEntries = new LinkedList<>(blackList);
 
-        if (blackListEntries.size() > 0) {
+        if (!blackListEntries.isEmpty()) {
             if (blackListEntries.removeIf(Line::contains)) {
                 modBlackListString
                 .append(Line.substring(
@@ -410,7 +413,7 @@ public class SettingsManager {
                 modBlackListString.append("\n");
             }
         }
-        if (blackListEntries.size() > 0) blackListEntries.forEach(modBlackListString::append);
+        if (!blackListEntries.isEmpty()) blackListEntries.forEach(modBlackListString::append);
         return modBlackListString.toString().strip();
     }
 }

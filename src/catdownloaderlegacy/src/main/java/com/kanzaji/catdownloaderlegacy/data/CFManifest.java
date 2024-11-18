@@ -27,6 +27,7 @@ package com.kanzaji.catdownloaderlegacy.data;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import com.kanzaji.catdownloaderlegacy.Updater;
 
+import com.kanzaji.catdownloaderlegacyv3.data.CDLInstance;
 import org.jetbrains.annotations.ApiStatus;
 
 import com.google.gson.Gson;
@@ -73,8 +74,8 @@ public class CFManifest {
         public int fileSize;
 
         /**
-         * This method creates new {@link com.kanzaji.catdownloaderlegacy.data.CDLInstance.ModFile} object, with information taken from this object. It does not guarantee that the returned mod file will not contain null or incorrect values.
-         * @return new {@link com.kanzaji.catdownloaderlegacy.data.CDLInstance.ModFile} with information from this object.
+         * This method creates new {@link CDLInstance.ModFile} object, with information taken from this object. It does not guarantee that the returned mod file will not contain null or incorrect values.
+         * @return new {@link CDLInstance.ModFile} with information from this object.
          */
         public CDLInstance.ModFile toCDLModFile() {return new CDLInstance.ModFile(this.getFileName(), this.downloadUrl, this.fileSize);}
 

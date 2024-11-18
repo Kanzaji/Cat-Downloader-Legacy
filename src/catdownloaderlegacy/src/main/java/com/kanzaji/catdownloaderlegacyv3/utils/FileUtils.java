@@ -1,7 +1,7 @@
 /**************************************************************************************
  * MIT License                                                                        *
  *                                                                                    *
- * Copyright (c) 2023. Kanzaji                                                        *
+ * Copyright (c) 2023-2024. Kanzaji                                                   *
  *                                                                                    *
  * Permission is hereby granted, free of charge, to any person obtaining a copy       *
  * of this software and associated documentation files (the "Software"), to deal      *
@@ -22,10 +22,10 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.utils;
+package com.kanzaji.catdownloaderlegacyv3.utils;
 
-import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
-
+import com.kanzaji.catdownloaderlegacyv3.services.Logger;
+import com.kanzaji.catdownloaderlegacyv3.services.interfaces.ILogger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,7 +49,7 @@ import java.util.zip.ZipFile;
  * @see FileUtils#getFileName(Path)
  */
 public class FileUtils {
-    private static final LoggerCustom logger = new LoggerCustom("File Utilities");
+    private static final ILogger logger = Logger.get("File Utilities");
 
     /**
      * Used to get an {@link InputStream} for an internal resource. Starts from the `root` directory of the jar.
@@ -105,7 +105,7 @@ public class FileUtils {
                 Files.createDirectory(directoryPath.get(i));
             }
 
-            logger.log("Path \"" + msgPath + "\" has been created!");
+            logger.info("Path \"" + msgPath + "\" has been created!");
         } catch (Exception e) {
             throw new UnexpectedException("Exception caught while creating path \"" + msgPath + "\"", e);
         }
@@ -142,7 +142,7 @@ public class FileUtils {
             dirListing.close();
 
         } else {
-            logger.log("Moving file \"" + FileOrFolder + "\" to the folder \"" + Destination + "\"");
+            logger.info("Moving file \"" + FileOrFolder + "\" to the folder \"" + Destination + "\"");
             if (override) {
                 Files.move(FileOrFolder, finalPath, StandardCopyOption.REPLACE_EXISTING);
             } else {
@@ -178,7 +178,7 @@ public class FileUtils {
 
         if (!Files.isDirectory(FileOrFolder)) {
             Files.deleteIfExists(FileOrFolder);
-            logger.log("File \"" + FileOrFolder + "\" has been deleted.");
+            logger.info("File \"" + FileOrFolder + "\" has been deleted.");
             return;
         }
 
@@ -200,7 +200,7 @@ public class FileUtils {
             exceptionsHashSet.forEach(ioe::addSuppressed);
             throw ioe;
         } else {
-            logger.log("Directory \"" + FileOrFolder + "\" has been deleted.");
+            logger.info("Directory \"" + FileOrFolder + "\" has been deleted.");
         }
     }
 
@@ -234,12 +234,12 @@ public class FileUtils {
             Files.move(File, newFile);
 
             logger.warn("New file name: \"" + newFile.getFileName() + "\"");
-            logger.log("Renamed file \"" + File.toAbsolutePath().getFileName() + "\" to \"" + newFile.getFileName() + "\".");
+            logger.info("Renamed file \"" + File.toAbsolutePath().getFileName() + "\" to \"" + newFile.getFileName() + "\".");
 
             return newFile.getFileName().toString();
         } else {
             Files.move(File, Path.of(getParentFolderAsString(File),Name));
-            logger.log("Renamed file \"" + File.toAbsolutePath().getFileName() + "\" to \"" + Name + "\".");
+            logger.info("Renamed file \"" + File.toAbsolutePath().getFileName() + "\" to \"" + Name + "\".");
             return Name;
         }
     }
@@ -254,7 +254,7 @@ public class FileUtils {
     public static void unzip(Path zipFilePath, @Nullable Path destinationPath, boolean shouldDeleteZipFile) throws IOException {
         Objects.requireNonNull(zipFilePath);
 
-        logger.log("Unzipping of the archive \"" + zipFilePath.toAbsolutePath() + "\" has been requested.");
+        logger.info("Unzipping of the archive \"" + zipFilePath.toAbsolutePath() + "\" has been requested.");
 
         if (Objects.isNull(destinationPath)) {
             String zipFileName = zipFilePath.getFileName().toString();
@@ -267,31 +267,31 @@ public class FileUtils {
             throw new IllegalStateException("Destination for the zip archive \"" + zipFilePath.toAbsolutePath() + "\" is a file!");
         }
 
-        logger.log("Destination: \"" + destinationPath.toAbsolutePath() + "\"");
+        logger.info("Destination: \"" + destinationPath.toAbsolutePath() + "\"");
 
         long dirs = 0;
         long files = 0;
         try (ZipFile zipFile = new ZipFile(zipFilePath.toFile())) {
-            logger.log("Archive contains " + zipFile.stream().toList().size() + " entries.");
+            logger.info("Archive contains " + zipFile.stream().toList().size() + " entries.");
             Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
             while (zipEntries.hasMoreElements()) {
                 ZipEntry zipEntry = zipEntries.nextElement();
                 Path dirOrFile = Path.of(destinationPath.toString(), zipEntry.getName());
                 if (zipEntry.isDirectory()) {
                     Files.createDirectory(dirOrFile);
-                    logger.log("Directory \"" + dirOrFile + "\" has been created.");
+                    logger.info("Directory \"" + dirOrFile + "\" has been created.");
                     dirs++;
                 } else {
                     Files.copy(zipFile.getInputStream(zipEntry), dirOrFile);
-                    logger.log("File \"" + dirOrFile + "\" has been created.");
+                    logger.info("File \"" + dirOrFile + "\" has been created.");
                     files++;
                 }
             }
         }
 
-        logger.log("Archive \"" + zipFilePath.toAbsolutePath() + "\" has been successfully uncompressed.");
-        logger.log(files + " files have been created.");
-        logger.log(dirs + " directories have been created");
+        logger.info("Archive \"" + zipFilePath.toAbsolutePath() + "\" has been successfully uncompressed.");
+        logger.info(files + " files have been created.");
+        logger.info(dirs + " directories have been created");
         if (shouldDeleteZipFile) delete(zipFilePath);
     }
 
@@ -316,7 +316,7 @@ public class FileUtils {
 
         Path gzFile;
         if (FileName != null) {
-            logger.log("Custom file name for archive specified! Archive will be saved under name: \"" + FileName + ".gz\"");
+            logger.info("Custom file name for archive specified! Archive will be saved under name: \"" + FileName + ".gz\"");
             gzFile = Path.of(getParentFolderAsString(File),FileName + ".gz");
         } else {
             gzFile = Path.of(getParentFolderAsString(File), File.getFileName() + ".gz");
@@ -324,7 +324,7 @@ public class FileUtils {
 
         boolean gzFileExists = Files.exists(gzFile);
 
-        logger.log("Compressing file \"" + File.toAbsolutePath() + "\"...");
+        logger.info("Compressing file \"" + File.toAbsolutePath() + "\"...");
 
         if (gzFileExists) {
             logger.warn("Found already compressed file with the same name!");
@@ -354,11 +354,11 @@ public class FileUtils {
         try (GZIPOutputStream gzOutput = new GZIPOutputStream(Files.newOutputStream(gzFile))) {
             Files.copy(File, gzOutput);
             if (DeleteOriginal) {
-                logger.log("Compression done! Deleting original file...");
+                logger.info("Compression done! Deleting original file...");
                 delete(File);
-                logger.log("File \"" + File.toAbsolutePath().getFileName() + "\" has been deleted.");
+                logger.info("File \"" + File.toAbsolutePath().getFileName() + "\" has been deleted.");
             } else {
-                logger.log("Compression done!");
+                logger.info("Compression done!");
             }
         }
     }

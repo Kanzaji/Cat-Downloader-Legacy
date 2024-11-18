@@ -99,7 +99,7 @@ public class CDLUpdater {
             );
 
             System.exit(0);
-        } catch (Error | Exception e) {
+        } catch (Throwable e) {
             logger.logStackTrace("Exception thrown while executing main app code!", e);
             System.exit(1);
         }

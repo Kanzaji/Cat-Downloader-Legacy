@@ -1,7 +1,7 @@
 /**************************************************************************************
  * MIT License                                                                        *
  *                                                                                    *
- * Copyright (c) 2023. Kanzaji                                                        *
+ * Copyright (c) 2023-2024. Kanzaji                                                   *
  *                                                                                    *
  * Permission is hereby granted, free of charge, to any person obtaining a copy       *
  * of this software and associated documentation files (the "Software"), to deal      *
@@ -22,36 +22,33 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.cdlupdater.loggers;
+package com.kanzaji.catdownloaderlegacyv3.services.interfaces;
+
+import org.jetbrains.annotations.Nullable;
 
 /**
- * @apiNote Imported from com.kanzaji.catdownloaderlegacy
+ * This interface is used to create logger services. Functions for different log levels are already implemented.
  */
-interface ILogger {
-    /**
-     * Used to initialize Logger. Creates new log file and overrides old one if present.
-     * It Has to be implemented manually.
-     */
-    void init();
-
+public interface ILogger {
     /**
      * Used to get a path to a log file.
-     * Has to be implemented manually.
      * @return {@link String} with absolute path of a log file.
+     * @apiNote Has to be implemented manually.
      */
     String getLogPath();
 
     /**
-     * Used to disable Logger and remove log file.
-     * Has to be implemented manually.
+     * Used to get boolean with the state of initialization of the Logger.
+     * @return {@link Boolean} true if logger has been initialized successfully, false otherwise.
+     * @apiNote Has to be implemented manually.
      */
-    void exit();
+    boolean isInitialized();
 
     /**
      * Logs a message to a log file.
      * @param msg {@link String} message to log.
      */
-    default void log(String msg) {
+    default void info(String msg) {
         this.logType(msg, 0);
     }
 
@@ -129,7 +126,7 @@ interface ILogger {
     }
 
     /**
-     * Custom Log method that allows to set level of log, message and attach throwable. Has to be implemented manually.<br>
+     * Custom Log method that allows to set level of log, message and attach throwable.<br>
      * Available levels:
      * <ul>
      *     <li>0 | LOG</li>
@@ -140,6 +137,7 @@ interface ILogger {
      * @param msg {@link String} message to log to a log file.
      * @param type Nullable {@link Integer} between 0 and 3 specifying selected level. Defaults to 0.
      * @param throwable Nullable {@link Throwable} to log.
+     * @apiNote Has to be implemented manually.
      */
-    void logCustom(String msg, int type, Throwable throwable);
+    void logCustom(String msg, int type, @Nullable Throwable throwable);
 }

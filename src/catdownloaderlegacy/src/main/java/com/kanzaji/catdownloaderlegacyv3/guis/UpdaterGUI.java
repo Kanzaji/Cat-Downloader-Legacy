@@ -1,7 +1,7 @@
 /**************************************************************************************
  * MIT License                                                                        *
  *                                                                                    *
- * Copyright (c) 2023. Kanzaji                                                        *
+ * Copyright (c) 2023-2024. Kanzaji                                                   *
  *                                                                                    *
  * Permission is hereby granted, free of charge, to any person obtaining a copy       *
  * of this software and associated documentation files (the "Software"), to deal      *
@@ -22,11 +22,13 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.guis;
+package com.kanzaji.catdownloaderlegacyv3.guis;
 
 import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 import com.kanzaji.catdownloaderlegacy.Updater;
+import com.kanzaji.catdownloaderlegacyv3.services.Logger;
+import com.kanzaji.catdownloaderlegacyv3.services.interfaces.ILogger;
 
 import javax.swing.*;
 import java.awt.*;
@@ -39,7 +41,7 @@ import java.util.Objects;
  * @see UpdaterGUI#startUpdateGUI()
  */
 public class UpdaterGUI {
-    private static final LoggerCustom logger = new LoggerCustom("Updater GUI");
+    private static final ILogger logger = Logger.get("Updater GUI");
     private static final JFrame MainFrame = new JFrame("Cat-Downloader Legacy Updater");
     private static JTextArea ChangelogText = null;
     private static JLabel UpdateText = null;
@@ -55,8 +57,8 @@ public class UpdaterGUI {
         int gWidth = GUIUtils.getScreenWidth();
         int gHeight = GUIUtils.getScreenHeight();
 
-        logger.log("Starting Update GUI...");
-        logger.log("Current resolution: " + gWidth + "x" + gHeight);
+        logger.info("Starting Update GUI...");
+        logger.info("Current resolution: " + gWidth + "x" + gHeight);
 
         Container panel = MainFrame.getContentPane();
         panel.setLayout(null);
@@ -119,7 +121,7 @@ public class UpdaterGUI {
         UpdateButton.setToolTipText("Click on this button to update the app");
         panel.add(UpdateButton);
 
-        logger.log("Main Frame ready! Making it visible.");
+        logger.info("Main Frame ready! Making it visible.");
         panel.setBackground(new Color(0xffffffff, true));
         MainFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         MainFrame.setSize(gWidth/2, gHeight/2);
@@ -136,7 +138,7 @@ public class UpdaterGUI {
      */
     public static void setChangelogText(String text) {
         if (Objects.isNull(ChangelogText)) throw new NullPointerException("ChangelogText is null! Was GUI not started?");
-        logger.log("Setting changelog text to: \"" + text + "\"");
+        logger.info("Setting changelog text to: \"" + text + "\"");
         ChangelogText.setText(text);
     }
 
@@ -148,7 +150,7 @@ public class UpdaterGUI {
      */
     public static void setUpdateVersion(String currentVersion, String latestVersion) {
         if (Objects.isNull(UpdateText)) throw new NullPointerException("ChangelogText is null! Was GUI not started?");
-        logger.log("Setting update text to: \"Current Version " + currentVersion + " ==> Latest Version " + latestVersion + "\"");
+        logger.info("Setting update text to: \"Current Version " + currentVersion + " ==> Latest Version " + latestVersion + "\"");
         UpdateText.setText("Current Version " + currentVersion + " ==> Latest Version " + latestVersion);
     }
 

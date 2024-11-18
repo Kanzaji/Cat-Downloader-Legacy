@@ -1,7 +1,7 @@
 /**************************************************************************************
  * MIT License                                                                        *
  *                                                                                    *
- * Copyright (c) 2023. Kanzaji                                                        *
+ * Copyright (c) 2023-2024. Kanzaji                                                   *
  *                                                                                    *
  * Permission is hereby granted, free of charge, to any person obtaining a copy       *
  * of this software and associated documentation files (the "Software"), to deal      *
@@ -22,17 +22,18 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.data;
+package com.kanzaji.catdownloaderlegacyv3.data;
 
 import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
-import com.kanzaji.catdownloaderlegacy.exceptions.UnknownFormatException;
+import com.kanzaji.catdownloaderlegacy.data.CFManifest;
+import com.kanzaji.catdownloaderlegacyv3.exceptions.UnknownFormatException;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
-import com.kanzaji.catdownloaderlegacy.utils.FileUtils;
-import com.kanzaji.catdownloaderlegacy.utils.FileVerUtils;
-import com.kanzaji.catdownloaderlegacy.utils.NetworkingUtils;
-import com.kanzaji.catdownloaderlegacy.utils.RandomUtils;
+import com.kanzaji.catdownloaderlegacyv3.utils.FileUtils;
+import com.kanzaji.catdownloaderlegacyv3.utils.FileVerUtils;
+import com.kanzaji.catdownloaderlegacyv3.utils.NetworkingUtils;
+import com.kanzaji.catdownloaderlegacyv3.utils.RandomUtils;
 import static com.kanzaji.catdownloaderlegacy.CatDownloader.WORKPATH;
-import static com.kanzaji.catdownloaderlegacy.guis.MRSecurityCheckGUI.modrinthSecurityCheckFail;
+import static com.kanzaji.catdownloaderlegacyv3.guis.MRSecurityCheckGUI.modrinthSecurityCheckFail;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

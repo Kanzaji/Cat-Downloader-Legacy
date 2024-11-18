@@ -1,7 +1,7 @@
 /**************************************************************************************
  * MIT License                                                                        *
  *                                                                                    *
- * Copyright (c) 2023. Kanzaji                                                        *
+ * Copyright (c) 2023-2024. Kanzaji                                                   *
  *                                                                                    *
  * Permission is hereby granted, free of charge, to any person obtaining a copy       *
  * of this software and associated documentation files (the "Software"), to deal      *
@@ -22,13 +22,13 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.utils;
-
-import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+package com.kanzaji.catdownloaderlegacyv3.utils;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import com.kanzaji.catdownloaderlegacyv3.services.Logger;
+import com.kanzaji.catdownloaderlegacyv3.services.interfaces.ILogger;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -43,7 +43,7 @@ import java.util.concurrent.TimeoutException;
  */
 public class RandomUtils {
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().setLenient().create();
-    private static final LoggerCustom logger = new LoggerCustom("Random Utilities");
+    private static final ILogger logger = Logger.get("Random Utilities");
 
     /**
      * Used to check if provided String is JSON Object.
@@ -66,8 +66,8 @@ public class RandomUtils {
      */
     public static void closeTheApp(int exitCode) {
         if (logger.isInitialized()) {
-            logger.log("Cat-Downloader Legacy is created and maintained by Kanzaji! Find the source code and issue tracker here:");
-            logger.log("https://github.com/Kanzaji/Cat-Downloader-Legacy");
+            logger.info("Cat-Downloader Legacy is created and maintained by Kanzaji! Find the source code and issue tracker here:");
+            logger.info("https://github.com/Kanzaji/Cat-Downloader-Legacy");
         }
         System.exit(exitCode);
     }
@@ -144,6 +144,6 @@ public class RandomUtils {
         Runtime run = Runtime.getRuntime();
         long memory = run.totalMemory() - run.freeMemory();
         System.gc();
-        logger.log(("GC Manual Trigger! " + (float)(memory - run.totalMemory() + run.freeMemory())/(1024L*1024L)) + " MegaBytes were cleared up.");
+        logger.info(("GC Manual Trigger! " + (float)(memory - run.totalMemory() + run.freeMemory())/(1024L*1024L)) + " MegaBytes were cleared up.");
     }
 }

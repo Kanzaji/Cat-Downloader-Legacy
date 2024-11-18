@@ -1,7 +1,7 @@
 /**************************************************************************************
  * MIT License                                                                        *
  *                                                                                    *
- * Copyright (c) 2023. Kanzaji                                                        *
+ * Copyright (c) 2023-2024. Kanzaji                                                   *
  *                                                                                    *
  * Permission is hereby granted, free of charge, to any person obtaining a copy       *
  * of this software and associated documentation files (the "Software"), to deal      *
@@ -22,12 +22,12 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.utils;
+package com.kanzaji.catdownloaderlegacyv3.utils;
 
 import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
-import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
-import static com.kanzaji.catdownloaderlegacy.utils.FileVerUtils.verifyFile;
 
+import com.kanzaji.catdownloaderlegacyv3.services.Logger;
+import com.kanzaji.catdownloaderlegacyv3.services.interfaces.ILogger;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -49,7 +49,7 @@ import java.util.Objects;
  * @see NetworkingUtils#downloadAndVerify(Path, String, int, String)
  */
 public class NetworkingUtils {
-    private static final LoggerCustom logger = new LoggerCustom("Network Utilities");
+    private static final ILogger logger = Logger.get("Network Utilities");
 
     /**
      * This method is used to check the connection to the specified URL.
@@ -89,7 +89,7 @@ public class NetworkingUtils {
                 logger.warn("File has been renamed to: " + FileUtils.rename(File, FileName));
             }
 
-            logger.log("Started downloading " + FileName + " ...");
+            logger.info("Started downloading " + FileName + " ...");
             if (Files.notExists(FileUtils.getParentFolder(File))) FileUtils.createRequiredPathToAFile(File);
 
             long StartTime = System.currentTimeMillis();
@@ -108,7 +108,7 @@ public class NetworkingUtils {
             InputData.close();
 
             float ElapsedTime = (float) (System.currentTimeMillis() - StartTime) / 1000F;
-            logger.log("Finished downloading " + FileName + " (Took " + ElapsedTime + "s)");
+            logger.info("Finished downloading " + FileName + " (Took " + ElapsedTime + "s)");
         } catch(Exception e) {
             if (Objects.equals(e.getClass(), UnknownHostException.class)) {
                 logger.critical("Couldn't find specified host (" + e.getMessage() + ") for the download of \"" + File + "\"!");
@@ -150,20 +150,20 @@ public class NetworkingUtils {
             FileName = File.getFileName().toString();
         }
 
-        logger.log("Verifying " + FileName + " after download...");
+        logger.info("Verifying " + FileName + " after download...");
         if ((Objects.isNull(Hash) || Objects.isNull(Algorithm))?
                 !FileVerUtils.verifyFile(File, FileSize, DownloadURL):
                 !FileVerUtils.verifyFile(File, FileSize, Hash, Algorithm)
         ) {
             logger.error("Verification of the " + FileName + " failed! Trying to re-download the file...");
             if(NetworkingUtils.reDownload(File, FileSize, DownloadURL, FileName, Hash, Algorithm)) {
-                logger.log("Re-download of " + FileName + " was successful!");
+                logger.info("Re-download of " + FileName + " was successful!");
             } else {
                 logger.critical("Re-download of " + FileName + " after " + ArgumentDecoder.getInstance().getDownloadAttempts() + " attempts failed!");
                 return false;
             }
         } else {
-            logger.log("Verification of the file \"" + FileName + "\" was successful.");
+            logger.info("Verification of the file \"" + FileName + "\" was successful.");
         }
         return true;
     }
@@ -223,16 +223,16 @@ public class NetworkingUtils {
             Thread.sleep(2500L * i);
 
             if (Files.deleteIfExists(file)) {
-                logger.log("Deleted corrupted " + fileName + ". Re-download attempt: " + (i+1));
+                logger.info("Deleted corrupted " + fileName + ". Re-download attempt: " + (i+1));
             }
 
             download(file, downloadUrl, fileName);
             if (hashVerification) {
-                if (verifyFile(file, fileSize, Hash, Algorithm)) {
+                if (FileVerUtils.verifyFile(file, fileSize, Hash, Algorithm)) {
                     return true;
                 }
             } else {
-                if (verifyFile(file, fileSize, downloadUrl)) {
+                if (FileVerUtils.verifyFile(file, fileSize, downloadUrl)) {
                     return true;
                 }
             }

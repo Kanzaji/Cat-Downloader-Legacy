@@ -24,13 +24,16 @@
 
 package com.kanzaji.catdownloaderlegacy.data;
 
+import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 
 /**
  * Class used to represent JSON Structure of configuration file.
- * @see com.kanzaji.catdownloaderlegacy.utils.SettingsManager
+ * @see SettingsManager
  */
+@Deprecated(forRemoval = true, since = "3.0.0-DEVELOP")
 public class Settings {
     /**
      * This static contains all Setting Keys from the Settings File.

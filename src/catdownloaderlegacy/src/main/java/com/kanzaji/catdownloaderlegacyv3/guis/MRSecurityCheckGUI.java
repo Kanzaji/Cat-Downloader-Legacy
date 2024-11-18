@@ -1,7 +1,7 @@
 /**************************************************************************************
  * MIT License                                                                        *
  *                                                                                    *
- * Copyright (c) 2023. Kanzaji                                                        *
+ * Copyright (c) 2023-2024. Kanzaji                                                   *
  *                                                                                    *
  * Permission is hereby granted, free of charge, to any person obtaining a copy       *
  * of this software and associated documentation files (the "Software"), to deal      *
@@ -22,11 +22,12 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.guis;
+package com.kanzaji.catdownloaderlegacyv3.guis;
 
-import com.kanzaji.catdownloaderlegacy.data.MRIndex;
-import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
-import com.kanzaji.catdownloaderlegacy.utils.RandomUtils;
+import com.kanzaji.catdownloaderlegacyv3.data.MRIndex;
+import com.kanzaji.catdownloaderlegacyv3.services.Logger;
+import com.kanzaji.catdownloaderlegacyv3.services.interfaces.ILogger;
+import com.kanzaji.catdownloaderlegacyv3.utils.RandomUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,7 +35,7 @@ import javax.swing.*;
 import java.awt.*;
 
 public class MRSecurityCheckGUI {
-    private static final LoggerCustom logger = new LoggerCustom("Modrinth Security Check");
+    private static final ILogger logger = Logger.get("Modrinth Security Check");
 
     /**
      * This method is used to prompt the user about possibly malicious intent of the pack they are trying to install. Closes the app with 401 exit code.

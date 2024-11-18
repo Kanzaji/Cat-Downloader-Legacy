@@ -1,7 +1,7 @@
 /**************************************************************************************
  * MIT License                                                                        *
  *                                                                                    *
- * Copyright (c) 2023. Kanzaji                                                        *
+ * Copyright (c) 2024. Kanzaji                                                        *
  *                                                                                    *
  * Permission is hereby granted, free of charge, to any person obtaining a copy       *
  * of this software and associated documentation files (the "Software"), to deal      *
@@ -22,31 +22,47 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.exceptions;
+package com.kanzaji.catdownloaderlegacyv3.services.configuration.types;
 
-/**
- * Signals that parsed file is in a format that is either incorrect or is an unknown format.
- */
-public class UnknownFormatException extends RuntimeException {
+import com.kanzaji.catdownloaderlegacyv3.services.configuration.ValidationResult;
+import com.kanzaji.catdownloaderlegacyv3.utils.interfaces.ThrowingFunction;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
-    /**
-     * Constructs UnknownFormatException with no detail message.
-     */
-    public UnknownFormatException() {super();}
+import java.util.function.Function;
+import java.util.function.Supplier;
 
-    /**
-     * Constructs UnknownFormatException with the specified detail message.
-     */
-    public UnknownFormatException(String msg) {super(msg);}
+public class IntegerType {
+    private IntegerType() {}
+    public static final ThrowingFunction<Object, Object> PARSER = (s) ->  {
+        if (s instanceof String) return Integer.parseInt((String) s);
+        if (s instanceof Double) return ((Double) s).intValue();
+        return (Integer) s;
+    };
 
-    /**
-     * Constructs UnknownFormatException with the specified detail message and cause;
-     */
-    public UnknownFormatException(String msg, Throwable e) {super(msg, e);}
+    @Contract(pure = true)
+    public static @NotNull Supplier<Object> defaultSupplier(int value) {
+        return () -> (Integer) value;
+    }
 
-    /**
-     * Constructs a new exception with the specified cause and a detail message of (cause==null ? null : cause.toString()) (which typically contains the class and detail message of cause).
-     */
-    public UnknownFormatException(Throwable e) {super(e);}
+    @Contract(pure = true)
+    public static @NotNull Function<Object, ValidationResult> inRangeValidator(int min, int max) {
+        return (s) -> {
+            try {
+                int val = (int) PARSER.apply(s);
 
+                if (val < min) {
+                    return new ValidationResult(false, "Value below minimum of " + min);
+                }
+
+                if (val > max) {
+                    return new ValidationResult(false, "Value above maximum of " + min);
+                }
+
+                return new ValidationResult(true, "");
+            } catch (Throwable e) {
+                return new ValidationResult(false, "Exception occurred while parsing the value! " + e);
+            }
+        };
+    }
 }

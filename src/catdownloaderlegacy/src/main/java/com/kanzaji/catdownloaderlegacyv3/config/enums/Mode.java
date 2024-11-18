@@ -1,7 +1,7 @@
 /**************************************************************************************
  * MIT License                                                                        *
  *                                                                                    *
- * Copyright (c) 2023. Kanzaji                                                        *
+ * Copyright (c) 2024. Kanzaji                                                        *
  *                                                                                    *
  * Permission is hereby granted, free of charge, to any person obtaining a copy       *
  * of this software and associated documentation files (the "Software"), to deal      *
@@ -22,37 +22,11 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.data;
+package com.kanzaji.catdownloaderlegacyv3.config.enums;
 
-/**
- * Class used to represent Data Structure for MinecraftInstance.json file.
- */
-@SuppressWarnings("unused")
-public class CFMinecraftInstance {
-
-    public baseModLoader baseModLoader;
-    public String name;
-    public CFManifest manifest;
-    public installedAddons[] installedAddons;
-
-    public static class installedAddons {
-        public Number addonID;
-        public AddonFile installedFile;
-    }
-    public static class AddonFile {
-        public Number id;
-        public Number fileLength;
-        public String downloadUrl;
-        public String fileName;
-    }
-    public static class baseModLoader {
-        public String name;
-        public String minecraftVersion;
-        public String forgeVersion;
-        //TODO: Verify CF Uses those names for different modLoaders.
-        public String fabricVersion;
-        public String quiltVersion;
-        // TODO: Change this to anything that CF will use for "NeoForge" thing.
-        public String neoForgeVersion;
-    }
+public enum Mode {
+    CF_INSTANCE,
+    CF_PACK,
+    MODRINTH,
+    AUTOMATIC
 }

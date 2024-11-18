@@ -1,7 +1,7 @@
 /**************************************************************************************
  * MIT License                                                                        *
  *                                                                                    *
- * Copyright (c) 2023. Kanzaji                                                        *
+ * Copyright (c) 2024. Kanzaji                                                        *
  *                                                                                    *
  * Permission is hereby granted, free of charge, to any person obtaining a copy       *
  * of this software and associated documentation files (the "Software"), to deal      *
@@ -22,60 +22,47 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.data;
+package com.kanzaji.catdownloaderlegacyv3.services.configuration.types;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.annotations.SerializedName;
+import com.kanzaji.catdownloaderlegacyv3.services.configuration.ValidationResult;
+import com.kanzaji.catdownloaderlegacyv3.utils.interfaces.ThrowingFunction;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
-/**
- * This class holds the data schema for Modrinth.index.json file from the mrpack archives.
- */
-@SuppressWarnings("unused")
-public class MRIndex {
-    public Number formatVersion;
-    public String game;
-    public String versionId;
-    public String name;
-    /**
-     * Optional field.
-     */
-    public String summary;
-    public MRDependencies dependencies;
-    public MRModFile[] files;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
-    public static class MRModFile {
-        private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        @Override
-        public String toString() {
-            return gson.toJson(this);
-        }
-        public Number fileSize;
-        public String path;
-        public String[] downloads;
-        public CDLInstance.Hashes hashes;
-        public env env;
-        /**
-         * Optional field.
-         */
-        public static class env {
-            public static String[] acceptedValues = {
-                "required","optional","unsupported"
-            };
-            public String client;
-            public String server;
-        }
+public class DoubleType {
+    private DoubleType() {}
+    public static final ThrowingFunction<Object, Object> PARSER = (s) ->  {
+        if (s instanceof String) return Double.parseDouble((String) s);
+        if (s instanceof Integer) return Double.valueOf((Integer) s);
+        return (Double) s;
+    };
+
+    @Contract(pure = true)
+    public static @NotNull Supplier<Object> defaultSupplier(double value) {
+        return () -> (Double) value;
     }
-    public static class MRDependencies {
-        public String minecraft;
-        @SerializedName("fabric-loader")
-        public String fabric;
-        @SerializedName("quilt-loader")
-        public String quilt;
-        @SerializedName("forge")
-        public String forge;
-        // TODO: Future proofing!
-        @SerializedName("neo-forge")
-        public String neoforge;
+
+    @Contract(pure = true)
+    public static @NotNull Function<Object, ValidationResult> inRangeValidator(double min, double max) {
+        return (s) -> {
+            try {
+                double val = (double) PARSER.apply(s);
+
+                if (val < min) {
+                    return new ValidationResult(false, "Value below minimum of " + min);
+                }
+
+                if (val > max) {
+                    return new ValidationResult(false, "Value above maximum of " + min);
+                }
+
+                return new ValidationResult(true, "");
+            } catch (Throwable e) {
+                return new ValidationResult(false, "Exception occurred while parsing the value! " + e);
+            }
+        };
     }
 }

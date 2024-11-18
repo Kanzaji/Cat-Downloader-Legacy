@@ -26,11 +26,14 @@ package com.kanzaji.catdownloaderlegacy;
 
 import com.kanzaji.catdownloaderlegacy.data.Settings;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
-import com.kanzaji.catdownloaderlegacy.guis.UpdaterGUI;
-import com.kanzaji.catdownloaderlegacy.utils.*;
+import com.kanzaji.catdownloaderlegacyv3.guis.UpdaterGUI;
 
 import static com.kanzaji.catdownloaderlegacy.CatDownloader.*;
 
+import com.kanzaji.catdownloaderlegacyv3.utils.FileUtils;
+import com.kanzaji.catdownloaderlegacyv3.utils.NetworkingUtils;
+import com.kanzaji.catdownloaderlegacyv3.utils.RandomUtils;
+import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 

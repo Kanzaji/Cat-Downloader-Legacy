@@ -24,11 +24,11 @@
 
 package com.kanzaji.catdownloaderlegacy;
 
-import com.kanzaji.catdownloaderlegacy.data.CDLInstance;
+import com.kanzaji.catdownloaderlegacyv3.data.CDLInstance;
 import com.kanzaji.catdownloaderlegacy.data.CFManifest;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
-import com.kanzaji.catdownloaderlegacy.utils.FileUtils;
-import com.kanzaji.catdownloaderlegacy.utils.RandomUtils;
+import com.kanzaji.catdownloaderlegacyv3.utils.FileUtils;
+import com.kanzaji.catdownloaderlegacyv3.utils.RandomUtils;
 import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
 
 import org.jetbrains.annotations.NotNull;

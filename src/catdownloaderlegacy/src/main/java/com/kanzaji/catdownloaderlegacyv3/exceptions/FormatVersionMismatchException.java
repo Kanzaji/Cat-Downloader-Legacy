@@ -1,7 +1,7 @@
 /**************************************************************************************
  * MIT License                                                                        *
  *                                                                                    *
- * Copyright (c) 2023. Kanzaji                                                        *
+ * Copyright (c) 2023-2024. Kanzaji                                                   *
  *                                                                                    *
  * Permission is hereby granted, free of charge, to any person obtaining a copy       *
  * of this software and associated documentation files (the "Software"), to deal      *
@@ -22,53 +22,31 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.guis;
-
-import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
-
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-
-import javax.swing.*;
-import java.awt.*;
+package com.kanzaji.catdownloaderlegacyv3.exceptions;
 
 /**
- * This class holds utility methods related to GUI.
+ * Signals that parsed file is in a format that is either incorrect or is an unknown format.
  */
-public class GUIUtils {
-    private static final LoggerCustom logger = new LoggerCustom("GUI Utilities");
+public class FormatVersionMismatchException extends RuntimeException {
 
     /**
-     * This method is used to set LookAndFeel of GUI's to the system one.
+     * Constructs FormatVersionMismatchException with no detail message.
      */
-    public static void setLookAndFeel() {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            logger.logStackTrace("Look And Feel not available! Going back to default.", e);
-        }
-    }
+    public FormatVersionMismatchException() {super();}
 
-    private static int gWidth = 1;
-    private static int gHeight = 1;
     /**
-     * This method is used to update static variables for the Width and Height of the user display.
+     * Constructs FormatVersionMismatchException with the specified detail message.
      */
-    public static void updateResolutionInformation() {
-        GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-        gWidth = gd.getDisplayMode().getWidth();
-        gHeight = gd.getDisplayMode().getHeight();
-    }
-    @Contract(pure = true)
-    public static int getScreenWidth() {
-        return gWidth;
-    }
-    @Contract(pure = true)
-    public static int getScreenHeight() {
-        return gHeight;
-    }
-    @Contract(value = " -> new", pure = true)
-    public static @NotNull Dimension getScreenDimension() {
-        return new Dimension(gWidth, gHeight);
-    }
+    public FormatVersionMismatchException(String msg) {super(msg);}
+
+    /**
+     * Constructs FormatVersionMismatchException with the specified detail message and cause;
+     */
+    public FormatVersionMismatchException(String msg, Throwable e) {super(msg, e);}
+
+    /**
+     * Constructs a new exception with the specified cause and a detail message of (cause==null ? null : cause.toString()) (which typically contains the class and detail message of cause).
+     */
+    public FormatVersionMismatchException(Throwable e) {super(e);}
+
 }

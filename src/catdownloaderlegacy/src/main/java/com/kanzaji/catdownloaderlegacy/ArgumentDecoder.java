@@ -27,7 +27,7 @@ package com.kanzaji.catdownloaderlegacy;
 import com.kanzaji.catdownloaderlegacy.data.Settings;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
 
-import com.kanzaji.catdownloaderlegacy.utils.FileUtils;
+import com.kanzaji.catdownloaderlegacyv3.utils.FileUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.FileNotFoundException;
@@ -311,7 +311,8 @@ public class ArgumentDecoder {
     public String getWorkingDir() {return this.WorkingDirectory;}
     public String getSettingsPath() {return this.SettingsPath;}
     public String getLogPath() {return this.LogPath;}
-    public String getCachePath() {return this.CachePath;};
+    public String getCachePath() {return this.CachePath;}
+
     public int getDownloadAttempts() {return this.DownloadAttempts;}
     public int getThreads() {return this.ThreadCount;}
     public int getLogStockSize() {return this.LogStockSize;}

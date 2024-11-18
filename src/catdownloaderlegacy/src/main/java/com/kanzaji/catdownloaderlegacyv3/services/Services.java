@@ -1,7 +1,7 @@
 /**************************************************************************************
  * MIT License                                                                        *
  *                                                                                    *
- * Copyright (c) 2023. Kanzaji                                                        *
+ * Copyright (c) 2024. Kanzaji                                                        *
  *                                                                                    *
  * Permission is hereby granted, free of charge, to any person obtaining a copy       *
  * of this software and associated documentation files (the "Software"), to deal      *
@@ -22,58 +22,49 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.utils;
+package com.kanzaji.catdownloaderlegacyv3.services;
 
+import com.kanzaji.catdownloaderlegacyv3.config.Configuration;
+import com.kanzaji.catdownloaderlegacyv3.services.configuration.ConfigurationService;
 import org.jetbrains.annotations.NotNull;
 
-import java.time.LocalDateTime;
+import java.nio.file.Path;
 
-/**
- * This class holds utility methods related to date.
- * @see DateUtils#getCurrentDate()
- * @see DateUtils#getCurrentTime()
- */
-public class DateUtils {
-    /**
-     * Used to get a {@link String} with current Date.
-     * @return {@link String} with current Date.
-     */
-    public static @NotNull String getCurrentDate() {
-        LocalDateTime time = LocalDateTime.now();
-        return time.getDayOfMonth() + "." + time.getMonthValue() + "." + time.getYear();
+public enum Services {
+    // Services enum, for easier access to services when needed.
+    LOGGER(Logger.getInstance().getName()),
+    CONFIG("Main Configuration Service");
+
+    // Fields used by ServiceManager to get services.
+    public final String name;
+    Services(String name) {
+        this.name = name;
     }
 
-    /**
-     * Used to get a {@link String} with current Time (Hours-Minutes-Seconds).
-     * @return {@link String} with current Time.
-     */
-    public static @NotNull String getCurrentTime() {
-        LocalDateTime time = LocalDateTime.now();
-        return time.getHour() + "-" + time.getMinute() + "-" + time.getSecond();
-    }
+    // Utility
 
     /**
-     * Used to get a {@link String} with current Time (Hours-Minutes-Seconds.Nano).
-     * @return {@link String} with current Time.
+     * Used to get instance of the logger from ServiceManager.
+     * @return Instance of the main logger service.
      */
-    public static @NotNull String getCurrentTimeDetail() {
-        LocalDateTime time = LocalDateTime.now();
-        return time.getHour() + "-" + time.getMinute() + "-" + time.getSecond() + "." + time.getNano();
+    public static @NotNull Logger getLogger() {
+        return ServiceManager.get(LOGGER);
     }
 
-    /**
-     * Used to get a {@link String} with current Date and Time (Day.Month.Year Hours-Minutes-Seconds).
-     * @return {@link String} with current Date and Time.
-     */
-    public static @NotNull String getCurrentFullDate() {
-        return getCurrentDate() + " " + getCurrentTime();
-    }
+    // Other methods related to services
 
     /**
-     * Used to get a {@link String} with current Date and Time (Day.Month.Year Hours-Minutes-Seconds.Nano).
-     * @return {@link String} with current Date and Time.
+     * Used to register services to ServiceManager.
+     * @apiNote Even tho it's possible to register new service anywhere,
+     * and the ENUM isn't required, for consistency reasons,
+     * new services should be registered here with added ENUM entry.
      */
-    public static @NotNull String getCurrentFulLDateDetail() {
-        return getCurrentDate() + " " + getCurrentTimeDetail();
+    public static void registerServices() {
+        ServiceManager.registerService(Logger.getInstance());
+
+        ConfigurationService mainCFG = new ConfigurationService("Main Configuration Service", Path.of("Cat-Downloader-Legacy-Config.json5"));
+        ServiceManager.registerService(mainCFG);
+
+        Configuration.register(mainCFG);
     }
 }

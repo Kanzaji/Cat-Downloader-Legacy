@@ -1,7 +1,7 @@
 /**************************************************************************************
  * MIT License                                                                        *
  *                                                                                    *
- * Copyright (c) 2023. Kanzaji                                                        *
+ * Copyright (c) 2023-2024. Kanzaji                                                   *
  *                                                                                    *
  * Permission is hereby granted, free of charge, to any person obtaining a copy       *
  * of this software and associated documentation files (the "Software"), to deal      *
@@ -22,10 +22,11 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacy.utils;
+package com.kanzaji.catdownloaderlegacyv3.utils;
 
 import com.kanzaji.catdownloaderlegacy.ArgumentDecoder;
-import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
+import com.kanzaji.catdownloaderlegacyv3.services.Logger;
+import com.kanzaji.catdownloaderlegacyv3.services.interfaces.ILogger;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -44,7 +45,7 @@ import java.util.Objects;
  * @see FileVerUtils#verifyFile(Path, Number, String)
  */
 public class FileVerUtils {
-    private static final LoggerCustom logger = new LoggerCustom("File Verification Utilities");
+    private static final ILogger logger = Logger.get("File Verification Utilities");
 
     /**
      * Used to verify integrity of the file with use of {@link FileVerUtils#verifyFileSize(Path, int)} and {@link FileVerUtils#verifyHash(Path, String, String)}.

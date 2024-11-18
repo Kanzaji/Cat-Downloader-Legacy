@@ -24,16 +24,19 @@
 
 package com.kanzaji.catdownloaderlegacy;
 
-import com.kanzaji.catdownloaderlegacy.data.CDLInstance;
+import com.kanzaji.catdownloaderlegacyv3.data.CDLInstance;
 import com.kanzaji.catdownloaderlegacy.data.CFManifest;
-import com.kanzaji.catdownloaderlegacy.data.MRIndex;
-import com.kanzaji.catdownloaderlegacy.exceptions.FormatVersionMismatchException;
-import com.kanzaji.catdownloaderlegacy.guis.GUIUtils;
-import com.kanzaji.catdownloaderlegacy.data.CFMinecraftInstance;
+import com.kanzaji.catdownloaderlegacyv3.data.MRIndex;
+import com.kanzaji.catdownloaderlegacyv3.exceptions.FormatVersionMismatchException;
+import com.kanzaji.catdownloaderlegacyv3.guis.GUIUtils;
+import com.kanzaji.catdownloaderlegacyv3.data.CFMinecraftInstance;
 import com.kanzaji.catdownloaderlegacy.loggers.LoggerCustom;
-import com.kanzaji.catdownloaderlegacy.utils.*;
 
 import com.google.gson.Gson;
+import com.kanzaji.catdownloaderlegacyv3.utils.FileUtils;
+import com.kanzaji.catdownloaderlegacyv3.utils.NetworkingUtils;
+import com.kanzaji.catdownloaderlegacyv3.utils.RandomUtils;
+import com.kanzaji.catdownloaderlegacy.utils.SettingsManager;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -107,7 +110,7 @@ public final class CatDownloader {
 
             logger.print("Entire Process took " + (float) (System.currentTimeMillis() - StartingTime) / 1000F + "s");
             RandomUtils.closeTheApp(0);
-        } catch (Exception | Error e) {
+        } catch (Throwable e) {
             System.out.println("---------------------------------------------------------------------");
             System.out.println("CatDownloader crashed! More details are in the log file at \"" + logger.getLogPath() + "\".");
             logger.logStackTrace("Exception thrown while executing main app code!", e);
@@ -207,7 +210,7 @@ public final class CatDownloader {
         }
 
         if (ARD.isModrinthMode() && manifestFile.getFileName().toString().endsWith(".mrpack")) {
-            logger.log("Manifest file is a Modrinth zip file! Uncompressing...");
+            logger.log("Manifest file is a Modrinth zip file! Decompressing...");
             Path CDLTemp = Path.of(WORKPATH.toString(), "CDLTemp");
             FileUtils.delete(CDLTemp);
             FileUtils.unzip(manifestFile, CDLTemp);
