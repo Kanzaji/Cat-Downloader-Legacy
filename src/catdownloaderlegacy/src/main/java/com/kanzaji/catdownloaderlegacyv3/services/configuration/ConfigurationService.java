@@ -27,10 +27,9 @@ package com.kanzaji.catdownloaderlegacyv3.services.configuration;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import com.kanzaji.catdownloaderlegacyv3.CatDownloader;
+import com.kanzaji.catdownloaderlegacyv3.config.Globals;
 import com.kanzaji.catdownloaderlegacyv3.services.ServiceManager;
-import com.kanzaji.catdownloaderlegacyv3.services.ServiceManager.State;
-import com.kanzaji.catdownloaderlegacyv3.services.Services;
+import com.kanzaji.catdownloaderlegacyv3.services.enums.State;
 import com.kanzaji.catdownloaderlegacyv3.services.Logger;
 import com.kanzaji.catdownloaderlegacyv3.services.interfaces.ILogger;
 import com.kanzaji.catdownloaderlegacyv3.services.interfaces.IService;
@@ -45,7 +44,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ConfigurationService implements IService {
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    private static final Logger mainLogger = Services.getLogger();
     private final ILogger logger;
     private final String name;
     public final Path configFile;
@@ -184,20 +182,23 @@ public class ConfigurationService implements IService {
      * Private method used to parse arguments and patch parsed values from the configuration file.
      */
     private void parseArguments() {
-        Map<String, String> args = new HashMap<>();
+        Map<String, StringBuilder> args = new HashMap<>();
         String currentArg = null;
-        for (String arg : CatDownloader.ARGUMENTS) {
-            // Skip all values until we find the first argument.
+        for (String arg : Globals.ARGUMENTS) {
             if (arg.startsWith("-")) {
                 if (arg.contains(":")) {
                     currentArg = arg.substring(0, arg.indexOf(":"));
                     if (!arg.endsWith(":"))
-                        args.putIfAbsent(currentArg, arg.substring(arg.indexOf(":")+1).strip());
+                        args.putIfAbsent(currentArg, new StringBuilder(arg.substring(arg.indexOf(":")+1).strip()));
+                } else {
+                    // Arguments without values will be checked for boolean interpretation.
+                    // Those we skip on assignment, however, as those can't have values, so value is set to null.
+                    args.putIfAbsent(arg, null);
                 }
             }
-            // We skip all arguments that don't have a value specified. Those are handled by the default value generators of specified configuration keys.
+            // Skip all values until we find the first argument.
             else if (currentArg != null)
-                args.putIfAbsent(currentArg, arg);
+                args.computeIfAbsent(currentArg, it -> new StringBuilder()).append(arg);
         }
 
         args.forEach((arg, value) -> {
@@ -208,6 +209,18 @@ public class ConfigurationService implements IService {
             }
             var key = keys.get(keyName);
             if (key == null) throw new IllegalStateException("Argument \"%s\" points to an invalid key \"%s\"!".formatted(arg, keyName));
+
+            // Boolean-True argument handling (-BypassNetworkCheck == -BypassNetworkCheck:true)
+            if (value == null) {
+                if (key.getValueClass() == Boolean.class) {
+                    key.setValue(true);
+                    logger.info("Patched configuration key \"%s\" with value \"true\", as Boolean-True argument was found.".formatted(keyName));
+                } else {
+                    logger.error("Configuration key \"%s\" is not a boolean and doesn't support Boolean-True argument!".formatted(keyName));
+                }
+                return;
+            }
+
             try {
                 key.parseAndSet(value);
                 logger.info("Patched configuration key \"%s\" with argument value \"%s\".".formatted(keyName, value));

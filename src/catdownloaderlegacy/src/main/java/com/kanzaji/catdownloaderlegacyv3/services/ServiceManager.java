@@ -24,6 +24,7 @@
 
 package com.kanzaji.catdownloaderlegacyv3.services;
 
+import com.kanzaji.catdownloaderlegacyv3.services.enums.State;
 import com.kanzaji.catdownloaderlegacyv3.services.interfaces.ILogger;
 import com.kanzaji.catdownloaderlegacyv3.services.interfaces.IService;
 import org.jetbrains.annotations.Contract;
@@ -47,17 +48,16 @@ import java.util.*;
 public class ServiceManager {
     private static State status = State.NOT_INIT;
     private static final Map<String, IService> services = new HashMap<>();
+    private static final Map<State, List<Runnable>> subscribers = new HashMap<>();
     private static final ILogger logger = Logger.get("Service Manager");
     @Contract(pure = true)
     private ServiceManager() {}
 
-    public enum State {
-        NOT_INIT,
-        PRE_INIT,
-        INIT,
-        POST_INIT,
-        EXIT,
-        CRASH
+    /**
+     * @return True if after NOT_INIT phase, after which registration of new services is not possible.
+     */
+    public static boolean afterRegistration() {
+        return status != State.NOT_INIT;
     }
 
     /**
@@ -73,19 +73,6 @@ public class ServiceManager {
     }
 
     /**
-     * Used to get IService automatically cast to the output class.
-     * @param service Service Enum with Service Name.
-     * @return IService cast to specified Class.
-     * @param <S> Class to cast the service to.
-     * @apiNote Make double sure the service you are requesting is cast to the proper class!
-     * @see Services
-     */
-    @SuppressWarnings("unchecked")
-    public static <S> @NotNull S get(@NotNull Services service) {
-        return (S) get(service.name);
-    }
-
-    /**
      * Used to get current status of Service Initialization.
      * @return Status of the ServiceManager.
      */
@@ -95,16 +82,30 @@ public class ServiceManager {
 
     /**
      * Used to register the Service to Service Manager.
-     * @throws IllegalStateException when the State of ServiceManager is POST_INIT or Service with specified name already is registered.
+     * @throws IllegalStateException when the execution state is different from {@link State#NOT_INIT} or Service with specified name already is registered.
      * @param service Object implementing IService to register.
      */
     public static void registerService(IService service) {
-        if (status == State.POST_INIT) throw new IllegalStateException("You can't register new Services after POST_INIT!");
+        if (afterRegistration()) throw new IllegalStateException("You can't register new Services after initialization started!");
         if (Objects.isNull(service)) throw new NullPointerException("You can't register NULL Service!");
         if (services.containsKey(service.getName())) throw new IllegalStateException("You can't register already registered service %s!".formatted(service.getName()));
 
         services.put(service.getName(), service);
         logger.info("Registered service: " + service.getName());
+    }
+
+    /**
+     * Used to subscribe to specified execution phase.
+     * @param phase Phase to subscribe to
+     * @param runnable Runnable to execute.
+     * @apiNote Take a note that event subscribers will be executed after services in non-deterministic order.
+     * Services are a recommended way to execute in a given phase. See {@link ServiceManager#registerService(IService)}.
+     */
+    public static void subscribe(State phase, Runnable runnable) {
+        if (afterRegistration()) throw new IllegalStateException("You can't subscribe to the execution phases after initialization started!");
+        if (phase == State.NOT_INIT)
+            throw new IllegalStateException("NOT_INIT is not a valid execution phase!");
+        subscribers.computeIfAbsent(phase, it -> new ArrayList<>()).add(Objects.requireNonNull(runnable, "Subscriber can't be null!"));
     }
 
     public static void runPreInit() {
@@ -155,5 +156,21 @@ public class ServiceManager {
             }
         });
         logger.info(stage + " phase of Services finished.");
+
+        if (subscribers.getOrDefault(stage, List.of()).isEmpty()) return;
+        var subs = subscribers.get(stage);
+        logger.info("Executing subscribers (%d) for execution phase \"%s\"...".formatted(subs.size(), stage));
+        subs.forEach(run -> {
+            try {
+                run.run();
+            } catch (Throwable ex) {
+                if (ignoreExceptions) {
+                    logger.logStackTrace("Failed execution of phase \"%s\" subscriber!".formatted(stage), ex);
+                } else {
+                    throw new RuntimeException("Failed execution of phase \"%s\" subscriber!".formatted(stage), ex);
+                }
+            }
+        });
+        logger.info("Finished execution of phase subscribers.");
     }
 }

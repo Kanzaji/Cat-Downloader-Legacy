@@ -203,7 +203,7 @@ public class ConfigurationKey<T> {
      */
     @SuppressWarnings("unchecked")
     public T get() {
-        ConfigurationService config = ServiceManager.get(Services.CONFIG);
+        ConfigurationService config = Services.CONFIG.get();
         if (!config.initialized()) throw new IllegalStateException(config.getName() + " is not yet initialized! Configuration values are available after PRE-INIT.");
         if (!valClass.isInstance(value) && Objects.nonNull(value))
             throw new IllegalStateException("Object of different class stored in key %s! Expected: %s, Stored: %s".formatted(getName(), valClass, value.getClass()));

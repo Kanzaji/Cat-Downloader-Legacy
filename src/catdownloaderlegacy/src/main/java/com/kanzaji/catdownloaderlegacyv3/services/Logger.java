@@ -24,9 +24,10 @@
 
 package com.kanzaji.catdownloaderlegacyv3.services;
 
+import com.kanzaji.catdownloaderlegacyv3.config.Globals;
+import com.kanzaji.catdownloaderlegacyv3.services.enums.State;
 import com.kanzaji.catdownloaderlegacyv3.utils.DateUtils;
 import com.kanzaji.catdownloaderlegacyv3.utils.FileUtils;
-import com.kanzaji.catdownloaderlegacyv3.CatDownloader;
 import com.kanzaji.catdownloaderlegacyv3.config.Configuration;
 import com.kanzaji.catdownloaderlegacyv3.services.interfaces.ILogger;
 import com.kanzaji.catdownloaderlegacyv3.services.interfaces.IService;
@@ -50,7 +51,7 @@ public class Logger implements ILogger, IService {
     private Logger() {}
     private boolean crashed = false;
     private boolean initialized = false;
-    private Path logFile = Path.of(CatDownloader.NAME + ".log");
+    private Path logFile = Path.of(Globals.NAME + ".log");
     private final List<PreInitMessage> preInitMessages = new LinkedList<>();
 
     /**
@@ -95,8 +96,8 @@ public class Logger implements ILogger, IService {
      * @return List with implemented initialization phases.
      */
     @Override
-    public List<ServiceManager.State> getPhases() {
-        return List.of(ServiceManager.State.PRE_INIT, ServiceManager.State.POST_INIT);
+    public List<State> getPhases() {
+        return List.of(State.PRE_INIT, State.POST_INIT);
     }
 
     /**

@@ -1,7 +1,7 @@
 /**************************************************************************************
  * MIT License                                                                        *
  *                                                                                    *
- * Copyright (c) 2023-2024. Kanzaji                                                   *
+ * Copyright (c) 2024. Kanzaji                                                        *
  *                                                                                    *
  * Permission is hereby granted, free of charge, to any person obtaining a copy       *
  * of this software and associated documentation files (the "Software"), to deal      *
@@ -22,46 +22,18 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacyv3.services.interfaces;
+package com.kanzaji.catdownloaderlegacyv3.config.enums;
 
-import com.kanzaji.catdownloaderlegacyv3.services.enums.State;
+import com.kanzaji.catdownloaderlegacyv3.config.Configuration;
 
-import java.util.List;
-
-public interface IService {
-    String getName();
-
+public enum FeedbackMode {
     /**
-     * Used to get lists of implemented phases.
-     * Only phases mentioned in a returned list are executed, even if implemented.
-     * @return List with implemented initialization phases.
+     * Original output mode. Results in "simple" and "aesthetic" way of displaying information.
      */
-    List<State> getPhases();
+    SIMPLE,
     /**
-     * Used for PreInit phase of the service.
-     * @throws Throwable Possible exception from the PreInit phase.
+     * Logs a ton of additional information to the standard output.
+     * @apiNote This <b><i>is not the same</i></b> as {@link Configuration#LoggerActive} being disabled! This will log in a readable way, but will break the styling.
      */
-    default void preInit() throws Throwable {}
-    /**
-     * Used for Init phase of the service.
-     * @throws Throwable Possible exception from the Init phase.
-     */
-    default void init() throws Throwable {}
-    /**
-     * Used for PostInit phase of the service.
-     * @throws Throwable Possible exception from the PostInit phase.
-     */
-    default void postInit() throws Throwable {}
-
-    /**
-     * Used for handling the exit off the application if required.
-     * @throws Throwable Possible exception from the Exit phase.
-     */
-    default void exit() throws Throwable {}
-
-    /**
-     * Used for handling the unexpected exit (crash) off the application if required.
-     * @throws Throwable Possible exception from the Exit phase.
-     */
-    default void crash() throws Throwable {}
+    VERBOSE
 }

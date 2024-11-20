@@ -22,60 +22,61 @@
  * SOFTWARE.                                                                          *
  **************************************************************************************/
 
-package com.kanzaji.catdownloaderlegacyv3.services.configuration;
+package com.kanzaji.catdownloaderlegacyv3.config;
 
+import com.kanzaji.catdownloaderlegacy.CatDownloader;
+import com.kanzaji.catdownloaderlegacyv3.guis.GUIUtils;
 import com.kanzaji.catdownloaderlegacyv3.services.Logger;
-import com.kanzaji.catdownloaderlegacyv3.services.enums.State;
 import com.kanzaji.catdownloaderlegacyv3.services.interfaces.ILogger;
-import com.kanzaji.catdownloaderlegacyv3.services.interfaces.IService;
-import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
-/**
- * ConfigurationConflictService is used to prevent conflicts between different Configuration Services, and prevent issues with accidental overlapping configuration keys.
- */
-public class ConfigurationConflictService implements IService {
-    private static final ILogger logger = Logger.get("Configuration Conflict Prevention Service");
-
-    private static final List<ConfigurationService> CFGServices = new ArrayList<>();
-
-    @Override
-    public String getName() {
-        return "Configuration Conflict Prevention Service";
-    }
-
-    protected static void addService(@NotNull ConfigurationService service) {
-        CFGServices.add(Objects.requireNonNull(service));
-    }
-
+public class Globals {
+    private static final ILogger logger = Logger.get("Initial Configuration");
+    // Global variables
+    public static final String VERSION = "3.0.0-DEVELOP";
+    @SuppressWarnings("ConstantConditions")
+    public static final boolean DEVELOP = VERSION.endsWith("DEVELOP");
+    @SuppressWarnings("ConstantConditions")
+    public static final boolean SNAPSHOT = VERSION.endsWith("SNAPSHOT");
+    public static final String REPOSITORY = "https://github.com/Kanzaji/Cat-Downloader-Legacy";
+    public static final String NAME = "Cat Downloader Legacy";
     /**
-     * Used to get lists of implemented phases.
-     * Only phases mentioned in a returned list are executed, even if implemented.
-     *
-     * @return List with implemented initialization phases.
+     * Arguments passed to the app.
      */
-    @Override
-    public List<State> getPhases() {
-        return List.of(State.POST_INIT);
-    }
-
+    public static final List<String> ARGUMENTS = new ArrayList<>();
     /**
-     * Used for PostInit phase of the service.
-     *
+     * Path to the java environment running the app.
      */
-    @Override
-    public void postInit() {
-        //TODO: Do check for conflicts between services
-        logger.info("Scanning Configuration services for potential conflicts...");
-//        List<String> paths = new ArrayList<>();
-//        CFGServices.stream().filter(it -> {
-//            var path = it.configFile.toAbsolutePath().toString();
-//            if (paths.contains(path)) return true;
-//            paths.add(path);
-//            return false;
-//        }).count();
+    public static Path JAVAPATH = null;
+    /**
+     * Path to the .jar containing the app.
+     */
+    public static Path APPPATH = null;
+
+    public static void setup() {
+        GUIUtils.setLookAndFeel();
+
+        try {
+            APPPATH = Path.of(CatDownloader.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath().replaceFirst("/", ""));
+            logger.info("App Path: " + APPPATH.toAbsolutePath());
+        } catch (Exception e) {
+            logger.logStackTrace("Failed to get App directory!", e);
+        }
+
+        try {
+            JAVAPATH = Path.of(ProcessHandle.current().info().command().orElseThrow());
+            logger.info("Java Path: " + JAVAPATH.toAbsolutePath());
+        } catch (Exception e) {
+            logger.logStackTrace("Failed to get Java directory!", e);
+        }
+
+        // Logo! Or more, a banner, we don't have a logo :P
+        System.out.println("---------------------------------------------------------------------");
+        System.out.printf ("     %s %s%n", NAME, VERSION);
+        System.out.println("     Created by: Kanzaji");
+        System.out.println("---------------------------------------------------------------------");
     }
 }

@@ -25,44 +25,47 @@
 package com.kanzaji.catdownloaderlegacyv3.services;
 
 import com.kanzaji.catdownloaderlegacyv3.config.Configuration;
-import com.kanzaji.catdownloaderlegacyv3.config.Globals;
-import com.kanzaji.catdownloaderlegacyv3.services.configuration.ConfigurationService;
 import com.kanzaji.catdownloaderlegacyv3.services.enums.State;
+import com.kanzaji.catdownloaderlegacyv3.services.interfaces.ILogger;
+import com.kanzaji.catdownloaderlegacyv3.services.interfaces.IService;
+import com.kanzaji.catdownloaderlegacyv3.utils.NetworkingUtils;
 
-import java.nio.file.Path;
+import java.util.List;
 
-public class Services<T> {
-    public static final Services<Logger> LOGGER = new Services<>(Logger.getInstance().getName());
-    public static final Services<ConfigurationService> CONFIG = new Services<>("Main Configuration Service");
+public class NetworkingService implements IService {
+    private static final ILogger logger = Logger.get("Networking Service");
 
-    private final String name;
-
-    private Services(String name) {
-        this.name = name;
-    }
-
-    @SuppressWarnings("unchecked")
-    public T get() {
-        return (T) ServiceManager.get(name);
-    }
-
+    @Override
     public String getName() {
-        return this.name;
+        return "Networking Service";
     }
 
-    /**
-     * Used to register services to ServiceManager.
-     * @apiNote Even tho it's possible to register new service anywhere,
-     * and the ENUM isn't required, for consistency reasons,
-     * new services should be registered here with added ENUM entry.
-     */
-    public static void registerServices() {
-        // Subscribing to PRE_INIT for basic setup, like path to the jar etc.
-        ServiceManager.subscribe(State.PRE_INIT, Globals::setup);
-        ServiceManager.registerService(Logger.getInstance());
+    @Override
+    public List<State> getPhases() {
+        return List.of(State.INIT);
+    }
 
-        ConfigurationService mainCFG = new ConfigurationService(CONFIG.getName(), Path.of("Cat-Downloader-Legacy-Config.json5"));
-        ServiceManager.registerService(mainCFG);
-        Configuration.register(mainCFG);
+    @Override
+    public void init() throws Throwable {
+        if (Configuration.BypassNetworkCheck.get()) {
+            logger.warn("Network Check bypass active! Skipping checking networking connection, stuff might go horribly wrong!");
+            return;
+        }
+
+        logger.info("Checking network connection...");
+
+        long StartingTime = System.currentTimeMillis();
+        if (NetworkingUtils.checkConnection("https://github.com/")) {
+            float CurrentTime = (float) (System.currentTimeMillis() - StartingTime) / 1000F;
+            logger.info("Network connection checked! Time to verify network: " + CurrentTime + " seconds.");
+            if (CurrentTime > 2) {
+                logger.print("It appears you have slow network connection! This might or might not cause issues with Verification or Download steps. Use with caution.", 1);
+            }
+        } else {
+            logger.critical("No network connection! This app can not run properly without access to the internet.");
+            System.out.println("It appears you are running this app without access to the internet. This app requires internet connection to function properly.");
+            System.out.println("If you have network connection, and the Check host is unavailable (github.com), run the app with -BypassNetworkCheck argument!");
+            throw new IllegalStateException("Network connection check failed!");
+        }
     }
 }
